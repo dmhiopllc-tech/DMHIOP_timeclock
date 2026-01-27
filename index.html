@@ -18,19 +18,19 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             padding: 20px;
         }
 
         .signup-container {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             max-width: 450px;
+            width: 100%;
             padding: 40px;
-            animation: slideUp 0.5s ease;
+            animation: slideUp 0.5s ease-out;
         }
 
         @keyframes slideUp {
@@ -52,10 +52,10 @@
         .logo-icon {
             width: 150px;
             height: 150px;
-            display: inline-flex;
+            margin: 0 auto 20px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 15px;
         }
 
         .logo-icon img {
@@ -65,14 +65,14 @@
         }
 
         h1 {
+            color: #1a202c;
             font-size: 28px;
-            color: #1a1a1a;
             font-weight: 700;
             margin-bottom: 8px;
         }
 
         .subtitle {
-            color: #666;
+            color: #718096;
             font-size: 14px;
         }
 
@@ -82,26 +82,25 @@
 
         label {
             display: block;
+            color: #2d3748;
+            font-weight: 600;
             margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
             font-size: 14px;
         }
 
         label i {
             margin-right: 8px;
             color: #667eea;
-            width: 16px;
         }
 
         input {
             width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e0e0e0;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
             border-radius: 10px;
-            font-size: 15px;
-            font-family: 'Inter', sans-serif;
+            font-size: 14px;
             transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
         }
 
         input:focus {
@@ -111,66 +110,55 @@
         }
 
         input.error {
-            border-color: #ef4444;
+            border-color: #f56565;
         }
 
         .error-message {
-            color: #ef4444;
-            font-size: 13px;
+            color: #f56565;
+            font-size: 12px;
             margin-top: 5px;
             display: none;
         }
 
-        .error-message.show {
-            display: block;
-        }
-
         .password-strength {
             margin-top: 8px;
-            display: none;
-        }
-
-        .password-strength.show {
-            display: block;
         }
 
         .strength-bar {
             height: 4px;
-            background: #e0e0e0;
+            background: #e2e8f0;
             border-radius: 2px;
             overflow: hidden;
             margin-bottom: 5px;
         }
 
-        .strength-bar-fill {
+        .strength-fill {
             height: 100%;
             width: 0%;
             transition: all 0.3s ease;
         }
 
-        .strength-bar-fill.weak {
-            width: 33%;
-            background: #ef4444;
+        .strength-fill.weak { 
+            width: 33%; 
+            background: #f56565; 
         }
-
-        .strength-bar-fill.medium {
-            width: 66%;
-            background: #f59e0b;
+        .strength-fill.medium { 
+            width: 66%; 
+            background: #ed8936; 
         }
-
-        .strength-bar-fill.strong {
-            width: 100%;
-            background: #10b981;
+        .strength-fill.strong { 
+            width: 100%; 
+            background: #48bb78; 
         }
 
         .strength-text {
             font-size: 12px;
-            color: #666;
+            color: #718096;
         }
 
-        .btn-signup {
+        .btn-primary {
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
@@ -182,47 +170,25 @@
             margin-top: 10px;
         }
 
-        .btn-signup:hover {
+        .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
-        .btn-signup:disabled {
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
         }
 
-        .divider {
-            text-align: center;
-            margin: 25px 0;
-            color: #999;
-            font-size: 14px;
-            position: relative;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 40%;
-            height: 1px;
-            background: #e0e0e0;
-        }
-
-        .divider::before {
-            left: 0;
-        }
-
-        .divider::after {
-            right: 0;
-        }
-
         .login-link {
             text-align: center;
             margin-top: 20px;
-            color: #666;
+            color: #718096;
             font-size: 14px;
         }
 
@@ -237,58 +203,17 @@
         }
 
         .success-message {
-            background: #10b981;
+            background: #48bb78;
             color: white;
-            padding: 15px;
+            padding: 16px;
             border-radius: 10px;
             margin-bottom: 20px;
+            text-align: center;
             display: none;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .success-message.show {
-            display: flex;
         }
 
         .success-message i {
-            font-size: 20px;
-        }
-
-        /* Mobile responsiveness */
-        @media (max-width: 480px) {
-            .signup-container {
-                padding: 30px 25px;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
-
-            .logo-icon {
-                width: 70px;
-                height: 70px;
-            }
-
-            .logo-icon i {
-                font-size: 35px;
-            }
-        }
-
-        /* Loading spinner */
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.8s linear infinite;
             margin-right: 8px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -302,17 +227,14 @@
             <p class="subtitle">Time Clock System</p>
         </div>
 
-        <div class="success-message" id="successMessage">
+        <div id="successMessage" class="success-message">
             <i class="fas fa-check-circle"></i>
-            <div>
-                <strong>Account Created!</strong><br>
-                <span style="font-size: 13px;">Redirecting to login...</span>
-            </div>
+            <span>Account Created! Redirecting to login...</span>
         </div>
 
         <form id="signupForm">
             <div class="form-group">
-                <label for="fullName">
+                <label>
                     <i class="fas fa-user"></i>Full Name
                 </label>
                 <input 
@@ -320,70 +242,62 @@
                     id="fullName" 
                     placeholder="John Doe"
                     required
-                    autocomplete="name"
                 >
                 <div class="error-message" id="nameError">Please enter your full name</div>
             </div>
 
             <div class="form-group">
-                <label for="email">
+                <label>
                     <i class="fas fa-envelope"></i>Email Address
                 </label>
                 <input 
                     type="email" 
                     id="email" 
-                    placeholder="john.doe@dmhiop.com"
+                    placeholder="you@company.com"
                     required
-                    autocomplete="email"
                 >
-                <div class="error-message" id="emailError">Please enter a valid email address</div>
+                <div class="error-message" id="emailError">Please enter a valid email</div>
             </div>
 
-
-
             <div class="form-group">
-                <label for="password">
+                <label>
                     <i class="fas fa-lock"></i>Password
                 </label>
                 <input 
                     type="password" 
                     id="password" 
-                    placeholder="Create a strong password"
+                    placeholder="••••••••"
                     required
-                    autocomplete="new-password"
                 >
-                <div class="password-strength" id="passwordStrength">
+                <div class="password-strength">
                     <div class="strength-bar">
-                        <div class="strength-bar-fill" id="strengthBarFill"></div>
+                        <div class="strength-fill" id="strengthFill"></div>
                     </div>
-                    <div class="strength-text" id="strengthText"></div>
+                    <div class="strength-text" id="strengthText">Enter a password</div>
                 </div>
                 <div class="error-message" id="passwordError">Password must be at least 6 characters</div>
             </div>
 
             <div class="form-group">
-                <label for="confirmPassword">
+                <label>
                     <i class="fas fa-lock"></i>Confirm Password
                 </label>
                 <input 
                     type="password" 
                     id="confirmPassword" 
-                    placeholder="Re-enter your password"
+                    placeholder="••••••••"
                     required
-                    autocomplete="new-password"
                 >
                 <div class="error-message" id="confirmError">Passwords do not match</div>
             </div>
 
-            <button type="submit" class="btn-signup" id="signupBtn">
+            <button type="submit" class="btn-primary" id="signupBtn">
                 <i class="fas fa-user-plus"></i> Create Account
             </button>
         </form>
 
-        <div class="divider">OR</div>
-
         <div class="login-link">
-            Already have an account? <a href="login.html">Login here</a>
+            Already have an account? <a href="login.html">Sign in here</a>
         </div>
     </div>
 
@@ -394,97 +308,85 @@
 
         // Password strength checker
         const passwordInput = document.getElementById('password');
-        const strengthIndicator = document.getElementById('passwordStrength');
-        const strengthBarFill = document.getElementById('strengthBarFill');
+        const strengthFill = document.getElementById('strengthFill');
         const strengthText = document.getElementById('strengthText');
 
-        passwordInput.addEventListener('input', (e) => {
-            const password = e.target.value;
-            
-            if (password.length === 0) {
-                strengthIndicator.classList.remove('show');
-                return;
-            }
-
-            strengthIndicator.classList.add('show');
-
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
             let strength = 0;
+
             if (password.length >= 6) strength++;
             if (password.length >= 10) strength++;
             if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
             if (/\d/.test(password)) strength++;
-            if (/[^a-zA-Z0-9]/.test(password)) strength++;
+            if (/[^a-zA-Z\d]/.test(password)) strength++;
 
-            strengthBarFill.className = 'strength-bar-fill';
+            strengthFill.className = 'strength-fill';
             
             if (strength <= 2) {
-                strengthBarFill.classList.add('weak');
+                strengthFill.classList.add('weak');
                 strengthText.textContent = 'Weak password';
-                strengthText.style.color = '#ef4444';
-            } else if (strength <= 3) {
-                strengthBarFill.classList.add('medium');
-                strengthText.textContent = 'Medium strength';
-                strengthText.style.color = '#f59e0b';
+            } else if (strength <= 4) {
+                strengthFill.classList.add('medium');
+                strengthText.textContent = 'Medium password';
             } else {
-                strengthBarFill.classList.add('strong');
+                strengthFill.classList.add('strong');
                 strengthText.textContent = 'Strong password';
-                strengthText.style.color = '#10b981';
             }
         });
 
-        // Form submission
-        const signupForm = document.getElementById('signupForm');
-        const signupBtn = document.getElementById('signupBtn');
-        const successMessage = document.getElementById('successMessage');
-
-        signupForm.addEventListener('submit', async (e) => {
+        // Form validation
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            // Clear previous errors
-            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
-            document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
-
-            // Get form values
             const fullName = document.getElementById('fullName').value.trim();
-            const email = document.getElementById('email').value.trim().toLowerCase();
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
-            // Validation
+            // Reset errors
+            document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+
             let hasError = false;
 
+            // Validate name
             if (!fullName) {
+                document.getElementById('nameError').style.display = 'block';
                 document.getElementById('fullName').classList.add('error');
-                document.getElementById('nameError').classList.add('show');
                 hasError = true;
             }
 
+            // Validate email
             if (!email || !email.includes('@')) {
+                document.getElementById('emailError').style.display = 'block';
                 document.getElementById('email').classList.add('error');
-                document.getElementById('emailError').classList.add('show');
                 hasError = true;
             }
 
+            // Validate password
             if (password.length < 6) {
+                document.getElementById('passwordError').style.display = 'block';
                 document.getElementById('password').classList.add('error');
-                document.getElementById('passwordError').classList.add('show');
                 hasError = true;
             }
 
+            // Validate confirm password
             if (password !== confirmPassword) {
+                document.getElementById('confirmError').style.display = 'block';
                 document.getElementById('confirmPassword').classList.add('error');
-                document.getElementById('confirmError').classList.add('show');
                 hasError = true;
             }
 
             if (hasError) return;
 
             // Disable button and show loading
+            const signupBtn = document.getElementById('signupBtn');
             signupBtn.disabled = true;
-            signupBtn.innerHTML = '<span class="spinner"></span> Creating Account...';
+            signupBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
 
             try {
-                // 1. Create auth user
+                // Create auth user
                 const { data: authData, error: authError } = await supabase.auth.signUp({
                     email: email,
                     password: password,
@@ -497,26 +399,28 @@
 
                 if (authError) throw authError;
 
-                // 2. Create user profile
+                // Create user profile
                 const { error: profileError } = await supabase
                     .from('users')
-                    .insert([{
-                        id: authData.user.id,
-                        email: email,
-                        full_name: fullName,
-                        employee_id: null,
-                        role: 'employee', // Default role
-                        hourly_rate: null,
-                        is_active: true
-                    }]);
+                    .insert([
+                        {
+                            id: authData.user.id,
+                            email: email,
+                            full_name: fullName,
+                            employee_id: null,
+                            role: 'employee',
+                            hourly_rate: null,
+                            is_active: true
+                        }
+                    ]);
 
                 if (profileError) throw profileError;
 
-                // Success!
-                successMessage.classList.add('show');
-                signupForm.style.display = 'none';
+                // Show success message
+                document.getElementById('successMessage').style.display = 'block';
+                document.getElementById('signupForm').style.display = 'none';
 
-                // Redirect to login after 2 seconds
+                // Redirect to login
                 setTimeout(() => {
                     window.location.href = 'login.html';
                 }, 2000);
@@ -524,36 +428,17 @@
             } catch (error) {
                 console.error('Signup error:', error);
                 
-                let errorMessage = 'Failed to create account. ';
-                
                 if (error.message.includes('already registered')) {
-                    errorMessage = 'This email is already registered. Please login instead.';
+                    document.getElementById('emailError').textContent = 'This email is already registered';
+                    document.getElementById('emailError').style.display = 'block';
                     document.getElementById('email').classList.add('error');
-                    document.getElementById('emailError').textContent = errorMessage;
-                    document.getElementById('emailError').classList.add('show');
                 } else {
-                    alert(errorMessage + error.message);
+                    alert('Error creating account: ' + error.message);
                 }
 
                 // Re-enable button
                 signupBtn.disabled = false;
                 signupBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
-            }
-        });
-
-        // Real-time validation
-        document.getElementById('confirmPassword').addEventListener('input', (e) => {
-            const password = document.getElementById('password').value;
-            const confirmPassword = e.target.value;
-            const confirmError = document.getElementById('confirmError');
-            const confirmInput = document.getElementById('confirmPassword');
-
-            if (confirmPassword && password !== confirmPassword) {
-                confirmInput.classList.add('error');
-                confirmError.classList.add('show');
-            } else {
-                confirmInput.classList.remove('error');
-                confirmError.classList.remove('show');
             }
         });
     </script>
