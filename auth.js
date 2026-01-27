@@ -57,4 +57,3 @@ window.timeclockAuth = {
         window.location.href = 'login.html';
     }
 };
-Copy
