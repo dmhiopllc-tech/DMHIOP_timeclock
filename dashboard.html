@@ -48,73 +48,78 @@
                 <div id="currentStatusIcon" class="inline-block p-6 rounded-full mb-4">
                     <!-- Status icon will be inserted here -->
                 </div>
-                <h2 id="statusText" class="text-2xl font-bold text-gray-800 mb-2">Checking status...</h2>
-                <p id="statusSubtext" class="text-gray-600"></p>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2" id="statusTitle">Ready to Clock In</h2>
+                <p class="text-gray-600" id="statusSubtitle">Click the button below to start your shift</p>
             </div>
 
-            <!-- Clock In/Out Button -->
             <div class="flex justify-center mb-6">
                 <button 
-                    id="clockButton"
-                    class="clock-btn w-64 h-64 rounded-full text-white font-bold text-2xl shadow-2xl transform hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    id="clockButton" 
+                    class="clock-btn w-48 h-48 rounded-full text-white font-bold text-xl shadow-2xl transform hover:scale-105 active:scale-95"
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
                 >
-                    <i class="fas fa-spinner fa-spin text-5xl"></i>
-                    <p class="mt-4 text-xl">Loading...</p>
+                    <i class="fas fa-clock text-4xl mb-2"></i><br>
+                    Clock In
                 </button>
             </div>
 
-            <!-- Location Status -->
-            <div id="locationStatus" class="text-center text-sm text-gray-600">
-                <i class="fas fa-map-marker-alt mr-2"></i>
-                <span id="locationText">Checking location...</span>
+            <div class="text-center text-sm text-gray-600">
+                <p id="locationStatus">
+                    <i class="fas fa-map-marker-alt mr-2"></i>Location will be verified
+                </p>
             </div>
         </div>
 
         <!-- Today's Summary -->
-        <div class="bg-white rounded-2xl shadow-xl p-6">
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
             <h3 class="text-xl font-bold text-gray-800 mb-4">
-                <i class="fas fa-calendar-day mr-2 text-blue-600"></i>
-                Today's Summary
+                <i class="fas fa-calendar-day mr-2"></i>Today's Summary
             </h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="text-center p-4 bg-blue-50 rounded-lg">
-                    <i class="fas fa-clock text-3xl text-blue-600 mb-2"></i>
-                    <p class="text-2xl font-bold text-gray-800" id="hoursToday">0.0</p>
-                    <p class="text-sm text-gray-600">Hours Today</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Total Hours</p>
+                    <p class="text-2xl font-bold text-blue-600" id="totalHours">0.00</p>
                 </div>
-                <div class="text-center p-4 bg-green-50 rounded-lg">
-                    <i class="fas fa-sign-in-alt text-3xl text-green-600 mb-2"></i>
-                    <p class="text-lg font-bold text-gray-800" id="clockInTime">--:--</p>
-                    <p class="text-sm text-gray-600">Clock In</p>
+                <div class="bg-green-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Clock In</p>
+                    <p class="text-lg font-semibold text-green-600" id="clockInTime">--:--</p>
                 </div>
-                <div class="text-center p-4 bg-orange-50 rounded-lg">
-                    <i class="fas fa-sign-out-alt text-3xl text-orange-600 mb-2"></i>
-                    <p class="text-lg font-bold text-gray-800" id="clockOutTime">--:--</p>
-                    <p class="text-sm text-gray-600">Clock Out</p>
+                <div class="bg-purple-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Clock Out</p>
+                    <p class="text-lg font-semibold text-purple-600" id="clockOutTime">--:--</p>
                 </div>
-                <div class="text-center p-4 bg-purple-50 rounded-lg">
-                    <i class="fas fa-map-marker-alt text-3xl text-purple-600 mb-2"></i>
-                    <p class="text-sm font-bold text-gray-800" id="currentLocation">--</p>
-                    <p class="text-sm text-gray-600">Location</p>
-                </div>
+            </div>
+            <div class="mt-4 text-center">
+                <p class="text-sm text-gray-600" id="workLocation">
+                    <i class="fas fa-building mr-2"></i>No location recorded
+                </p>
             </div>
         </div>
 
         <!-- Quick Actions -->
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <a href="my-timesheet.html" class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition flex items-center justify-between">
-                <div>
-                    <h4 class="font-bold text-gray-800 text-lg mb-1">My Timesheet</h4>
-                    <p class="text-gray-600 text-sm">View your hours</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a href="timeclock-my-timesheet.html" class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition transform hover:scale-105">
+                <div class="flex items-center">
+                    <div class="bg-blue-100 rounded-full p-4 mr-4">
+                        <i class="fas fa-list text-2xl text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">My Timesheet</h4>
+                        <p class="text-sm text-gray-600">View your work history</p>
+                    </div>
                 </div>
-                <i class="fas fa-chevron-right text-gray-400"></i>
             </a>
-            <a href="profile.html" class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition flex items-center justify-between">
-                <div>
-                    <h4 class="font-bold text-gray-800 text-lg mb-1">Profile</h4>
-                    <p class="text-gray-600 text-sm">Edit your info</p>
+
+            <a href="timeclock-profile.html" class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition transform hover:scale-105">
+                <div class="flex items-center">
+                    <div class="bg-purple-100 rounded-full p-4 mr-4">
+                        <i class="fas fa-user text-2xl text-purple-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">My Profile</h4>
+                        <p class="text-sm text-gray-600">Update your information</p>
+                    </div>
                 </div>
-                <i class="fas fa-chevron-right text-gray-400"></i>
             </a>
         </div>
     </div>
@@ -167,74 +172,57 @@
                 }
             } catch (error) {
                 console.error('Error checking status:', error);
-                alert('Error loading status. Please refresh the page.');
             }
         }
 
         function updateUIForClockedIn() {
-            const statusIcon = document.getElementById('currentStatusIcon');
-            const statusText = document.getElementById('statusText');
-            const statusSubtext = document.getElementById('statusSubtext');
-            const clockButton = document.getElementById('clockButton');
-
-            statusIcon.className = 'inline-block p-6 bg-green-100 rounded-full mb-4 pulse';
-            statusIcon.innerHTML = '<i class="fas fa-circle text-5xl text-green-600"></i>';
-            statusText.textContent = 'Clocked In';
-            statusText.className = 'text-2xl font-bold text-green-600 mb-2';
+            document.getElementById('statusTitle').textContent = 'Currently Clocked In';
+            document.getElementById('statusSubtitle').textContent = 'Click below to clock out';
+            document.getElementById('currentStatusIcon').innerHTML = '<i class="fas fa-clock text-6xl text-green-500 pulse"></i>';
             
-            const clockInTime = new Date(currentEntry.clock_in_time);
-            const elapsed = Math.floor((Date.now() - clockInTime.getTime()) / 1000 / 60);
-            statusSubtext.textContent = `Started ${clockInTime.toLocaleTimeString()} (${elapsed} min ago)`;
-
-            clockButton.className = 'clock-btn w-64 h-64 rounded-full bg-gradient-to-br from-red-500 to-red-700 text-white font-bold text-2xl shadow-2xl transform hover:scale-105 transition';
-            clockButton.innerHTML = '<i class="fas fa-sign-out-alt text-5xl"></i><p class="mt-4 text-xl">Clock Out</p>';
-            clockButton.onclick = handleClockOut;
-            clockButton.disabled = false;
+            const clockBtn = document.getElementById('clockButton');
+            clockBtn.innerHTML = '<i class="fas fa-stop-circle text-4xl mb-2"></i><br>Clock Out';
+            clockBtn.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
         }
 
         function updateUIForClockedOut() {
-            const statusIcon = document.getElementById('currentStatusIcon');
-            const statusText = document.getElementById('statusText');
-            const statusSubtext = document.getElementById('statusSubtext');
-            const clockButton = document.getElementById('clockButton');
-
-            statusIcon.className = 'inline-block p-6 bg-gray-100 rounded-full mb-4';
-            statusIcon.innerHTML = '<i class="fas fa-circle text-5xl text-gray-400"></i>';
-            statusText.textContent = 'Clocked Out';
-            statusText.className = 'text-2xl font-bold text-gray-600 mb-2';
-            statusSubtext.textContent = 'Ready to start your shift';
-
-            clockButton.className = 'clock-btn w-64 h-64 rounded-full bg-gradient-to-br from-green-500 to-green-700 text-white font-bold text-2xl shadow-2xl transform hover:scale-105 transition';
-            clockButton.innerHTML = '<i class="fas fa-sign-in-alt text-5xl"></i><p class="mt-4 text-xl">Clock In</p>';
-            clockButton.onclick = handleClockIn;
-            clockButton.disabled = false;
+            document.getElementById('statusTitle').textContent = 'Ready to Clock In';
+            document.getElementById('statusSubtitle').textContent = 'Click the button below to start your shift';
+            document.getElementById('currentStatusIcon').innerHTML = '<i class="fas fa-clock text-6xl text-gray-400"></i>';
+            
+            const clockBtn = document.getElementById('clockButton');
+            clockBtn.innerHTML = '<i class="fas fa-clock text-4xl mb-2"></i><br>Clock In';
+            clockBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
         }
 
+        // Clock In/Out handler
+        document.getElementById('clockButton').addEventListener('click', async function() {
+            if (isClockedIn) {
+                await handleClockOut();
+            } else {
+                await handleClockIn();
+            }
+        });
+
         async function handleClockIn() {
-            const clockButton = document.getElementById('clockButton');
-            const locationText = document.getElementById('locationText');
-
             try {
-                clockButton.disabled = true;
-                clockButton.innerHTML = '<i class="fas fa-spinner fa-spin text-5xl"></i><p class="mt-4 text-xl">Getting location...</p>';
-                locationText.textContent = 'Getting your location...';
-
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Getting location...';
+                
                 // Get current location
                 const location = await geo.getCurrentLocation();
-                locationText.textContent = `Location found (±${Math.round(location.accuracy)}m accuracy)`;
-
+                
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Validating location...';
+                
                 // Validate geofence
-                clockButton.innerHTML = '<i class="fas fa-spinner fa-spin text-5xl"></i><p class="mt-4 text-xl">Validating location...</p>';
                 const validation = await geo.validateGeofence(location.latitude, location.longitude);
-
+                
                 if (!validation.valid) {
-                    alert(validation.error);
-                    updateUIForClockedOut();
+                    alert(validation.message);
+                    document.getElementById('locationStatus').innerHTML = '<i class="fas fa-map-marker-alt mr-2"></i>Location validation failed';
                     return;
                 }
 
-                // Clock in
-                clockButton.innerHTML = '<i class="fas fa-spinner fa-spin text-5xl"></i><p class="mt-4 text-xl">Clocking in...</p>';
+                // Create time entry
                 const { data, error } = await supabase
                     .from('time_entries')
                     .insert([{
@@ -253,70 +241,64 @@
                 currentEntry = data;
                 isClockedIn = true;
                 updateUIForClockedIn();
+                document.getElementById('locationStatus').innerHTML = `<i class="fas fa-check-circle text-green-500 mr-2"></i>Clocked in at ${validation.location.name}`;
+                
                 await loadTodaySummary();
-
-                document.getElementById('currentLocation').textContent = validation.location.name;
-                locationText.textContent = `Clocked in at ${validation.location.name} ✓`;
 
             } catch (error) {
                 console.error('Clock in error:', error);
-                alert(`Failed to clock in: ${error.message}`);
-                updateUIForClockedOut();
+                alert('Error clocking in: ' + error.message);
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>Clock in failed';
             }
         }
 
         async function handleClockOut() {
-            const clockButton = document.getElementById('clockButton');
-            const locationText = document.getElementById('locationText');
-
-            if (!confirm('Are you sure you want to clock out?')) {
-                return;
-            }
-
             try {
-                clockButton.disabled = true;
-                clockButton.innerHTML = '<i class="fas fa-spinner fa-spin text-5xl"></i><p class="mt-4 text-xl">Getting location...</p>';
-                locationText.textContent = 'Getting your location...';
-
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Getting location...';
+                
                 // Get current location
                 const location = await geo.getCurrentLocation();
-                locationText.textContent = `Location found (±${Math.round(location.accuracy)}m accuracy)`;
-
+                
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Validating location...';
+                
                 // Validate geofence
-                clockButton.innerHTML = '<i class="fas fa-spinner fa-spin text-5xl"></i><p class="mt-4 text-xl">Validating location...</p>';
                 const validation = await geo.validateGeofence(location.latitude, location.longitude);
-
+                
                 if (!validation.valid) {
-                    alert(validation.error);
-                    updateUIForClockedIn();
-                    return;
+                    const confirmClockOut = confirm(validation.message + '\n\nDo you want to clock out anyway?');
+                    if (!confirmClockOut) {
+                        document.getElementById('locationStatus').innerHTML = '<i class="fas fa-map-marker-alt mr-2"></i>Clock out cancelled';
+                        return;
+                    }
                 }
 
-                // Clock out
-                clockButton.innerHTML = '<i class="fas fa-spinner fa-spin text-5xl"></i><p class="mt-4 text-xl">Clocking out...</p>';
-                const { error } = await supabase
+                // Update time entry
+                const { data, error } = await supabase
                     .from('time_entries')
                     .update({
                         clock_out_time: new Date().toISOString(),
                         clock_out_latitude: location.latitude,
                         clock_out_longitude: location.longitude,
-                        clock_out_location_id: validation.location.id
+                        clock_out_location_id: validation.valid ? validation.location.id : null,
+                        status: 'clocked_out'
                     })
-                    .eq('id', currentEntry.id);
+                    .eq('id', currentEntry.id)
+                    .select()
+                    .single();
 
                 if (error) throw error;
 
                 currentEntry = null;
                 isClockedIn = false;
                 updateUIForClockedOut();
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-check-circle text-green-500 mr-2"></i>Successfully clocked out';
+                
                 await loadTodaySummary();
-
-                locationText.textContent = `Clocked out at ${validation.location.name} ✓`;
 
             } catch (error) {
                 console.error('Clock out error:', error);
-                alert(`Failed to clock out: ${error.message}`);
-                updateUIForClockedIn();
+                alert('Error clocking out: ' + error.message);
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>Clock out failed';
             }
         }
 
@@ -324,35 +306,45 @@
             try {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-
+                
                 const { data, error } = await supabase
                     .from('time_entries')
-                    .select('*')
+                    .select('*, work_locations!clock_in_location_id(name)')
                     .eq('user_id', currentUser.id)
-                    .gte('clock_in_time', today.toISOString());
+                    .gte('clock_in_time', today.toISOString())
+                    .order('clock_in_time', { ascending: false });
 
                 if (error) throw error;
 
-                let totalHours = 0;
-                let firstClockIn = null;
-                let lastClockOut = null;
-
-                data.forEach(entry => {
-                    if (entry.total_hours) {
-                        totalHours += parseFloat(entry.total_hours);
+                if (data && data.length > 0) {
+                    const latestEntry = data[0];
+                    
+                    // Update clock in time
+                    const clockInDate = new Date(latestEntry.clock_in_time);
+                    document.getElementById('clockInTime').textContent = clockInDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    // Update clock out time
+                    if (latestEntry.clock_out_time) {
+                        const clockOutDate = new Date(latestEntry.clock_out_time);
+                        document.getElementById('clockOutTime').textContent = clockOutDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    } else {
+                        document.getElementById('clockOutTime').textContent = 'Active';
                     }
-                    if (!firstClockIn || new Date(entry.clock_in_time) < new Date(firstClockIn)) {
-                        firstClockIn = entry.clock_in_time;
+                    
+                    // Update total hours
+                    let totalHours = 0;
+                    data.forEach(entry => {
+                        if (entry.total_hours) {
+                            totalHours += parseFloat(entry.total_hours);
+                        }
+                    });
+                    document.getElementById('totalHours').textContent = totalHours.toFixed(2);
+                    
+                    // Update location
+                    if (latestEntry.work_locations) {
+                        document.getElementById('workLocation').innerHTML = `<i class="fas fa-building mr-2"></i>${latestEntry.work_locations.name}`;
                     }
-                    if (entry.clock_out_time && (!lastClockOut || new Date(entry.clock_out_time) > new Date(lastClockOut))) {
-                        lastClockOut = entry.clock_out_time;
-                    }
-                });
-
-                document.getElementById('hoursToday').textContent = totalHours.toFixed(1);
-                document.getElementById('clockInTime').textContent = firstClockIn ? new Date(firstClockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
-                document.getElementById('clockOutTime').textContent = lastClockOut ? new Date(lastClockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
-
+                }
             } catch (error) {
                 console.error('Error loading summary:', error);
             }
