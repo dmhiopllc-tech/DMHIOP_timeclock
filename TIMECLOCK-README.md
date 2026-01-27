@@ -206,7 +206,7 @@ Upload all files to your hosting (GitHub Pages, Netlify, Vercel, etc.)
 
 ## 📞 Support
 
-Need help? Create an issue or contact support.
+Need help? Create an issue or contact support. 
 
 ---
 
