@@ -210,4 +210,4 @@ Need help? Create an issue or contact support.
 
 ---
 
-**Built with ❤️ for efficient time tracking**
+**Built with ❤️ for efficient time tracking** 
