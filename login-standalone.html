@@ -126,16 +126,17 @@
             }
         });
 
-        function redirectToDashboard(role) {
+            function redirectToDashboard(role) {
             if (role === 'admin') {
                 window.location.href = 'admin-dashboard-standalone.html';
             } else if (role === 'manager') {
                 window.location.href = 'manager-dashboard.html';
             } else {
-                // ⭐ CHANGED: Employees now get auto-geofence dashboard with automatic reminders
-                window.location.href = 'dashboard-auto-geofence.html';
+                // Employees get enhanced dashboard with PTO tracking
+                window.location.href = 'employee-dashboard-enhanced.html';
             }
         }
+
 
         // Handle login form submission
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
