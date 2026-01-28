@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard - Time Clock</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="logo.svg" alt="DMH Logo" style="width: 50px; height: 50px; object-fit: contain;" onerror="this.style.display='none'">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">Manager Dashboard</h1>
+                    <p class="text-sm text-gray-600" id="userName">Loading...</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="dashboard-auto-geofence.html" class="text-blue-600 hover:text-blue-700">
+                    <i class="fas fa-clock mr-2"></i>My Time Clock
+                </a>
+                <button onclick="handleLogout()" class="text-red-600 hover:text-red-700 font-semibold">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white border-b">
+        <div class="max-w-7xl mx-auto px-4">
+            <nav class="flex space-x-8">
+                <button onclick="showTab('overview')" id="tab-overview" class="tab-btn py-4 px-2 border-b-2 border-blue-600 text-blue-600 font-semibold">
+                    <i class="fas fa-home mr-2"></i>Overview
+                </button>
+                <button onclick="showTab('team')" id="tab-team" class="tab-btn py-4 px-2 border-b-2 border-transparent text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-users mr-2"></i>My Team
+                </button>
+                <button onclick="showTab('timesheets')" id="tab-timesheets" class="tab-btn py-4 px-2 border-b-2 border-transparent text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-clock mr-2"></i>Timesheets
+                </button>
+                <button onclick="showTab('approve')" id="tab-approve" class="tab-btn py-4 px-2 border-b-2 border-transparent text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-check-circle mr-2"></i>Pending Approval
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto p-4 mt-4">
+        
+        <!-- Overview Tab -->
+        <div id="content-overview" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <!-- Total Team Members -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="bg-blue-100 rounded-full p-3 mr-4">
+                            <i class="fas fa-users text-2xl text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Team Members</p>
+                            <p class="text-2xl font-bold text-gray-800" id="stat-team">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clocked In Now -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="bg-green-100 rounded-full p-3 mr-4">
+                            <i class="fas fa-clock text-2xl text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Clocked In</p>
+                            <p class="text-2xl font-bold text-gray-800" id="stat-clocked-in">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Hours -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="bg-purple-100 rounded-full p-3 mr-4">
+                            <i class="fas fa-business-time text-2xl text-purple-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Today's Hours</p>
+                            <p class="text-2xl font-bold text-gray-800" id="stat-today-hours">0.0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Approvals -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="bg-orange-100 rounded-full p-3 mr-4">
+                            <i class="fas fa-exclamation-circle text-2xl text-orange-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Pending</p>
+                            <p class="text-2xl font-bold text-gray-800" id="stat-pending">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Status -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    <i class="fas fa-users-cog mr-2"></i>Team Status Right Now
+                </h3>
+                <div id="team-status">
+                    <p class="text-gray-600">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    <i class="fas fa-history mr-2"></i>Recent Team Activity
+                </h3>
+                <div id="recent-activity" class="space-y-3">
+                    <p class="text-gray-600">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Team Tab -->
+        <div id="content-team" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b">
+                    <h3 class="text-lg font-bold text-gray-800">
+                        <i class="fas fa-users mr-2"></i>My Team Members
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div id="team-list">
+                        <p class="text-gray-600">Loading team members...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timesheets Tab -->
+        <div id="content-timesheets" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">
+                        <i class="fas fa-clock mr-2"></i>Team Timesheets
+                    </h3>
+                    <div class="flex space-x-4">
+                        <input type="date" id="filter-date-start" class="border rounded px-3 py-2">
+                        <input type="date" id="filter-date-end" class="border rounded px-3 py-2">
+                        <select id="filter-employee" class="border rounded px-3 py-2">
+                            <option value="">All Employees</option>
+                        </select>
+                        <button onclick="loadTimesheets()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-search mr-2"></i>Filter
+                        </button>
+                        <button onclick="exportTimesheets()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-file-excel mr-2"></i>Export
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div id="timesheets-list">
+                        <p class="text-gray-600">Loading timesheets...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Approval Tab -->
+        <div id="content-approve" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b">
+                    <h3 class="text-lg font-bold text-gray-800">
+                        <i class="fas fa-check-circle mr-2"></i>Pending Approvals
+                    </h3>
+                    <p class="text-sm text-gray-600 mt-2">Review and approve time entries from your team</p>
+                </div>
+                <div class="p-6">
+                    <div id="pending-list">
+                        <p class="text-gray-600">Loading pending entries...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
+        
+        const managerClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let currentUser = null;
+        let teamMembers = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            await requireManager();
+            if (!currentUser) return;
+
+            document.getElementById('userName').textContent = currentUser.full_name + ' (Manager)';
+            
+            await loadDashboardData();
+            await loadTeamMembers();
+            
+            // Set default date filters to this week
+            const today = new Date();
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay()); // Sunday
+            
+            document.getElementById('filter-date-start').valueAsDate = weekStart;
+            document.getElementById('filter-date-end').valueAsDate = today;
+        });
+
+        async function requireManager() {
+            try {
+                const { data: { user } } = await managerClient.auth.getUser();
+                
+                if (!user) {
+                    window.location.href = 'login-standalone.html';
+                    return;
+                }
+
+                const { data: userProfile } = await managerClient
+                    .from('users')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (!userProfile || !['manager', 'admin'].includes(userProfile.role)) {
+                    alert('Access denied. Manager privileges required.');
+                    window.location.href = 'dashboard-auto-geofence.html';
+                    return;
+                }
+
+                currentUser = userProfile;
+                console.log('Manager logged in:', currentUser.full_name);
+            } catch (error) {
+                console.error('Auth error:', error);
+                window.location.href = 'login-standalone.html';
+            }
+        }
+
+        async function handleLogout() {
+            await managerClient.auth.signOut();
+            window.location.href = 'login-standalone.html';
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('border-blue-600', 'text-blue-600');
+                el.classList.add('border-transparent', 'text-gray-600');
+            });
+
+            document.getElementById('content-' + tabName).classList.remove('hidden');
+            document.getElementById('tab-' + tabName).classList.remove('border-transparent', 'text-gray-600');
+            document.getElementById('tab-' + tabName).classList.add('border-blue-600', 'text-blue-600');
+
+            if (tabName === 'team') loadTeamList();
+            if (tabName === 'timesheets') loadTimesheets();
+            if (tabName === 'approve') loadPendingApprovals();
+        }
+
+        async function loadTeamMembers() {
+            try {
+                // Load all employees (managers can see all employees)
+                // In a real system, you'd filter by manager_id or department
+                const { data, error } = await managerClient
+                    .from('users')
+                    .select('*')
+                    .eq('role', 'employee')
+                    .eq('is_active', true)
+                    .order('full_name');
+
+                if (error) throw error;
+
+                teamMembers = data || [];
+                console.log('Team members loaded:', teamMembers.length);
+                
+                // Populate employee filter dropdown
+                const filterSelect = document.getElementById('filter-employee');
+                filterSelect.innerHTML = '<option value="">All Employees</option>';
+                teamMembers.forEach(member => {
+                    filterSelect.innerHTML += `<option value="${member.id}">${member.full_name}</option>`;
+                });
+            } catch (error) {
+                console.error('Error loading team:', error);
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                // Total team members
+                document.getElementById('stat-team').textContent = teamMembers.length;
+
+                // Currently clocked in
+                const { data: clockedIn } = await managerClient
+                    .from('time_entries')
+                    .select('user_id')
+                    .eq('status', 'clocked_in')
+                    .in('user_id', teamMembers.map(m => m.id));
+
+                document.getElementById('stat-clocked-in').textContent = clockedIn?.length || 0;
+
+                // Today's total hours
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                const { data: todayEntries } = await managerClient
+                    .from('time_entries')
+                    .select('total_hours')
+                    .in('user_id', teamMembers.map(m => m.id))
+                    .gte('clock_in_time', today.toISOString());
+
+                let totalHours = 0;
+                todayEntries?.forEach(entry => {
+                    if (entry.total_hours) totalHours += parseFloat(entry.total_hours);
+                });
+                document.getElementById('stat-today-hours').textContent = totalHours.toFixed(1);
+
+                // Pending approvals (entries without approval status)
+                const { data: pending } = await managerClient
+                    .from('time_entries')
+                    .select('id')
+                    .in('user_id', teamMembers.map(m => m.id))
+                    .is('approved_by', null)
+                    .eq('status', 'clocked_out');
+
+                document.getElementById('stat-pending').textContent = pending?.length || 0;
+
+                // Load team status
+                await loadTeamStatus();
+
+                // Load recent activity
+                await loadRecentActivity();
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        async function loadTeamStatus() {
+            try {
+                const { data: entries } = await managerClient
+                    .from('time_entries')
+                    .select('*, users(full_name)')
+                    .in('user_id', teamMembers.map(m => m.id))
+                    .eq('status', 'clocked_in')
+                    .order('clock_in_time', { ascending: false });
+
+                let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+
+                if (entries && entries.length > 0) {
+                    entries.forEach(entry => {
+                        const clockInTime = new Date(entry.clock_in_time);
+                        const now = new Date();
+                        const hoursWorked = ((now - clockInTime) / (1000 * 60 * 60)).toFixed(1);
+
+                        html += `
+                            <div class="border rounded-lg p-4 bg-green-50">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="font-bold text-gray-800">${entry.users?.full_name || 'Unknown'}</h4>
+                                    <span class="px-2 py-1 text-xs rounded-full bg-green-500 text-white">
+                                        <i class="fas fa-circle pulse"></i> Active
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-600">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    Clocked in: ${clockInTime.toLocaleTimeString()}
+                                </p>
+                                <p class="text-sm text-gray-600">
+                                    <i class="fas fa-hourglass-half mr-1"></i>
+                                    Hours so far: ${hoursWorked}
+                                </p>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<p class="text-gray-600 col-span-3">No team members currently clocked in</p>';
+                }
+
+                html += '</div>';
+                document.getElementById('team-status').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading team status:', error);
+            }
+        }
+
+        async function loadRecentActivity() {
+            try {
+                const { data: entries } = await managerClient
+                    .from('time_entries')
+                    .select('*, users(full_name)')
+                    .in('user_id', teamMembers.map(m => m.id))
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                let html = '';
+                if (entries && entries.length > 0) {
+                    entries.forEach(entry => {
+                        const time = new Date(entry.clock_in_time).toLocaleString();
+                        const status = entry.status === 'clocked_in' ? 'Clocked In' : 'Clocked Out';
+                        const statusColor = entry.status === 'clocked_in' ? 'green' : 'gray';
+
+                        html += `
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                                <div>
+                                    <p class="font-semibold">${entry.users?.full_name || 'Unknown'}</p>
+                                    <p class="text-sm text-gray-600">${status} at ${time}</p>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded bg-${statusColor}-100 text-${statusColor}-800">${entry.status}</span>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<p class="text-gray-600">No recent activity</p>';
+                }
+                document.getElementById('recent-activity').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading recent activity:', error);
+            }
+        }
+
+        async function loadTeamList() {
+            try {
+                let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+
+                for (const member of teamMembers) {
+                    // Get their current status
+                    const { data: activeEntry } = await managerClient
+                        .from('time_entries')
+                        .select('*')
+                        .eq('user_id', member.id)
+                        .eq('status', 'clocked_in')
+                        .limit(1)
+                        .single();
+
+                    const status = activeEntry ? 'Clocked In' : 'Not Clocked In';
+                    const statusColor = activeEntry ? 'green' : 'gray';
+
+                    html += `
+                        <div class="border rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 class="font-bold text-gray-800">${member.full_name}</h4>
+                                    <p class="text-sm text-gray-600">${member.email}</p>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded-full bg-${statusColor}-100 text-${statusColor}-800">
+                                    ${status}
+                                </span>
+                            </div>
+                            ${activeEntry ? `
+                                <p class="text-xs text-gray-500 mb-2">
+                                    Since: ${new Date(activeEntry.clock_in_time).toLocaleTimeString()}
+                                </p>
+                            ` : ''}
+                            <button onclick="viewEmployeeTimesheets('${member.id}')" class="text-blue-600 hover:text-blue-800 text-sm">
+                                <i class="fas fa-clock mr-1"></i>View Timesheets
+                            </button>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+                document.getElementById('team-list').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading team list:', error);
+            }
+        }
+
+        async function loadTimesheets() {
+            try {
+                const startDate = document.getElementById('filter-date-start').value;
+                const endDate = document.getElementById('filter-date-end').value;
+                const employeeId = document.getElementById('filter-employee').value;
+
+                let query = managerClient
+                    .from('time_entries')
+                    .select('*, users(full_name), work_locations!clock_in_location_id(name)')
+                    .in('user_id', employeeId ? [employeeId] : teamMembers.map(m => m.id))
+                    .order('clock_in_time', { ascending: false });
+
+                if (startDate) {
+                    query = query.gte('clock_in_time', new Date(startDate).toISOString());
+                }
+                if (endDate) {
+                    const end = new Date(endDate);
+                    end.setHours(23, 59, 59, 999);
+                    query = query.lte('clock_in_time', end.toISOString());
+                }
+
+                const { data: entries, error } = await query;
+
+                if (error) throw error;
+
+                let html = '<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200">';
+                html += `
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clock In</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clock Out</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hours</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                `;
+
+                entries.forEach(entry => {
+                    const clockIn = new Date(entry.clock_in_time);
+                    const clockOut = entry.clock_out_time ? new Date(entry.clock_out_time) : null;
+                    const hours = entry.total_hours || '0.00';
+                    const location = entry.work_locations?.name || 'Unknown';
+                    
+                    html += `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap font-semibold">${entry.users?.full_name || 'Unknown'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${clockIn.toLocaleDateString()}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${clockIn.toLocaleTimeString()}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${clockOut ? clockOut.toLocaleTimeString() : 'Active'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-semibold">${hours}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${location}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs rounded-full bg-${entry.status === 'clocked_in' ? 'green' : 'gray'}-100 text-${entry.status === 'clocked_in' ? 'green' : 'gray'}-800">
+                                    ${entry.status}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table></div>';
+                
+                // Add summary
+                const totalHours = entries.reduce((sum, e) => sum + (parseFloat(e.total_hours) || 0), 0);
+                html += `<div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <p class="font-bold text-gray-800">Total Hours: ${totalHours.toFixed(2)}</p>
+                </div>`;
+
+                document.getElementById('timesheets-list').innerHTML = html;
+
+            } catch (error) {
+                console.error('Error loading timesheets:', error);
+                document.getElementById('timesheets-list').innerHTML = '<p class="text-red-600">Error loading timesheets</p>';
+            }
+        }
+
+        async function loadPendingApprovals() {
+            try {
+                const { data: entries, error } = await managerClient
+                    .from('time_entries')
+                    .select('*, users(full_name), work_locations!clock_in_location_id(name)')
+                    .in('user_id', teamMembers.map(m => m.id))
+                    .is('approved_by', null)
+                    .eq('status', 'clocked_out')
+                    .order('clock_out_time', { ascending: false });
+
+                if (error) throw error;
+
+                let html = '';
+                if (entries && entries.length > 0) {
+                    html = '<div class="space-y-4">';
+                    entries.forEach(entry => {
+                        const clockIn = new Date(entry.clock_in_time);
+                        const clockOut = new Date(entry.clock_out_time);
+                        const hours = entry.total_hours || '0.00';
+
+                        html += `
+                            <div class="border rounded-lg p-4 bg-yellow-50">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h4 class="font-bold text-gray-800">${entry.users?.full_name || 'Unknown'}</h4>
+                                        <p class="text-sm text-gray-600">${entry.work_locations?.name || 'Unknown Location'}</p>
+                                    </div>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
+                                        Pending Approval
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 mb-3 text-sm">
+                                    <div>
+                                        <p class="text-gray-600">Clock In</p>
+                                        <p class="font-semibold">${clockIn.toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-600">Clock Out</p>
+                                        <p class="font-semibold">${clockOut.toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-600">Total Hours</p>
+                                        <p class="font-semibold text-blue-600">${hours}</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="approveEntry('${entry.id}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                                        <i class="fas fa-check mr-2"></i>Approve
+                                    </button>
+                                    <button onclick="rejectEntry('${entry.id}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                                        <i class="fas fa-times mr-2"></i>Reject
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                } else {
+                    html = '<p class="text-gray-600">No pending approvals</p>';
+                }
+
+                document.getElementById('pending-list').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading pending approvals:', error);
+            }
+        }
+
+        async function approveEntry(entryId) {
+            try {
+                const { error } = await managerClient
+                    .from('time_entries')
+                    .update({
+                        approved_by: currentUser.id,
+                        approved_at: new Date().toISOString(),
+                        approval_status: 'approved'
+                    })
+                    .eq('id', entryId);
+
+                if (error) throw error;
+
+                alert('Time entry approved successfully');
+                loadPendingApprovals();
+                loadDashboardData();
+            } catch (error) {
+                console.error('Error approving entry:', error);
+                alert('Error approving entry');
+            }
+        }
+
+        async function rejectEntry(entryId) {
+            const reason = prompt('Enter reason for rejection:');
+            if (!reason) return;
+
+            try {
+                const { error } = await managerClient
+                    .from('time_entries')
+                    .update({
+                        approved_by: currentUser.id,
+                        approved_at: new Date().toISOString(),
+                        approval_status: 'rejected',
+                        rejection_reason: reason
+                    })
+                    .eq('id', entryId);
+
+                if (error) throw error;
+
+                alert('Time entry rejected');
+                loadPendingApprovals();
+                loadDashboardData();
+            } catch (error) {
+                console.error('Error rejecting entry:', error);
+                alert('Error rejecting entry');
+            }
+        }
+
+        function viewEmployeeTimesheets(employeeId) {
+            document.getElementById('filter-employee').value = employeeId;
+            showTab('timesheets');
+            loadTimesheets();
+        }
+
+        function exportTimesheets() {
+            alert('Export functionality coming soon! This will export to Excel/CSV.');
+        }
+    </script>
+</body>
+</html>
