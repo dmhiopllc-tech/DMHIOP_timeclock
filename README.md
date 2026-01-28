@@ -69,4 +69,4 @@ Employee time tracking system with GPS location verification and geofencing.
    ```sql
    UPDATE public.users 
    SET role = 'admin'
-   WHERE email IN ('sean_roberts@dmhiop.com', 'tatiana.schnierow@dmhiop.com');
+   WHERE email IN ('sean_roberts@dmhiop.com', 'tatiana.schnierow@dmhiop.com'); 
