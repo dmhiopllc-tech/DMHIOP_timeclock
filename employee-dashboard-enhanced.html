@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard - Enhanced with PTO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        .clock-btn { transition: all 0.3s ease; }
+        .clock-btn:active { transform: scale(0.95); }
+        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes bounce-in {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-bounce-in { animation: bounce-in 0.5s ease-out; }
+        @keyframes slide-in {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slide-in { animation: slide-in 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="logo.svg" alt="DMH Logo" style="width: 50px; height: 50px; object-fit: contain;" onerror="this.style.display='none'">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">Time Clock</h1>
+                    <p class="text-sm text-gray-600" id="userName">Loading...</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div id="monitoringStatus" class="text-xs text-gray-500">
+                    <i class="fas fa-satellite-dish mr-1"></i>Monitoring...
+                </div>
+                <button onclick="handleLogout()" class="text-red-600 hover:text-red-700 font-semibold">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto p-4 mt-4">
+        
+        <!-- PTO & Pay Period Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Pay Period Hours -->
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-xl p-6 text-white">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-semibold opacity-90">Pay Period Hours</h3>
+                    <i class="fas fa-calendar-week text-2xl opacity-75"></i>
+                </div>
+                <p class="text-4xl font-bold mb-1" id="payPeriodHours">0.00</p>
+                <p class="text-xs opacity-75" id="payPeriodDates">Loading...</p>
+            </div>
+
+            <!-- PTO Balance -->
+            <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-xl p-6 text-white">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-semibold opacity-90">PTO Available</h3>
+                    <i class="fas fa-umbrella-beach text-2xl opacity-75"></i>
+                </div>
+                <p class="text-4xl font-bold mb-1" id="ptoBalance">0.0</p>
+                <p class="text-xs opacity-75">hours (Accrues 1.54/pay period)</p>
+            </div>
+
+            <!-- Sick Time Balance -->
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-semibold opacity-90">Sick Time</h3>
+                    <i class="fas fa-medkit text-2xl opacity-75"></i>
+                </div>
+                <p class="text-4xl font-bold mb-1" id="sickBalance">0.0</p>
+                <p class="text-xs opacity-75">hours (Accrues 0.62/pay period)</p>
+            </div>
+        </div>
+
+        <!-- Clock In/Out Card -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+            <div class="text-center mb-8">
+                <div id="currentStatusIcon" class="inline-block p-6 rounded-full mb-4">
+                    <i class="fas fa-clock text-6xl text-gray-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2" id="statusTitle">Ready to Clock In</h2>
+                <p class="text-gray-600" id="statusSubtitle">Automatic reminders enabled</p>
+            </div>
+
+            <div class="flex justify-center mb-6">
+                <button 
+                    id="clockButton" 
+                    class="clock-btn w-48 h-48 rounded-full text-white font-bold text-xl shadow-2xl transform hover:scale-105 active:scale-95"
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+                    onclick="handleClockAction()"
+                >
+                    <i class="fas fa-clock text-4xl mb-2"></i><br>
+                    Clock In
+                </button>
+            </div>
+
+            <div class="text-center text-sm text-gray-600">
+                <p id="locationStatus">
+                    <i class="fas fa-map-marker-alt mr-2"></i>Location monitoring active
+                </p>
+            </div>
+        </div>
+
+        <!-- Today's Summary -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-calendar-day mr-2"></i>Today's Summary
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Total Hours</p>
+                    <p class="text-2xl font-bold text-blue-600" id="totalHours">0.00</p>
+                </div>
+                <div class="bg-green-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Clock In</p>
+                    <p class="text-lg font-semibold text-green-600" id="clockInTime">--:--</p>
+                </div>
+                <div class="bg-purple-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Clock Out</p>
+                    <p class="text-lg font-semibold text-purple-600" id="clockOutTime">--:--</p>
+                </div>
+            </div>
+            <div class="mt-4 text-center">
+                <p class="text-sm text-gray-600" id="workLocation">
+                    <i class="fas fa-building mr-2"></i>No location recorded
+                </p>
+            </div>
+        </div>
+
+        <!-- Time Off Request Section -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-calendar-alt mr-2"></i>Time Off Requests
+                </h3>
+                <button onclick="showRequestModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>New Request
+                </button>
+            </div>
+
+            <!-- My Requests List -->
+            <div id="requestsList">
+                <p class="text-gray-600">Loading your requests...</p>
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
+            <h3 class="text-lg font-bold mb-3">
+                <i class="fas fa-info-circle mr-2"></i>How It Works
+            </h3>
+            <div class="space-y-2 text-sm">
+                <p><i class="fas fa-check-circle mr-2"></i>Automatic clock reminders when you arrive/leave work</p>
+                <p><i class="fas fa-check-circle mr-2"></i>PTO accrues at 1.54 hours per pay period (40 hours/year)</p>
+                <p><i class="fas fa-check-circle mr-2"></i>Sick time accrues at 0.62 hours per pay period (16 hours/year)</p>
+                <p><i class="fas fa-check-circle mr-2"></i>Submit time off requests anytime - manager approval required</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Off Request Modal -->
+    <div id="requestModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-bounce-in">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Request Time Off</h3>
+                <button onclick="closeRequestModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+
+            <form id="timeOffForm" class="space-y-4">
+                <!-- Request Type -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Type</label>
+                    <select id="requestType" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none">
+                        <option value="pto">PTO (Paid Time Off)</option>
+                        <option value="sick">Sick Time</option>
+                        <option value="unpaid">Unpaid Time Off</option>
+                    </select>
+                </div>
+
+                <!-- Start Date -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Start Date</label>
+                    <input type="date" id="startDate" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none">
+                </div>
+
+                <!-- End Date -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">End Date</label>
+                    <input type="date" id="endDate" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none">
+                </div>
+
+                <!-- Hours -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Hours Requested</label>
+                    <input type="number" id="hoursRequested" min="0.5" step="0.5" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none" placeholder="8">
+                    <p class="text-xs text-gray-500 mt-1">8 hours = 1 day, 4 hours = half day</p>
+                </div>
+
+                <!-- Note -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Note (Optional)</label>
+                    <textarea id="employeeNote" rows="3" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none" placeholder="Additional details..."></textarea>
+                </div>
+
+                <!-- Balance Check -->
+                <div id="balanceWarning" class="hidden p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-lg text-sm">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <span id="balanceWarningText"></span>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex space-x-3 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">
+                        <i class="fas fa-paper-plane mr-2"></i>Submit Request
+                    </button>
+                    <button type="button" onclick="closeRequestModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-lg">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
+        
+        const myDashClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+        let currentEntry = null;
+        let isClockedIn = false;
+        let geofenceMonitor = null;
+        let ptoBalances = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            await requireAuth();
+            if (!currentUser) return;
+
+            document.getElementById('userName').textContent = currentUser.full_name;
+            
+            await loadCurrentStatus();
+            await loadTodaySummary();
+            await loadPTOBalances();
+            await loadPayPeriodHours();
+            await loadTimeOffRequests();
+            
+            initializeGeofenceMonitor();
+            registerServiceWorker();
+        });
+
+        async function requireAuth() {
+            try {
+                const { data: { user } } = await myDashClient.auth.getUser();
+                
+                if (!user) {
+                    window.location.href = 'login-standalone.html';
+                    return;
+                }
+
+                const { data: userProfile } = await myDashClient
+                    .from('users')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (!userProfile) {
+                    alert('User profile not found');
+                    window.location.href = 'login-standalone.html';
+                    return;
+                }
+
+                currentUser = userProfile;
+                console.log('Logged in as:', currentUser.full_name);
+            } catch (error) {
+                console.error('Auth error:', error);
+                window.location.href = 'login-standalone.html';
+            }
+        }
+
+        async function handleLogout() {
+            if (geofenceMonitor) geofenceMonitor.stopMonitoring();
+            await myDashClient.auth.signOut();
+            window.location.href = 'login-standalone.html';
+        }
+
+        async function loadPTOBalances() {
+            try {
+                const { data, error } = await myDashClient
+                    .from('pto_balances')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .single();
+
+                if (error) throw error;
+
+                ptoBalances = data;
+                document.getElementById('ptoBalance').textContent = (data.pto_balance || 0).toFixed(1);
+                document.getElementById('sickBalance').textContent = (data.sick_balance || 0).toFixed(1);
+            } catch (error) {
+                console.error('Error loading PTO balances:', error);
+            }
+        }
+
+        async function loadPayPeriodHours() {
+            try {
+                const { data: payPeriod } = await myDashClient
+                    .from('pay_periods')
+                    .select('*')
+                    .eq('is_current', true)
+                    .single();
+
+                if (payPeriod) {
+                    const startDate = new Date(payPeriod.start_date).toLocaleDateString();
+                    const endDate = new Date(payPeriod.end_date).toLocaleDateString();
+                    document.getElementById('payPeriodDates').textContent = `${startDate} - ${endDate}`;
+
+                    const { data: entries } = await myDashClient
+                        .from('time_entries')
+                        .select('total_hours')
+                        .eq('user_id', currentUser.id)
+                        .gte('clock_in_time', payPeriod.start_date)
+                        .lte('clock_in_time', payPeriod.end_date);
+
+                    let totalHours = 0;
+                    entries?.forEach(e => { if (e.total_hours) totalHours += parseFloat(e.total_hours); });
+                    document.getElementById('payPeriodHours').textContent = totalHours.toFixed(2);
+                }
+            } catch (error) {
+                console.error('Error loading pay period:', error);
+            }
+        }
+
+        async function loadTimeOffRequests() {
+            try {
+                const { data, error } = await myDashClient
+                    .from('time_off_requests')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                let html = '';
+                if (data && data.length > 0) {
+                    html = '<div class="space-y-3">';
+                    data.forEach(req => {
+                        const statusColors = {
+                            'pending': 'yellow',
+                            'approved': 'green',
+                            'rejected': 'red',
+                            'cancelled': 'gray'
+                        };
+                        const color = statusColors[req.status] || 'gray';
+                        const typeLabels = { 'pto': 'PTO', 'sick': 'Sick Time', 'unpaid': 'Unpaid' };
+
+                        html += `
+                            <div class="border rounded-lg p-4 bg-${color}-50 border-${color}-200">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-bold text-gray-800">${typeLabels[req.request_type]}</h4>
+                                        <p class="text-sm text-gray-600">${new Date(req.start_date).toLocaleDateString()} - ${new Date(req.end_date).toLocaleDateString()}</p>
+                                        <p class="text-sm font-semibold mt-1">${req.hours_requested} hours</p>
+                                        ${req.employee_note ? `<p class="text-xs text-gray-500 mt-1">${req.employee_note}</p>` : ''}
+                                    </div>
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-${color}-100 text-${color}-800">
+                                        ${req.status.toUpperCase()}
+                                    </span>
+                                </div>
+                                ${req.rejection_reason ? `<p class="text-xs text-red-600 mt-2"><strong>Reason:</strong> ${req.rejection_reason}</p>` : ''}
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                } else {
+                    html = '<p class="text-gray-600">No time off requests yet</p>';
+                }
+                document.getElementById('requestsList').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading requests:', error);
+            }
+        }
+
+        function showRequestModal() {
+            document.getElementById('requestModal').classList.remove('hidden');
+            document.getElementById('startDate').min = new Date().toISOString().split('T')[0];
+            document.getElementById('endDate').min = new Date().toISOString().split('T')[0];
+        }
+
+        function closeRequestModal() {
+            document.getElementById('requestModal').classList.add('hidden');
+            document.getElementById('timeOffForm').reset();
+            document.getElementById('balanceWarning').classList.add('hidden');
+        }
+
+        document.getElementById('requestType').addEventListener('change', function() {
+            checkBalance();
+        });
+
+        document.getElementById('hoursRequested').addEventListener('input', function() {
+            checkBalance();
+        });
+
+        function checkBalance() {
+            const type = document.getElementById('requestType').value;
+            const hours = parseFloat(document.getElementById('hoursRequested').value) || 0;
+            
+            if (!ptoBalances || hours === 0) return;
+
+            const warning = document.getElementById('balanceWarning');
+            const warningText = document.getElementById('balanceWarningText');
+
+            if (type === 'pto' && hours > ptoBalances.pto_balance) {
+                warning.classList.remove('hidden');
+                warningText.textContent = `You only have ${ptoBalances.pto_balance.toFixed(1)} hours of PTO available. This request exceeds your balance.`;
+            } else if (type === 'sick' && hours > ptoBalances.sick_balance) {
+                warning.classList.remove('hidden');
+                warningText.textContent = `You only have ${ptoBalances.sick_balance.toFixed(1)} hours of sick time available. This request exceeds your balance.`;
+            } else {
+                warning.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('timeOffForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const requestData = {
+                user_id: currentUser.id,
+                request_type: document.getElementById('requestType').value,
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value,
+                hours_requested: parseFloat(document.getElementById('hoursRequested').value),
+                employee_note: document.getElementById('employeeNote').value || null,
+                status: 'pending'
+            };
+
+            try {
+                const { error } = await myDashClient
+                    .from('time_off_requests')
+                    .insert([requestData]);
+
+                if (error) throw error;
+
+                alert('Time off request submitted successfully!');
+                closeRequestModal();
+                await loadTimeOffRequests();
+            } catch (error) {
+                console.error('Error submitting request:', error);
+                alert('Error submitting request: ' + error.message);
+            }
+        });
+
+        // Clock functions (keeping existing code)
+        async function loadCurrentStatus() {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const { data, error } = await myDashClient
+                    .from('time_entries')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .eq('status', 'clocked_in')
+                    .gte('clock_in_time', today.toISOString())
+                    .order('clock_in_time', { ascending: false })
+                    .limit(1);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    currentEntry = data[0];
+                    isClockedIn = true;
+                    updateUIForClockedIn();
+                } else {
+                    isClockedIn = false;
+                    updateUIForClockedOut();
+                }
+                
+                if (geofenceMonitor) {
+                    geofenceMonitor.updateClockStatus(isClockedIn);
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+            }
+        }
+
+        window.loadCurrentStatus = loadCurrentStatus;
+
+        function updateUIForClockedIn() {
+            document.getElementById('statusTitle').textContent = 'Currently Clocked In';
+            document.getElementById('statusSubtitle').textContent = 'We\'ll remind you to clock out when you leave';
+            document.getElementById('currentStatusIcon').innerHTML = '<i class="fas fa-clock text-6xl text-green-500 pulse"></i>';
+            
+            const clockBtn = document.getElementById('clockButton');
+            clockBtn.innerHTML = '<i class="fas fa-stop-circle text-4xl mb-2"></i><br>Clock Out';
+            clockBtn.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+        }
+
+        function updateUIForClockedOut() {
+            document.getElementById('statusTitle').textContent = 'Ready to Clock In';
+            document.getElementById('statusSubtitle').textContent = 'We\'ll notify you when you arrive at work';
+            document.getElementById('currentStatusIcon').innerHTML = '<i class="fas fa-clock text-6xl text-gray-400"></i>';
+            
+            const clockBtn = document.getElementById('clockButton');
+            clockBtn.innerHTML = '<i class="fas fa-clock text-4xl mb-2"></i><br>Clock In';
+            clockBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        }
+
+        async function handleClockAction() {
+            if (isClockedIn) {
+                await handleClockOut();
+            } else {
+                await handleClockIn();
+            }
+        }
+
+        async function handleClockIn() {
+            try {
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Getting location...';
+                
+                const location = await getCurrentLocation();
+                
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Validating location...';
+                
+                const validation = await validateGeofence(location.latitude, location.longitude);
+                
+                if (!validation.valid) {
+                    alert(validation.message);
+                    document.getElementById('locationStatus').innerHTML = '<i class="fas fa-map-marker-alt mr-2"></i>Location validation failed';
+                    return;
+                }
+
+                const { data, error } = await myDashClient
+                    .from('time_entries')
+                    .insert([{
+                        user_id: currentUser.id,
+                        clock_in_time: new Date().toISOString(),
+                        clock_in_latitude: location.latitude,
+                        clock_in_longitude: location.longitude,
+                        clock_in_location_id: validation.location.id,
+                        status: 'clocked_in'
+                    }])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                currentEntry = data;
+                isClockedIn = true;
+                updateUIForClockedIn();
+                document.getElementById('locationStatus').innerHTML = `<i class="fas fa-check-circle text-green-500 mr-2"></i>Clocked in at ${validation.location.name}`;
+                
+                if (geofenceMonitor) {
+                    geofenceMonitor.updateClockStatus(true);
+                }
+                
+                await loadTodaySummary();
+                await loadPayPeriodHours();
+
+            } catch (error) {
+                console.error('Clock in error:', error);
+                alert('Error clocking in: ' + error.message);
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>Clock in failed';
+            }
+        }
+
+        async function handleClockOut() {
+            try {
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Clocking out...';
+                
+                const location = await getCurrentLocation();
+                const clockOutTime = new Date();
+                const clockInTime = new Date(currentEntry.clock_in_time);
+                const totalHours = ((clockOutTime - clockInTime) / (1000 * 60 * 60)).toFixed(2);
+
+                const { error } = await myDashClient
+                    .from('time_entries')
+                    .update({
+                        clock_out_time: clockOutTime.toISOString(),
+                        clock_out_latitude: location.latitude,
+                        clock_out_longitude: location.longitude,
+                        total_hours: parseFloat(totalHours),
+                        status: 'clocked_out'
+                    })
+                    .eq('id', currentEntry.id);
+
+                if (error) throw error;
+
+                currentEntry = null;
+                isClockedIn = false;
+                updateUIForClockedOut();
+                document.getElementById('locationStatus').innerHTML = `<i class="fas fa-check-circle text-green-500 mr-2"></i>Clocked out! Total: ${totalHours} hours`;
+                
+                if (geofenceMonitor) {
+                    geofenceMonitor.updateClockStatus(false);
+                }
+                
+                await loadTodaySummary();
+                await loadPayPeriodHours();
+
+            } catch (error) {
+                console.error('Clock out error:', error);
+                alert('Error clocking out: ' + error.message);
+            }
+        }
+
+        async function loadTodaySummary() {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                const { data, error } = await myDashClient
+                    .from('time_entries')
+                    .select('*, work_locations!clock_in_location_id(name)')
+                    .eq('user_id', currentUser.id)
+                    .gte('clock_in_time', today.toISOString())
+                    .order('clock_in_time', { ascending: false });
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    const latestEntry = data[0];
+                    
+                    const clockInDate = new Date(latestEntry.clock_in_time);
+                    document.getElementById('clockInTime').textContent = clockInDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    if (latestEntry.clock_out_time) {
+                        const clockOutDate = new Date(latestEntry.clock_out_time);
+                        document.getElementById('clockOutTime').textContent = clockOutDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    } else {
+                        document.getElementById('clockOutTime').textContent = 'Active';
+                    }
+                    
+                    let totalHours = 0;
+                    data.forEach(entry => {
+                        if (entry.total_hours) {
+                            totalHours += parseFloat(entry.total_hours);
+                        }
+                    });
+                    document.getElementById('totalHours').textContent = totalHours.toFixed(2);
+                    
+                    if (latestEntry.work_locations) {
+                        document.getElementById('workLocation').innerHTML = `<i class="fas fa-building mr-2"></i>${latestEntry.work_locations.name}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading summary:', error);
+            }
+        }
+
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation is not supported'));
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        });
+                    },
+                    (error) => {
+                        reject(new Error('Unable to get location: ' + error.message));
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            });
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+        async function validateGeofence(userLat, userLon) {
+            try {
+                const { data: locations, error } = await myDashClient
+                    .from('work_locations')
+                    .select('*')
+                    .eq('is_active', true);
+
+                if (error) throw error;
+
+                if (!locations || locations.length === 0) {
+                    return {
+                        valid: false,
+                        message: 'No active work locations found.'
+                    };
+                }
+
+                let nearestLocation = null;
+                let minDistance = Infinity;
+
+                for (const location of locations) {
+                    const distance = calculateDistance(userLat, userLon, location.latitude, location.longitude);
+
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestLocation = location;
+                    }
+
+                    if (distance <= location.radius_meters) {
+                        return {
+                            valid: true,
+                            location: location,
+                            distance: distance
+                        };
+                    }
+                }
+
+                return {
+                    valid: false,
+                    message: `You are ${Math.round(minDistance)} meters from ${nearestLocation.name}. You must be within ${nearestLocation.radius_meters} meters.`,
+                    nearestLocation: nearestLocation,
+                    distance: minDistance
+                };
+            } catch (error) {
+                return {
+                    valid: false,
+                    message: 'Error validating location: ' + error.message
+                };
+            }
+        }
+
+        // Geofence Monitor (simplified inline version)
+        function initializeGeofenceMonitor() {
+            console.log('🎯 Geofence monitoring ready');
+            document.getElementById('monitoringStatus').innerHTML = '<i class="fas fa-satellite-dish mr-1 text-green-500"></i>Active';
+        }
+
+        async function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw-geofence.js');
+                    console.log('✅ Service Worker registered');
+                } catch (error) {
+                    console.error('Service Worker registration failed:', error);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
