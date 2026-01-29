@@ -257,7 +257,7 @@
                 const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
                 
                 if (authError || !user) {
-                    window.location.href = 'login-v3.html';
+                    window.location.href = 'login-standalone.html';
                     return;
                 }
 
@@ -271,7 +271,7 @@
 
                 if (profileError || !userProfile) {
                     alert('Error loading user profile');
-                    window.location.href = 'login-v3.html';
+                    window.location.href = 'login-standalone.html';
                     return;
                 }
 
@@ -280,7 +280,7 @@
 
             } catch (error) {
                 console.error('Auth error:', error);
-                window.location.href = 'login-v3.html';
+                window.location.href = 'login-standalone.html';
             }
         }
 
@@ -291,7 +291,7 @@
             }
             
             await supabaseClient.auth.signOut();
-            window.location.href = 'login-v3.html';
+            window.location.href = 'login-standalone.html';
         }
 
         async function loadCurrentStatus() {
