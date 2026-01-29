@@ -94,14 +94,13 @@
     <script src="timeclock-config-v2.js"></script>
     <script src="timeclock-auth-v2.js"></script>
     <script>
-        const supabase = window.timeclockSupabase;
-        const auth = window.timeclockAuth;
+        // Use globally defined supabase and auth from timeclock-auth-v2.js
 
         // Check if already logged in
         document.addEventListener('DOMContentLoaded', async function() {
-            const user = await auth.getCurrentUser();
+            const user = await window.timeclockAuth.getCurrentUser();
             if (user) {
-                auth.redirectToDashboard(user.role);
+                window.timeclockAuth.redirectToDashboard(user.role);
             }
         });
 
@@ -122,7 +121,7 @@
 
             try {
                 // Sign in with Supabase
-                const { data, error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await window.timeclockSupabase.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
@@ -130,7 +129,7 @@
                 if (error) throw error;
 
                 // Get user profile to check role
-                const { data: userProfile, error: profileError } = await supabase
+                const { data: userProfile, error: profileError } = await window.timeclockSupabase
                     .from('users')
                     .select('*')
                     .eq('id', data.user.id)
@@ -141,7 +140,7 @@
                 }
 
                 // Redirect based on role
-                auth.redirectToDashboard(userProfile.role);
+                window.timeclockAuth.redirectToDashboard(userProfile.role);
 
             } catch (error) {
                 console.error('Login error:', error);
