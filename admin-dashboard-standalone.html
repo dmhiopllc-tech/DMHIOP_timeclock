@@ -234,6 +234,22 @@
                         <i class="fas fa-check-circle mr-2"></i>Time Off Approvals
                     </h3>
                     <p class="text-sm text-gray-600 mt-1">Requires: Tatiana + (Sean OR Gary)</p>
+                    
+                    <!-- Filter Buttons -->
+                    <div class="flex space-x-3 mt-4">
+                        <button onclick="loadApprovals('pending')" data-filter="pending" class="filter-btn px-4 py-2 rounded bg-blue-600 text-white font-semibold">
+                            <i class="fas fa-clock mr-1"></i>Pending
+                        </button>
+                        <button onclick="loadApprovals('approved')" data-filter="approved" class="filter-btn px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold">
+                            <i class="fas fa-check mr-1"></i>Approved
+                        </button>
+                        <button onclick="loadApprovals('rejected')" data-filter="rejected" class="filter-btn px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold">
+                            <i class="fas fa-times mr-1"></i>Rejected
+                        </button>
+                        <button onclick="loadApprovals('all')" data-filter="all" class="filter-btn px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold">
+                            <i class="fas fa-list mr-1"></i>All
+                        </button>
+                    </div>
                 </div>
                 <div class="p-6">
                     <div id="approvals-list">
@@ -811,34 +827,90 @@
             }
         }
 
-        async function loadApprovals() {
+        let currentApprovalFilter = 'pending';
+
+        async function loadApprovals(filter = 'pending') {
+            currentApprovalFilter = filter;
+            
             try {
-                const { data: approvals, error } = await adminClient
-                    .from('pending_approvals_by_user')
-                    .select('*')
-                    .eq('can_approve', true)
-                    .order('start_date');
+                let query = adminClient
+                    .from('time_off_requests')
+                    .select(`
+                        id,
+                        user_id,
+                        request_type,
+                        start_date,
+                        end_date,
+                        hours_requested,
+                        approval_status,
+                        current_approvals,
+                        requires_approvals,
+                        employee_note,
+                        created_at,
+                        users:user_id (full_name, email)
+                    `);
+
+                // Apply filter
+                if (filter === 'pending') {
+                    query = query.in('approval_status', ['pending', 'partially_approved']);
+                } else if (filter === 'approved') {
+                    query = query.eq('approval_status', 'approved');
+                } else if (filter === 'rejected') {
+                    query = query.eq('approval_status', 'rejected');
+                }
+                // 'all' filter doesn't add any condition
+
+                query = query.order('created_at', { ascending: false });
+
+                const { data: requests, error } = await query;
 
                 if (error) throw error;
 
-                if (!approvals || approvals.length === 0) {
-                    document.getElementById('approvals-list').innerHTML = '<div class="text-center py-8"><i class="fas fa-check-circle text-4xl text-green-500 mb-2"></i><p class="text-gray-600">No pending approvals</p></div>';
+                // Update filter buttons
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                });
+                document.querySelector(`[data-filter="${filter}"]`).classList.remove('bg-gray-200', 'text-gray-700');
+                document.querySelector(`[data-filter="${filter}"]`).classList.add('bg-blue-600', 'text-white');
+
+                if (!requests || requests.length === 0) {
+                    const messages = {
+                        pending: 'No pending approvals',
+                        approved: 'No approved requests yet',
+                        rejected: 'No rejected requests',
+                        all: 'No time-off requests found'
+                    };
+                    document.getElementById('approvals-list').innerHTML = `<div class="text-center py-8"><i class="fas fa-check-circle text-4xl text-gray-400 mb-2"></i><p class="text-gray-600">${messages[filter]}</p></div>`;
                     return;
                 }
 
                 let html = '<div class="space-y-4">';
 
-                approvals.forEach(req => {
+                requests.forEach(req => {
                     const startDate = new Date(req.start_date).toLocaleDateString();
                     const endDate = new Date(req.end_date).toLocaleDateString();
-                    const statusBadge = req.approval_status === 'pending' ? 'badge-pending' : 'badge-partially';
+                    const createdDate = new Date(req.created_at).toLocaleDateString();
+                    
+                    let statusBadge = '';
+                    if (req.approval_status === 'pending') {
+                        statusBadge = 'badge-pending';
+                    } else if (req.approval_status === 'partially_approved') {
+                        statusBadge = 'badge-partially';
+                    } else if (req.approval_status === 'approved') {
+                        statusBadge = 'badge-approved';
+                    } else if (req.approval_status === 'rejected') {
+                        statusBadge = 'badge-rejected';
+                    }
+                    
+                    const daysUntil = Math.ceil((new Date(req.start_date) - new Date()) / (1000 * 60 * 60 * 24));
                     
                     html += `
-                        <div class="border rounded-lg p-4">
+                        <div class="border rounded-lg p-4 ${req.approval_status === 'approved' ? 'bg-green-50 border-green-200' : req.approval_status === 'rejected' ? 'bg-red-50 border-red-200' : ''}">
                             <div class="flex justify-between items-start mb-3">
                                 <div>
-                                    <h4 class="font-bold">${req.employee_name}</h4>
-                                    <p class="text-sm text-gray-600">${req.email}</p>
+                                    <h4 class="font-bold">${req.users?.full_name || 'Unknown'}</h4>
+                                    <p class="text-sm text-gray-600">${req.users?.email || ''}</p>
                                 </div>
                                 <span class="px-3 py-1 text-xs rounded-full ${statusBadge}">
                                     ${req.approval_status.replace('_', ' ').toUpperCase()} (${req.current_approvals}/${req.requires_approvals})
@@ -847,7 +919,7 @@
                             <div class="grid grid-cols-2 gap-4 mb-3">
                                 <div>
                                     <p class="text-xs text-gray-500">Type</p>
-                                    <p class="font-semibold">${req.request_type}</p>
+                                    <p class="font-semibold">${req.request_type.toUpperCase()}</p>
                                 </div>
                                 <div>
                                     <p class="text-xs text-gray-500">Hours</p>
@@ -858,11 +930,16 @@
                                     <p class="font-semibold">${startDate} - ${endDate}</p>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-gray-500">Days Until</p>
-                                    <p class="font-semibold">${req.days_until_start} days</p>
+                                    <p class="text-xs text-gray-500">${daysUntil >= 0 ? 'Days Until' : 'Days Ago'}</p>
+                                    <p class="font-semibold">${Math.abs(daysUntil)} days</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Requested On</p>
+                                    <p class="font-semibold">${createdDate}</p>
                                 </div>
                             </div>
                             ${req.employee_note ? `<p class="text-sm text-gray-600 mb-3"><strong>Note:</strong> ${req.employee_note}</p>` : ''}
+                            ${req.approval_status === 'pending' || req.approval_status === 'partially_approved' ? `
                             <div class="flex space-x-3">
                                 <button onclick="approveRequest('${req.id}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded">
                                     <i class="fas fa-check mr-1"></i>Approve
@@ -871,6 +948,12 @@
                                     <i class="fas fa-times mr-1"></i>Reject
                                 </button>
                             </div>
+                            ` : ''}
+                            ${req.approval_status === 'approved' || req.approval_status === 'rejected' ? `
+                                <button onclick="viewApprovalHistory('${req.id}')" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded">
+                                    <i class="fas fa-history mr-1"></i>View Approval History
+                                </button>
+                            ` : ''}
                         </div>
                     `;
                 });
@@ -881,6 +964,45 @@
             } catch (error) {
                 console.error('Error loading approvals:', error);
                 document.getElementById('approvals-list').innerHTML = '<p class="text-red-600">Error loading approvals</p>';
+            }
+        }
+
+        async function viewApprovalHistory(requestId) {
+            try {
+                const { data: approvals, error } = await adminClient
+                    .from('time_off_approvals')
+                    .select(`
+                        *,
+                        users:approver_id (full_name, email)
+                    `)
+                    .eq('time_off_request_id', requestId)
+                    .order('approval_date');
+
+                if (error) throw error;
+
+                let historyHtml = '<h3 class="font-bold mb-3">Approval History:</h3>';
+                
+                if (approvals && approvals.length > 0) {
+                    approvals.forEach((approval, index) => {
+                        const approvalDate = new Date(approval.approval_date).toLocaleString();
+                        historyHtml += `
+                            <div class="border-l-4 ${approval.approval_action === 'approved' ? 'border-green-500' : 'border-red-500'} pl-4 mb-3">
+                                <p><strong>Approver ${index + 1}:</strong> ${approval.users?.full_name || 'Unknown'}</p>
+                                <p><strong>Action:</strong> <span class="${approval.approval_action === 'approved' ? 'text-green-600' : 'text-red-600'} font-semibold">${approval.approval_action.toUpperCase()}</span></p>
+                                <p><strong>Date:</strong> ${approvalDate}</p>
+                                ${approval.notes ? `<p><strong>Notes:</strong> ${approval.notes}</p>` : ''}
+                            </div>
+                        `;
+                    });
+                } else {
+                    historyHtml += '<p class="text-gray-600">No approval history found.</p>';
+                }
+
+                alert(historyHtml.replace(/<[^>]*>/g, '\n').replace(/&nbsp;/g, ' '));
+
+            } catch (error) {
+                console.error('Error loading approval history:', error);
+                alert('Error loading approval history');
             }
         }
 
