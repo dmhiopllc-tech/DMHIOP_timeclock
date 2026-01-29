@@ -891,7 +891,7 @@
                 const { error } = await adminClient
                     .from('time_off_approvals')
                     .insert({
-                        time_off_request_id: requestId,
+                        time_off_request: requestId,
                         approver_id: currentUser.id,
                         approver_role: currentUser.role,
                         approval_action: 'approved',
@@ -921,7 +921,7 @@
                 const { error } = await adminClient
                     .from('time_off_approvals')
                     .insert({
-                        time_off_request_id: requestId,
+                        time_off_request: requestId,
                         approver_id: currentUser.id,
                         approver_role: currentUser.role,
                         approval_action: 'rejected',
