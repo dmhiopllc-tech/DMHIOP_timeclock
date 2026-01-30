@@ -1,72 +1,70 @@
-# ⏰ Time Clock App - v3
+# DMH Time Clock - Enterprise Employee Time Tracking System
 
-Employee time tracking system with GPS location verification and geofencing.
+🚀 **Live Site**: https://dmhioptimeclock.com/
 
-## 🚀 **LIVE SITE - USE THESE URLs:**
+## 📋 Project Overview
 
-### **Main Entry Points:**
-- **Signup:** https://dmhiopllc-tech.github.io/DMHIOP_timeclock/index-v3.html
-- **Login:** https://dmhiopllc-tech.github.io/DMHIOP_timeclock/login-v3.html
-- **Dashboard:** https://dmhiopllc-tech.github.io/DMHIOP_timeclock/dashboard-v3.html
+A comprehensive time clock and attendance tracking system built for Desert Mountain Healing IOP. Features GPS geofencing, PTO management, multi-level approvals, and PayChex payroll integration.
 
-### **Auto-Redirect:**
-- https://dmhiopllc-tech.github.io/DMHIOP_timeclock/ (redirects to index-v3.html)
+## ✅ Currently Completed Features
 
----
+### 🔐 Authentication & Access Control
+- ✅ Supabase authentication with role-based access (Admin, Manager, Employee)
+- ✅ Secure login/signup with email verification
+- ✅ Password reset functionality
+- ✅ Role-based dashboard routing
 
-## 📋 Features
+### ⏰ Time Clock Features
+- ✅ GPS-verified clock in/out
+- ✅ Geofence monitoring (Desert Mountain Healing IOP location)
+- ✅ Automatic location tracking
+- ✅ Today's hours summary
+- ✅ Current pay period tracking
+- ✅ Time entry editing with audit trail
 
-- **Employee Dashboard** - Clock in/out with GPS tracking
-- **Geofencing** - Verify employees are at work locations
-- **Today's Summary** - View daily hours and clock times
-- **Manager Dashboard** - Approve timesheets (coming soon)
-- **Admin Portal** - Manage users and locations (coming soon)
-- **Payroll Export** - Export approved hours to CSV (coming soon)
+### 🌴 PTO & Time Off Management
+- ✅ PTO balance tracking (1.54 hours/pay period accrual)
+- ✅ Sick time tracking (0.62 hours/pay period accrual)
+- ✅ Time-off request system
+- ✅ Multi-level approval workflow
+- ✅ Approval history and notes
 
-## 🔧 Tech Stack
+### 📱 PWA (Progressive Web App)
+- ✅ Install banner with auto-prompt
+- ✅ Offline functionality
+- ✅ Service worker for background sync
+- ✅ App manifest with icons
+- ✅ Auto-location permission request
 
-- **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
-- **Styling:** Tailwind CSS via CDN
-- **Icons:** Font Awesome 6.4.0
-- **Database:** Supabase (PostgreSQL)
-- **Authentication:** Supabase Auth
-- **GPS:** Browser Geolocation API
-- **Hosting:** GitHub Pages
+### 👔 Admin Dashboard
+- ✅ Employee management
+- ✅ Geofence alert monitoring
+- ✅ Time entry oversight
+- ✅ PayChex CSV export
+- ✅ Multi-level approval management
+- ✅ Work location configuration
+- ✅ 6-tab navigation (Overview, Employees, Alerts, Payroll, Approvals, Locations)
 
-## 📖 Active Files (v3)
+### 👨‍💼 Manager Dashboard
+- ✅ Team overview
+- ✅ Timesheet management
+- ✅ Approval workflows
+- ✅ Team member monitoring
 
-### **HTML Pages:**
-- `index-v3.html` - Signup page (main entry)
-- `login-v3.html` - Login page
-- `dashboard-v3.html` - Employee dashboard
-- `index.html` - Redirect to index-v3.html
+## 🌐 Live URLs
 
-### **JavaScript:**
-- `timeclock-config-v2.js` - Supabase configuration
-- `timeclock-auth-v2.js` - Authentication utilities
-- `timeclock-geofencing-v2.js` - GPS and geofencing logic
+### Production Site
+- **Domain**: https://dmhioptimeclock.com/
+- **Hosting**: GitHub Pages
+- **Custom Domain**: Namecheap DNS → GitHub Pages
 
-### **Assets:**
-- `logo.svg` - DMH branded logo
+### Application Pages
+| Page | URL | Purpose |
+|------|-----|---------|
+| **Signup** | [/index-v3.html](https://dmhioptimeclock.com/index-v3.html) | New employee registration |
+| **Login** | [/login-standalone.html](https://dmhioptimeclock.com/login-standalone.html) | Authentication |
+| **Employee Dashboard** | [/employee-dashboard-enhanced.html](https://dmhioptimeclock.com/employee-dashboard-enhanced.html) | Employee time tracking & PTO |
+| **Admin Dashboard** | [/admin-dashboard-standalone.html](https://dmhioptimeclock.com/admin-dashboard-standalone.html) | Admin portal |
+| **Manager Dashboard** | [/manager-dashboard.html](https://dmhioptimeclock.com/manager-dashboard.html) | Manager portal |
 
-### **Deprecated Files (ignore):**
-- `config.js` - Empty (use timeclock-config-v2.js)
-- `auth.js` - Empty (use timeclock-auth-v2.js)
-- `geofencing.js` - Empty (use timeclock-geofencing-v2.js)
-
----
-
-## 🎯 Setup Instructions
-
-### **For Admins: Create Admin Accounts**
-
-1. **Sign up at:** https://dmhiopllc-tech.github.io/DMHIOP_timeclock/index-v3.html
-2. **Create accounts for:**
-   - Sean Roberts: sean_roberts@dmhiop.com
-   - Tatiana Schnierow: tatiana.schnierow@dmhiop.com
-
-3. **Upgrade to admin via Supabase SQL:**
-   ```sql
-   UPDATE public.users 
-   SET role = 'admin'
-   WHERE email IN ('sean_roberts@dmhiop.com', 'tatiana.schnierow@dmhiop.com'); 
+### QR Code for Employee Access
