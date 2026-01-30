@@ -125,7 +125,7 @@ self.addEventListener('notificationclick', (event) => {
             }
             // If no window is open, open a new one
             if (clients.openWindow) {
-                return clients.openWindow('/dashboard-standalone.html');
+                return clients.openWindow('/employee-dashboard-enhanced.html');
             }
         })
     );
