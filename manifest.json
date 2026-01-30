@@ -2,7 +2,7 @@
   "name": "DMH Time Clock",
   "short_name": "Time Clock",
   "description": "Desert Mountain Healing IOP - Time Clock and Attendance System",
-  "start_url": "/employee-dashboard-enhanced.html",
+  "start_url": "/employee-dashboard-v2.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#667eea",
@@ -63,7 +63,7 @@
       "name": "Clock In",
       "short_name": "Clock In",
       "description": "Quick clock-in",
-      "url": "/employee-dashboard-enhanced.html#clock-in",
+      "url": "/employee-dashboard-v2.html#clock-in",
       "icons": [
         {
           "src": "icons/icon-192x192.png",
