@@ -56,7 +56,7 @@ window.timeclockAuth = {
                 break;
             case 'employee':
             default:
-               window.location.href = 'employee-dashboard-enhanced.html';
+                    window.location.href = 'employee-dashboard-v2.html';
         }
     },
 
