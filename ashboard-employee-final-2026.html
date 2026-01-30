@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- 🚀 FRESH BUILD: 2026-01-30-20:30:00 UTC - CACHE BUST -->
+    <!-- NO DUPLICATE SUPABASE - VERIFIED CLEAN - FINAL VERSION -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard - Enhanced with PTO</title>
+    
+    <!-- External Resources -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    
+    <style>
+        .clock-btn {
+            transition: all 0.3s ease;
+            transform: scale(1);
+        }
+        .clock-btn:active {
+            transform: scale(0.95);
+        }
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        @keyframes bounce-in {
+            0% { transform: scale(0.9); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes slide-in {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-bounce-in {
+            animation: bounce-in 0.5s ease-out;
+        }
+        .animate-slide-in {
+            animation: slide-in 0.3s ease-out;
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .success-message {
+            background: #10b981;
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            animation: slide-in 0.3s ease-out;
+        }
+        .error-message {
+            background: #ef4444;
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            animation: slide-in 0.3s ease-out;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-pending { background: #fbbf24; color: #78350f; }
+        .badge-approved { background: #10b981; color: white; }
+        .badge-rejected { background: #ef4444; color: white; }
+        .stat-card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        #installPrompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: none;
+        }
+        .location-status {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            z-index: 100;
+            display: none;
+        }
+        .location-valid { background: #10b981; color: white; }
+        .location-invalid { background: #ef4444; color: white; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <img src="logo.png" alt="DMH Logo" style="width: 50px; height: 50px; object-fit: contain;" onerror="this.style.display='none'">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Time Clock</h1>
+                    <p class="text-sm text-gray-600" id="userInfo">Loading...</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
+                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+            </button>
+        </div>
+    </header>
+
+    <!-- Location Status Badge -->
+    <div id="locationStatus" class="location-status"></div>
+
+    <!-- PWA Install Prompt -->
+    <div id="installPrompt">
+        <p class="mb-2">Install this app for quick access!</p>
+        <button onclick="installPWA()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg mr-2">Install</button>
+        <button onclick="dismissInstall()" class="text-gray-600">Dismiss</button>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        
+        <!-- Error/Success Messages -->
+        <div id="messageContainer"></div>
+
+        <!-- Clock In/Out Section -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8 animate-bounce-in">
+            <h2 class="text-3xl font-bold text-center mb-6 text-gray-800">
+                <i class="fas fa-clock mr-2"></i>Time Clock
+            </h2>
+            
+            <div class="text-center mb-6">
+                <p class="text-gray-600 mb-2">Current Status:</p>
+                <p id="clockStatus" class="text-2xl font-bold text-indigo-600">Loading...</p>
+            </div>
+
+            <div class="flex flex-col items-center space-y-4">
+                <button id="clockInBtn" onclick="toggleClock('in')" 
+                        class="clock-btn bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full max-w-xs">
+                    <i class="fas fa-play-circle mr-2"></i>Clock In
+                </button>
+                
+                <button id="clockOutBtn" onclick="toggleClock('out')" 
+                        class="clock-btn bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full max-w-xs" 
+                        disabled>
+                    <i class="fas fa-stop-circle mr-2"></i>Clock Out
+                </button>
+            </div>
+
+            <div id="locationInfo" class="mt-6 text-center text-sm text-gray-600"></div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <!-- Today's Hours -->
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-semibold text-gray-700">Today's Hours</h3>
+                    <i class="fas fa-calendar-day text-2xl text-indigo-600"></i>
+                </div>
+                <p id="todayHours" class="text-3xl font-bold text-indigo-600">0.00</p>
+                <p class="text-sm text-gray-500 mt-1">Hours worked today</p>
+            </div>
+
+            <!-- Pay Period Hours -->
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-semibold text-gray-700">Pay Period</h3>
+                    <i class="fas fa-calendar-week text-2xl text-green-600"></i>
+                </div>
+                <p id="periodHours" class="text-3xl font-bold text-green-600">0.00</p>
+                <p class="text-sm text-gray-500 mt-1">Hours this period</p>
+            </div>
+
+            <!-- PTO Balance -->
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-semibold text-gray-700">PTO Balance</h3>
+                    <i class="fas fa-umbrella-beach text-2xl text-blue-600"></i>
+                </div>
+                <p id="ptoBalance" class="text-3xl font-bold text-blue-600">0.00</p>
+                <p class="text-sm text-gray-500 mt-1">Hours available</p>
+            </div>
+        </div>
+
+        <!-- Time Off Request Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                <i class="fas fa-calendar-plus mr-2"></i>Request Time Off
+            </h2>
+            
+            <form id="ptoForm" onsubmit="submitPTORequest(event)" class="space-y-4">
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                        <input type="date" id="startDate" required 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                        <input type="date" id="endDate" required 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                    <select id="ptoType" required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Select type...</option>
+                        <option value="vacation">Vacation</option>
+                        <option value="sick">Sick Leave</option>
+                        <option value="personal">Personal</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reason (Optional)</label>
+                    <textarea id="ptoReason" rows="3" 
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                
+                <button type="submit" 
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition">
+                    <i class="fas fa-paper-plane mr-2"></i>Submit Request
+                </button>
+            </form>
+        </div>
+
+        <!-- Time Off Requests History -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                <i class="fas fa-history mr-2"></i>My Requests
+            </h2>
+            <div id="requestsContainer">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // ===== SUPABASE CONFIGURATION - SINGLE CLIENT INSTANCE =====
+        const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+        let currentEntry = null;
+        let deferredPrompt = null;
+        let locationWatchId = null;
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadDashboardData();
+            setupPWA();
+            requestLocationPermission();
+            startLocationMonitoring();
+        });
+
+        // ===== AUTHENTICATION =====
+        async function checkAuth() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (!session) {
+                    window.location.href = 'login-standalone.html';
+                    return;
+                }
+
+                const { data: user } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (!user) {
+                    throw new Error('User not found');
+                }
+
+                currentUser = user;
+                document.getElementById('userInfo').textContent = `Welcome, ${user.full_name || user.email}`;
+            } catch (error) {
+                console.error('Auth error:', error);
+                window.location.href = 'login-standalone.html';
+            }
+        }
+
+        async function logout() {
+            try {
+                await supabase.auth.signOut();
+                window.location.href = 'login-standalone.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                showMessage('Logout failed', 'error');
+            }
+        }
+
+        // ===== DASHBOARD DATA =====
+        async function loadDashboardData() {
+            try {
+                await Promise.all([
+                    updateClockStatus(),
+                    loadTodayHours(),
+                    loadPeriodHours(),
+                    loadPTOBalance(),
+                    loadTimeOffRequests()
+                ]);
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showMessage('Error loading data', 'error');
+            }
+        }
+
+        async function updateClockStatus() {
+            try {
+                const { data: entries } = await supabase
+                    .from('time_entries')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .is('clock_out_time', null)
+                    .order('clock_in_time', { ascending: false })
+                    .limit(1);
+
+                if (entries && entries.length > 0) {
+                    currentEntry = entries[0];
+                    document.getElementById('clockStatus').textContent = 'Clocked In';
+                    document.getElementById('clockStatus').classList.add('pulse');
+                    document.getElementById('clockInBtn').disabled = true;
+                    document.getElementById('clockOutBtn').disabled = false;
+                } else {
+                    currentEntry = null;
+                    document.getElementById('clockStatus').textContent = 'Clocked Out';
+                    document.getElementById('clockStatus').classList.remove('pulse');
+                    document.getElementById('clockInBtn').disabled = false;
+                    document.getElementById('clockOutBtn').disabled = true;
+                }
+            } catch (error) {
+                console.error('Error checking clock status:', error);
+            }
+        }
+
+        async function loadTodayHours() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                
+                const { data: entries } = await supabase
+                    .from('time_entries')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .gte('clock_in_time', `${today}T00:00:00`)
+                    .lte('clock_in_time', `${today}T23:59:59`);
+
+                let totalMinutes = 0;
+                entries?.forEach(entry => {
+                    if (entry.clock_out_time) {
+                        const start = new Date(entry.clock_in_time);
+                        const end = new Date(entry.clock_out_time);
+                        totalMinutes += (end - start) / 1000 / 60;
+                    } else if (entry.id === currentEntry?.id) {
+                        const start = new Date(entry.clock_in_time);
+                        const now = new Date();
+                        totalMinutes += (now - start) / 1000 / 60;
+                    }
+                });
+
+                document.getElementById('todayHours').textContent = (totalMinutes / 60).toFixed(2);
+            } catch (error) {
+                console.error('Error loading today hours:', error);
+            }
+        }
+
+        async function loadPeriodHours() {
+            try {
+                const now = new Date();
+                const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+                const { data: entries } = await supabase
+                    .from('time_entries')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .gte('clock_in_time', periodStart.toISOString())
+                    .lte('clock_in_time', periodEnd.toISOString());
+
+                let totalMinutes = 0;
+                entries?.forEach(entry => {
+                    if (entry.clock_out_time) {
+                        const start = new Date(entry.clock_in_time);
+                        const end = new Date(entry.clock_out_time);
+                        totalMinutes += (end - start) / 1000 / 60;
+                    }
+                });
+
+                document.getElementById('periodHours').textContent = (totalMinutes / 60).toFixed(2);
+            } catch (error) {
+                console.error('Error loading period hours:', error);
+            }
+        }
+
+        async function loadPTOBalance() {
+            try {
+                const { data: balance } = await supabase
+                    .from('pto_balances')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .single();
+
+                if (balance) {
+                    document.getElementById('ptoBalance').textContent = balance.available_hours.toFixed(2);
+                }
+            } catch (error) {
+                console.error('Error loading PTO balance:', error);
+            }
+        }
+
+        // ===== CLOCK IN/OUT =====
+        async function toggleClock(action) {
+            try {
+                const location = await getCurrentLocation();
+                const validation = await validateGeofence(location.latitude, location.longitude);
+
+                if (!validation.valid) {
+                    showMessage(validation.error, 'error');
+                    return;
+                }
+
+                if (action === 'in') {
+                    await clockIn(location, validation.location);
+                } else {
+                    await clockOut(location, validation.location);
+                }
+
+                await loadDashboardData();
+            } catch (error) {
+                console.error('Clock error:', error);
+                showMessage(error.message || 'Clock operation failed', 'error');
+            }
+        }
+
+        async function clockIn(location, workLocation) {
+            const { data, error } = await supabase
+                .from('time_entries')
+                .insert({
+                    user_id: currentUser.id,
+                    clock_in_time: new Date().toISOString(),
+                    clock_in_latitude: location.latitude,
+                    clock_in_longitude: location.longitude,
+                    work_location_id: workLocation.id
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            currentEntry = data;
+            showMessage('Clocked in successfully!', 'success');
+            
+            // Log geofence event
+            await supabase.from('geofence_events').insert({
+                user_id: currentUser.id,
+                event_type: 'clock_in',
+                work_location_id: workLocation.id,
+                latitude: location.latitude,
+                longitude: location.longitude,
+                distance_from_center: Math.round(calculateDistance(
+                    location.latitude, location.longitude,
+                    workLocation.latitude, workLocation.longitude
+                ))
+            });
+        }
+
+        async function clockOut(location, workLocation) {
+            if (!currentEntry) {
+                throw new Error('No active clock-in found');
+            }
+
+            const { error } = await supabase
+                .from('time_entries')
+                .update({
+                    clock_out_time: new Date().toISOString(),
+                    clock_out_latitude: location.latitude,
+                    clock_out_longitude: location.longitude
+                })
+                .eq('id', currentEntry.id);
+
+            if (error) throw error;
+
+            showMessage('Clocked out successfully!', 'success');
+            currentEntry = null;
+
+            // Log geofence event
+            await supabase.from('geofence_events').insert({
+                user_id: currentUser.id,
+                event_type: 'clock_out',
+                work_location_id: workLocation.id,
+                latitude: location.latitude,
+                longitude: location.longitude,
+                distance_from_center: Math.round(calculateDistance(
+                    location.latitude, location.longitude,
+                    workLocation.latitude, workLocation.longitude
+                ))
+            });
+        }
+
+        // ===== GEOLOCATION =====
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation not supported'));
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    position => resolve({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    }),
+                    error => {
+                        const messages = {
+                            1: 'Location permission denied',
+                            2: 'Location unavailable',
+                            3: 'Location request timeout'
+                        };
+                        reject(new Error(messages[error.code] || 'Location error'));
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            });
+        }
+
+        async function validateGeofence(userLat, userLon) {
+            try {
+                const { data: locations, error } = await supabase
+                    .from('work_locations')
+                    .select('*')
+                    .eq('is_active', true);
+
+                if (error) throw error;
+
+                if (!locations || locations.length === 0) {
+                    return {
+                        valid: false,
+                        error: 'No work locations configured. Please contact your administrator.'
+                    };
+                }
+
+                for (const location of locations) {
+                    const distance = calculateDistance(
+                        userLat, userLon,
+                        location.latitude, location.longitude
+                    );
+
+                    if (distance <= location.radius_meters) {
+                        return {
+                            valid: true,
+                            location: location,
+                            distance: Math.round(distance)
+                        };
+                    }
+                }
+
+                // Find nearest location
+                const nearest = locations.reduce((prev, curr) => {
+                    const prevDist = calculateDistance(userLat, userLon, prev.latitude, prev.longitude);
+                    const currDist = calculateDistance(userLat, userLon, curr.latitude, curr.longitude);
+                    return currDist < prevDist ? curr : prev;
+                });
+
+                const nearestDistance = Math.round(calculateDistance(
+                    userLat, userLon, nearest.latitude, nearest.longitude
+                ));
+
+                return {
+                    valid: false,
+                    error: `You are ${nearestDistance}m away from ${nearest.name}. Please move closer to clock in.`,
+                    nearestLocation: nearest,
+                    distance: nearestDistance
+                };
+            } catch (error) {
+                console.error('Geofence validation error:', error);
+                return {
+                    valid: false,
+                    error: 'Failed to validate location. Please try again.'
+                };
+            }
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Earth radius in meters
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+        async function requestLocationPermission() {
+            try {
+                const location = await getCurrentLocation();
+                const validation = await validateGeofence(location.latitude, location.longitude);
+                
+                const statusEl = document.getElementById('locationStatus');
+                statusEl.style.display = 'block';
+                
+                if (validation.valid) {
+                    statusEl.textContent = `✓ At ${validation.location.name}`;
+                    statusEl.className = 'location-status location-valid';
+                } else {
+                    statusEl.textContent = `✗ ${validation.distance}m from work`;
+                    statusEl.className = 'location-status location-invalid';
+                }
+            } catch (error) {
+                console.error('Location permission error:', error);
+                const statusEl = document.getElementById('locationStatus');
+                statusEl.style.display = 'block';
+                statusEl.textContent = '⚠ Location unavailable';
+                statusEl.className = 'location-status location-invalid';
+            }
+        }
+
+        function startLocationMonitoring() {
+            if (navigator.geolocation) {
+                locationWatchId = navigator.geolocation.watchPosition(
+                    position => {
+                        validateGeofence(position.coords.latitude, position.coords.longitude)
+                            .then(validation => {
+                                const statusEl = document.getElementById('locationStatus');
+                                if (validation.valid) {
+                                    statusEl.textContent = `✓ At ${validation.location.name}`;
+                                    statusEl.className = 'location-status location-valid';
+                                } else {
+                                    statusEl.textContent = `✗ ${validation.distance}m from work`;
+                                    statusEl.className = 'location-status location-invalid';
+                                }
+                            });
+                    },
+                    error => console.error('Location watch error:', error),
+                    { enableHighAccuracy: true, maximumAge: 30000, timeout: 27000 }
+                );
+            }
+        }
+
+        // ===== PTO REQUESTS =====
+        async function submitPTORequest(event) {
+            event.preventDefault();
+            
+            try {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                const type = document.getElementById('ptoType').value;
+                const reason = document.getElementById('ptoReason').value;
+
+                const { error } = await supabase
+                    .from('time_off_requests')
+                    .insert({
+                        user_id: currentUser.id,
+                        start_date: startDate,
+                        end_date: endDate,
+                        type: type,
+                        reason: reason,
+                        status: 'pending'
+                    });
+
+                if (error) throw error;
+
+                showMessage('Time off request submitted successfully!', 'success');
+                document.getElementById('ptoForm').reset();
+                await loadTimeOffRequests();
+            } catch (error) {
+                console.error('PTO request error:', error);
+                showMessage('Failed to submit request', 'error');
+            }
+        }
+
+        async function loadTimeOffRequests() {
+            try {
+                const { data: requests } = await supabase
+                    .from('time_off_requests')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+
+                const container = document.getElementById('requestsContainer');
+                
+                if (!requests || requests.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No requests yet</p>';
+                    return;
+                }
+
+                container.innerHTML = requests.map(req => `
+                    <div class="border-b border-gray-200 py-4 last:border-b-0">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="font-semibold text-gray-800">${formatDate(req.start_date)} - ${formatDate(req.end_date)}</p>
+                                <p class="text-sm text-gray-600">${capitalizeFirst(req.type)}</p>
+                            </div>
+                            <span class="badge badge-${req.status}">${capitalizeFirst(req.status)}</span>
+                        </div>
+                        ${req.reason ? `<p class="text-sm text-gray-600 mt-2">${req.reason}</p>` : ''}
+                        ${req.manager_notes ? `<p class="text-sm text-gray-500 mt-2 italic">Manager: ${req.manager_notes}</p>` : ''}
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading requests:', error);
+            }
+        }
+
+        // ===== PWA SETUP =====
+        function setupPWA() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/pwa-service-worker.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            }
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                document.getElementById('installPrompt').style.display = 'block';
+            });
+        }
+
+        async function installPWA() {
+            if (!deferredPrompt) return;
+            
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                showMessage('App installed successfully!', 'success');
+            }
+            
+            deferredPrompt = null;
+            document.getElementById('installPrompt').style.display = 'none';
+        }
+
+        function dismissInstall() {
+            document.getElementById('installPrompt').style.display = 'none';
+            deferredPrompt = null;
+        }
+
+        // ===== UTILITY FUNCTIONS =====
+        function showMessage(message, type) {
+            const container = document.getElementById('messageContainer');
+            const div = document.createElement('div');
+            div.className = type === 'success' ? 'success-message' : 'error-message';
+            div.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+            
+            setTimeout(() => div.remove(), 5000);
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        // Auto-refresh today's hours every minute
+        setInterval(() => {
+            if (currentEntry) {
+                loadTodayHours();
+            }
+        }, 60000);
+    </script>
+</body>
+</html>
