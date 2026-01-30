@@ -34,7 +34,7 @@ window.timeclockAuth = {
         const user = await this.getCurrentUser();
         
         if (!user) {
-            window.location.href = 'login.html';
+            window.location.href = 'login-standalone.html';
             return null;
         }
 
@@ -51,14 +51,12 @@ window.timeclockAuth = {
     redirectToDashboard: function(role) {
         switch(role) {
             case 'admin':
-                window.location.href = 'admin-dashboard.html';
-                break;
-            case 'manager':
+                            window.location.href = 'admin-dashboard-standalone.html';
                 window.location.href = 'manager-dashboard.html';
                 break;
             case 'employee':
             default:
-                window.location.href = 'dashboard.html';
+               window.location.href = 'employee-dashboard-enhanced.html';
         }
     },
 
