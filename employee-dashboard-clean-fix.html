@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- 🚀 FRESH BUILD: 2026-01-30-21:00:00 UTC - VARIABLE NAME FIX -->
-    <!-- NO DUPLICATE SUPABASE - USES dashboardSupabase VARIABLE -->
+    <!-- 🚀 FRESH BUILD: 2026-01-30-21:15:00 UTC - SCHEMA FIX -->
+    <!-- NO DUPLICATE SUPABASE - SCHEMA COMPATIBLE VERSION -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Dashboard - Enhanced with PTO</title>
@@ -480,8 +480,7 @@
                     user_id: currentUser.id,
                     clock_in_time: new Date().toISOString(),
                     clock_in_latitude: location.latitude,
-                    clock_in_longitude: location.longitude,
-                    work_location_id: workLocation.id
+                    clock_in_longitude: location.longitude
                 })
                 .select()
                 .single();
@@ -490,19 +489,6 @@
 
             currentEntry = data;
             showMessage('Clocked in successfully!', 'success');
-            
-            // Log geofence event
-            await dashboardSupabase.from('geofence_events').insert({
-                user_id: currentUser.id,
-                event_type: 'clock_in',
-                work_location_id: workLocation.id,
-                latitude: location.latitude,
-                longitude: location.longitude,
-                distance_from_center: Math.round(calculateDistance(
-                    location.latitude, location.longitude,
-                    workLocation.latitude, workLocation.longitude
-                ))
-            });
         }
 
         async function clockOut(location, workLocation) {
@@ -523,19 +509,6 @@
 
             showMessage('Clocked out successfully!', 'success');
             currentEntry = null;
-
-            // Log geofence event
-            await dashboardSupabase.from('geofence_events').insert({
-                user_id: currentUser.id,
-                event_type: 'clock_out',
-                work_location_id: workLocation.id,
-                latitude: location.latitude,
-                longitude: location.longitude,
-                distance_from_center: Math.round(calculateDistance(
-                    location.latitude, location.longitude,
-                    workLocation.latitude, workLocation.longitude
-                ))
-            });
         }
 
         // ===== GEOLOCATION =====
