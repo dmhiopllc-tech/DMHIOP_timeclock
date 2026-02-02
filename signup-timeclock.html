@@ -281,7 +281,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="timeclock-config-v2.js"></script>
     <script>
-        const supabase = window.timeclockSupabase;
+        // Use a unique name to avoid conflicts with global supabase
+        const signupClient = window.timeclockSupabase;
 
         // Password strength checker
         const passwordInput = document.getElementById('password');
@@ -350,8 +351,10 @@
             document.querySelector('.btn-signup').disabled = true;
 
             try {
+                console.log('🚀 Starting signup process...');
+                
                 // Sign up with Supabase
-                const { data: authData, error: authError } = await supabase.auth.signUp({
+                const { data: authData, error: authError } = await signupClient.auth.signUp({
                     email: email,
                     password: password,
                     options: {
@@ -362,9 +365,10 @@
                 });
 
                 if (authError) throw authError;
+                console.log('✅ Auth signup successful:', authData.user.id);
 
                 // Create user profile
-                const { error: profileError } = await supabase
+                const { error: profileError } = await signupClient
                     .from('users')
                     .insert({
                         id: authData.user.id,
@@ -375,9 +379,10 @@
                     });
 
                 if (profileError) throw profileError;
+                console.log('✅ User profile created');
 
                 // Initialize PTO balance
-                const { error: ptoError } = await supabase
+                const { error: ptoError } = await signupClient
                     .from('pto_balances')
                     .insert({
                         user_id: authData.user.id,
@@ -387,10 +392,13 @@
                     });
 
                 if (ptoError) throw ptoError;
+                console.log('✅ PTO balance initialized');
 
                 // Show success message
                 document.getElementById('successMessage').style.display = 'block';
                 document.getElementById('signupForm').style.display = 'none';
+
+                console.log('✅ Signup complete! Redirecting to dashboard...');
 
                 // Redirect after 2 seconds
                 setTimeout(() => {
@@ -398,7 +406,7 @@
                 }, 2000);
 
             } catch (error) {
-                console.error('Signup error:', error);
+                console.error('❌ Signup error:', error);
                 alert('Signup failed: ' + (error.message || 'Please try again'));
                 
                 // Reset button state
