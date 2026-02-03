@@ -6,8 +6,8 @@
     <title>Login - Time Clock (Standalone)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
     
@@ -100,39 +100,46 @@
         const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
         
+        // Create Supabase client
         const myLoginClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Check if already logged in
         document.addEventListener('DOMContentLoaded', async function() {
-            const { data: { user } } = await myLoginClient.auth.getUser();
-            
-            if (user) {
-                const { data: userProfile } = await myLoginClient
-                    .from('users')
-                    .select('*')
-                    .eq('id', user.id)
-                    .single();
+            try {
+                const { data: { user } } = await myLoginClient.auth.getUser();
                 
-                if (userProfile) {
-                    redirectToDashboard(userProfile.role);
+                if (user) {
+                    console.log('User already logged in:', user.email);
+                    
+                    // Get user profile
+                    const { data: userProfile } = await myLoginClient
+                        .from('users')
+                        .select('*')
+                        .eq('id', user.id)
+                        .single();
+                    
+                    if (userProfile) {
+                        console.log('User role:', userProfile.role);
+                        redirectToDashboard(userProfile.role);
+                    }
                 }
+            } catch (error) {
+                console.log('Not logged in, showing login form');
             }
         });
 
         function redirectToDashboard(role) {
-            switch(role) {
-                case 'admin':
-                    window.location.href = 'admin-dashboard-standalone.html';
-                    break;
-                case 'manager':
-                    window.location.href = 'manager-dashboard.html';
-                    break;
-                default:
-                    window.location.href = 'employee-dashboard-clean-fix.html';
+            if (role === 'admin') {
+                window.location.href = 'admin-dashboard-standalone.html';
+            } else if (role === 'manager') {
+                window.location.href = 'manager-dashboard.html';
+            } else {
+                // Default to enhanced dashboard with PTO for all employees
+                window.location.href = 'employee-dashboard-clean-fix.html';
             }
         }
 
-        // Handle Login
+        // Handle login form submission
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -141,38 +148,46 @@
             const loginBtn = document.getElementById('loginBtn');
             const errorMessage = document.getElementById('errorMessage');
             const errorText = document.getElementById('errorText');
-            
+
             // Disable button and show loading
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing in...';
             errorMessage.classList.add('hidden');
-            
+
             try {
+                console.log('Attempting login for:', email);
+                
                 // Sign in with Supabase
                 const { data, error } = await myLoginClient.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
-                
+
+                console.log('Login response:', data, error);
+
                 if (error) throw error;
-                
-                // Get user profile to determine role
+
+                // Get user profile to check role
                 const { data: userProfile, error: profileError } = await myLoginClient
                     .from('users')
                     .select('*')
                     .eq('id', data.user.id)
                     .single();
-                
-                if (profileError) throw profileError;
-                
-                console.log('✅ Login successful:', userProfile);
-                
+
+                console.log('User profile:', userProfile, profileError);
+
+                if (profileError) {
+                    throw new Error('User profile not found. Please contact admin.');
+                }
+
+                console.log('Login successful! Role:', userProfile.role);
+
                 // Redirect based on role
                 redirectToDashboard(userProfile.role);
-                
+
             } catch (error) {
                 console.error('Login error:', error);
-                errorText.textContent = error.message || 'Login failed. Please check your credentials.';
+                errorText.textContent = error.message || 'Invalid email or password';
                 errorMessage.classList.remove('hidden');
                 
                 // Re-enable button
@@ -180,6 +195,21 @@
                 loginBtn.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Sign In';
             }
         });
+    </script>
+
+    <!-- Service Worker Registration for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/pwa-service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
     </script>
 </body>
 </html>
