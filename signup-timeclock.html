@@ -381,14 +381,26 @@
                 if (profileError) throw profileError;
                 console.log('✅ User profile created');
 
-              // Initialize PTO balance
+           // Initialize PTO balance
 const { error: ptoError } = await signupClient
     .from('pto_balances')
     .insert({
         user_id: authData.user.id,
-        available_hours: 0,
-        used_hours: 0
+        pto_balance: 0,
+        sick_balance: 0,
+        pto_accrual_rate: 0,
+        sick_accrual_rate: 0,
+        pto_annual_cap: 40,
+        sick_annual_cap: 40,
+        current_year: new Date().getFullYear(),
+        pto_used_this_year: 0,
+        sick_used_this_year: 0,
+        last_accrual_date: new Date().toISOString()
     });
+
+if (ptoError) throw ptoError;
+console.log('✅ PTO balance initialized');
+
 
 
                 if (ptoError) throw ptoError;
