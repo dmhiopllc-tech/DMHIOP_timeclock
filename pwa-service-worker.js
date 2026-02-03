@@ -1,15 +1,17 @@
 // DMH Time Clock - Service Worker for PWA
 // Provides offline support, caching, and background sync
 
-const CACHE_NAME = 'dmh-timeclock-v2';
+const CACHE_NAME = 'dmh-timeclock-v3';
 const urlsToCache = [
     '/',
-    '/employee-dashboard-v2.html',
-    '/admin-dashboard-standalone.html',
+    '/employee-dashboard-clean-fix.html',
     '/login-standalone.html',
+    '/signup-timeclock.html',
     '/timeclock-config-v2.js',
     '/timeclock-auth-v2.js',
-    '/timeclock-geofencing-v2.js'
+    '/timeclock-geofencing-v2.js',
+    '/logo.png',
+    '/manifest.json'
 ];
 
 // Install Service Worker
@@ -113,7 +115,7 @@ self.addEventListener('push', (event) => {
         badge: '/icons/icon-96x96.png',
         vibrate: [200, 100, 200],
         data: {
-            url: data.url || '/employee-dashboard-v2.html'
+            url: data.url || '/employee-dashboard-clean-fix.html'
         },
         requireInteraction: true
     };
@@ -129,7 +131,7 @@ self.addEventListener('notificationclick', (event) => {
     
     event.notification.close();
     
-    const urlToOpen = event.notification.data?.url || '/employee-dashboard-v2.html';
+    const urlToOpen = event.notification.data?.url || '/employee-dashboard-clean-fix.html';
     
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true })
