@@ -381,15 +381,15 @@
                 if (profileError) throw profileError;
                 console.log('✅ User profile created');
 
-                // Initialize PTO balance
-                const { error: ptoError } = await signupClient
-                    .from('pto_balances')
-                    .insert({
-                        user_id: authData.user.id,
-                        available_hours: 0,
-                        used_hours: 0,
-                        pending_hours: 0
-                    });
+              // Initialize PTO balance
+const { error: ptoError } = await signupClient
+    .from('pto_balances')
+    .insert({
+        user_id: authData.user.id,
+        available_hours: 0,
+        used_hours: 0
+    });
+
 
                 if (ptoError) throw ptoError;
                 console.log('✅ PTO balance initialized');
