@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DMH Time Clock - Redirecting...</title>
-    <meta http-equiv="refresh" content="0; url=login-standalone.html">
+    <meta http-equiv="refresh" content="0;url=login-standalone.html">
+    <title>DMH Time Clock</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#667eea">
     <style>
@@ -15,14 +15,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            margin: 0;
         }
-        .loader {
+        .redirect-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             text-align: center;
         }
         .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid white;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -33,19 +37,42 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #666;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <div class="loader">
+    <div class="redirect-container">
         <div class="spinner"></div>
-        <h2>DMH Time Clock</h2>
-        <p>Redirecting to login...</p>
+        <h1>Welcome to DMH Time Clock</h1>
+        <p>Redirecting to login page...</p>
     </div>
+
     <script>
-        // Fallback redirect if meta refresh doesn't work
-        setTimeout(() => {
-            window.location.href = 'login-standalone.html';
-        }, 100);
+        // Redirect to login-standalone.html
+        window.location.href = 'login-standalone.html';
+    </script>
+
+    <!-- Service Worker Registration for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/pwa-service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
     </script>
 </body>
 </html>
