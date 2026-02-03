@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#667eea">
     <style>
         * {
             margin: 0;
@@ -283,7 +283,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="timeclock-config-v2.js"></script>
     <script>
-        // Use a unique name to avoid conflicts with global supabase
         const signupClient = window.timeclockSupabase;
 
         // Password strength checker
@@ -354,7 +353,7 @@
 
             try {
                 console.log('🚀 Starting signup process...');
-                
+
                 // Sign up with Supabase
                 const { data: authData, error: authError } = await signupClient.auth.signUp({
                     email: email,
@@ -383,27 +382,22 @@
                 if (profileError) throw profileError;
                 console.log('✅ User profile created');
 
-           // Initialize PTO balance
-const { error: ptoError } = await signupClient
-    .from('pto_balances')
-    .insert({
-        user_id: authData.user.id,
-        pto_balance: 0,
-        sick_balance: 0,
-        pto_accrual_rate: 0,
-        sick_accrual_rate: 0,
-        pto_annual_cap: 40,
-        sick_annual_cap: 40,
-        current_year: new Date().getFullYear(),
-        pto_used_this_year: 0,
-        sick_used_this_year: 0,
-        last_accrual_date: new Date().toISOString()
-    });
-
-if (ptoError) throw ptoError;
-console.log('✅ PTO balance initialized');
-
-
+                // Initialize PTO balance
+                const { error: ptoError } = await signupClient
+                    .from('pto_balances')
+                    .insert({
+                        user_id: authData.user.id,
+                        pto_balance: 0,
+                        sick_balance: 0,
+                        pto_accrual_rate: 0,
+                        sick_accrual_rate: 0,
+                        pto_annual_cap: 40,
+                        sick_annual_cap: 40,
+                        current_year: new Date().getFullYear(),
+                        pto_used_this_year: 0,
+                        sick_used_this_year: 0,
+                        last_accrual_date: new Date().toISOString()
+                    });
 
                 if (ptoError) throw ptoError;
                 console.log('✅ PTO balance initialized');
@@ -420,7 +414,7 @@ console.log('✅ PTO balance initialized');
                 }, 2000);
 
             } catch (error) {
-                console.error('❌ Signup error:', error);
+                console.error('❌ Signup failed:', error);
                 alert('Signup failed: ' + (error.message || 'Please try again'));
                 
                 // Reset button state
@@ -429,6 +423,21 @@ console.log('✅ PTO balance initialized');
                 document.querySelector('.btn-signup').disabled = false;
             }
         });
+    </script>
+
+    <!-- Service Worker Registration for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/pwa-service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
     </script>
 </body>
 </html>
