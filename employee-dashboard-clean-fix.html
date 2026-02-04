@@ -64,6 +64,14 @@
             margin: 1rem 0;
             animation: slide-in 0.3s ease-out;
         }
+        .warning-message {
+            background: #f59e0b;
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            animation: slide-in 0.3s ease-out;
+        }
         .error-message {
             background: #ef4444;
             color: white;
@@ -291,7 +299,19 @@
             setupPWA();
             requestLocationPermission();
             startLocationMonitoring();
+            requestNotificationPermission();
         });
+
+        // Request notification permission
+        async function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                try {
+                    await Notification.requestPermission();
+                } catch (error) {
+                    console.log('Notification permission error:', error);
+                }
+            }
+        }
 
         // ===== AUTHENTICATION =====
         async function checkAuth() {
@@ -455,8 +475,9 @@
                 const location = await getCurrentLocation();
                 const validation = await validateGeofence(location.latitude, location.longitude);
 
+                // REQUIRE geofence for clock in/out
                 if (!validation.valid) {
-                    showMessage(validation.error, 'error');
+                    showMessage(validation.error || 'You must be at a work location to clock in/out', 'error');
                     return;
                 }
 
@@ -474,13 +495,17 @@
         }
 
         async function clockIn(location, workLocation) {
+            const clockInTime = new Date().toISOString();
+            
+            // Create time entry
             const { data, error } = await dashboardSupabase
                 .from('time_entries')
                 .insert({
                     user_id: currentUser.id,
-                    clock_in_time: new Date().toISOString(),
+                    clock_in_time: clockInTime,
                     clock_in_latitude: location.latitude,
-                    clock_in_longitude: location.longitude
+                    clock_in_longitude: location.longitude,
+                    work_location_id: workLocation.id
                 })
                 .select()
                 .single();
@@ -488,7 +513,7 @@
             if (error) throw error;
 
             currentEntry = data;
-            showMessage('Clocked in successfully!', 'success');
+            showMessage(`✓ Clocked in at ${workLocation.name}!`, 'success');
         }
 
         async function clockOut(location, workLocation) {
@@ -496,18 +521,20 @@
                 throw new Error('No active clock-in found');
             }
 
+            const clockOutTime = new Date().toISOString();
+
             const { error } = await dashboardSupabase
                 .from('time_entries')
                 .update({
-                    clock_out_time: new Date().toISOString(),
+                    clock_out_time: clockOutTime,
                     clock_out_latitude: location.latitude,
                     clock_out_longitude: location.longitude
                 })
                 .eq('id', currentEntry.id);
 
             if (error) throw error;
-
-            showMessage('Clocked out successfully!', 'success');
+            
+            showMessage(`✓ Clocked out from ${workLocation.name}!`, 'success');
             currentEntry = null;
         }
 
@@ -634,12 +661,23 @@
             }
         }
 
+        // Track user's geofence status
+        let lastGeofenceStatus = null;
+        let insideGeofence = false;
+
         function startLocationMonitoring() {
             if (navigator.geolocation) {
                 locationWatchId = navigator.geolocation.watchPosition(
                     position => {
-                        validateGeofence(position.coords.latitude, position.coords.longitude)
+                        const location = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        };
+                        
+                        validateGeofence(location.latitude, location.longitude)
                             .then(validation => {
+                                // Update status badge
                                 const statusEl = document.getElementById('locationStatus');
                                 if (validation.valid) {
                                     statusEl.textContent = `✓ At ${validation.location.name}`;
@@ -648,11 +686,156 @@
                                     statusEl.textContent = `✗ ${validation.distance}m from work`;
                                     statusEl.className = 'location-status location-invalid';
                                 }
+                                
+                                // Log geofence entry/exit events
+                                logGeofenceEvent(location, validation);
                             });
                     },
                     error => console.error('Location watch error:', error),
                     { enableHighAccuracy: true, maximumAge: 30000, timeout: 27000 }
                 );
+            }
+        }
+
+        async function logGeofenceEvent(location, validation) {
+            const nowInside = validation.valid;
+            
+            // Check if status changed (entered or exited geofence)
+            if (lastGeofenceStatus !== null && lastGeofenceStatus !== nowInside) {
+                const eventType = nowInside ? 'entry' : 'exit';
+                const eventTime = new Date().toISOString();
+                const locationName = validation.location?.name || validation.nearestLocation?.name || 'work location';
+                
+                try {
+                    // Create geofence event
+                    const { data: geofenceEvent, error: geoError } = await dashboardSupabase
+                        .from('geofence_events')
+                        .insert({
+                            user_id: currentUser.id,
+                            event_type: eventType,
+                            event_time: eventTime,
+                            latitude: location.latitude,
+                            longitude: location.longitude,
+                            distance_from_geofence: validation.distance || 0,
+                            nearest_location: locationName,
+                            is_resolved: false
+                        })
+                        .select()
+                        .single();
+
+                    if (geoError) {
+                        console.error('Error logging geofence event:', geoError);
+                        return;
+                    }
+
+                    console.log(`Geofence ${eventType} logged:`, geofenceEvent);
+                    
+                    // Show notification to employee
+                    if (eventType === 'entry') {
+                        // Entered geofence - check if already clocked in
+                        if (!currentEntry) {
+                            showReminderNotification(
+                                '🏢 You arrived at work!',
+                                `Don't forget to clock in at ${locationName}`,
+                                'warning'
+                            );
+                            // Also show browser notification if permitted
+                            showBrowserNotification(
+                                'Time to Clock In',
+                                `You've arrived at ${locationName}. Remember to clock in!`
+                            );
+                        }
+                    } else {
+                        // Exited geofence - check if still clocked in
+                        if (currentEntry) {
+                            showReminderNotification(
+                                '🚗 You left work!',
+                                `Don't forget to clock out from ${locationName}`,
+                                'warning'
+                            );
+                            // Also show browser notification if permitted
+                            showBrowserNotification(
+                                'Time to Clock Out',
+                                `You've left ${locationName}. Remember to clock out!`
+                            );
+                        }
+                    }
+                    
+                    // Create admin alert for manual review
+                    await dashboardSupabase
+                        .from('admin_alerts')
+                        .insert({
+                            user_id: currentUser.id,
+                            geofence_event_id: geofenceEvent.id,
+                            alert_type: 'geofence_tracking',
+                            severity: 'LOW',
+                            message: `${currentUser.full_name || currentUser.email} ${eventType === 'entry' ? 'entered' : 'exited'} ${locationName}`,
+                            is_resolved: false,
+                            created_at: eventTime
+                        });
+                        
+                } catch (error) {
+                    console.error('Error logging geofence event:', error);
+                }
+            }
+            
+            // Update status
+            lastGeofenceStatus = nowInside;
+            insideGeofence = nowInside;
+        }
+
+        // Show reminder notification (always visible)
+        function showReminderNotification(title, message, type) {
+            const container = document.getElementById('messageContainer');
+            const div = document.createElement('div');
+            
+            div.className = type === 'warning' ? 'warning-message' : 'success-message';
+            div.style.fontSize = '1.1rem';
+            div.style.fontWeight = 'bold';
+            div.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div style="font-size: 1.2rem; margin-bottom: 0.25rem;">${title}</div>
+                        <div style="font-size: 0.9rem; font-weight: normal;">${message}</div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200 ml-4">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+            
+            // Auto-dismiss after 10 seconds (longer for reminders)
+            setTimeout(() => div.remove(), 10000);
+        }
+
+        // Show browser notification (if permission granted)
+        async function showBrowserNotification(title, message) {
+            if (!('Notification' in window)) return;
+            
+            if (Notification.permission === 'granted') {
+                try {
+                    new Notification(title, {
+                        body: message,
+                        icon: 'logo.png',
+                        badge: 'logo.png',
+                        vibrate: [200, 100, 200],
+                        tag: 'clock-reminder'
+                    });
+                } catch (error) {
+                    console.log('Notification error:', error);
+                }
+            } else if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    new Notification(title, {
+                        body: message,
+                        icon: 'logo.png',
+                        badge: 'logo.png',
+                        vibrate: [200, 100, 200],
+                        tag: 'clock-reminder'
+                    });
+                }
             }
         }
 
@@ -759,7 +942,11 @@
         function showMessage(message, type) {
             const container = document.getElementById('messageContainer');
             const div = document.createElement('div');
-            div.className = type === 'success' ? 'success-message' : 'error-message';
+            let className = 'error-message';
+            if (type === 'success') className = 'success-message';
+            if (type === 'warning') className = 'warning-message';
+            
+            div.className = className;
             div.innerHTML = `
                 <div class="flex justify-between items-center">
                     <span>${message}</span>
