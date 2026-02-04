@@ -172,7 +172,7 @@
             <div class="bg-white rounded-lg shadow">
                 <div class="p-6 border-b flex justify-between items-center">
                     <h3 class="text-lg font-bold text-gray-800">
-                        <i class="fas fa-bell mr-2"></i>Geofence Alerts
+                        <i class="fas fa-map-marked-alt mr-2"></i>Geofence Activity Log
                     </h3>
                     <button onclick="loadAlerts()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
                         <i class="fas fa-sync mr-2"></i>Refresh
@@ -605,46 +605,107 @@
 
         async function loadAlerts() {
             try {
-                const { data: alerts, error } = await adminClient
-                    .from('admin_alert_summary')
-                    .select('*')
-                    .order('alert_time', { ascending: false });
+                // Load geofence events with user info and check for matching time entries
+                const { data: events, error } = await adminClient
+                    .from('geofence_events')
+                    .select(`
+                        *,
+                        users!geofence_events_user_id_fkey (full_name, email),
+                        time_entries!geofence_events_time_entry_id_fkey (clock_in_time, clock_out_time)
+                    `)
+                    .eq('is_resolved', false)
+                    .order('event_time', { ascending: false })
+                    .limit(50);
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Alerts query error:', error);
+                    throw error;
+                }
 
-                if (!alerts || alerts.length === 0) {
-                    document.getElementById('alerts-list').innerHTML = '<div class="text-center py-8"><i class="fas fa-check-circle text-4xl text-green-500 mb-2"></i><p class="text-gray-600">No unresolved alerts! 🎉</p></div>';
+                if (!events || events.length === 0) {
+                    document.getElementById('alerts-list').innerHTML = '<div class="text-center py-8"><i class="fas fa-check-circle text-4xl text-green-500 mb-2"></i><p class="text-gray-600">No geofence events to review! 🎉</p></div>';
                     return;
                 }
 
                 let html = '<div class="space-y-4">';
 
-                alerts.forEach(alert => {
-                    const severityClass = alert.severity === 'high' ? 'alert-high' : alert.severity === 'medium' ? 'alert-medium' : 'alert-low';
-                    const alertTime = new Date(alert.alert_time).toLocaleString();
-                    const eventTime = new Date(alert.event_time).toLocaleString();
+                events.forEach(event => {
+                    const employeeName = event.users?.full_name || event.users?.email || 'Unknown';
+                    const eventTime = new Date(event.event_time);
+                    const eventTimeStr = eventTime.toLocaleString();
+                    const eventType = event.event_type === 'entry' ? 'entered' : 'exited';
+                    const location = event.nearest_location || 'work location';
+                    const distance = event.distance_from_geofence || 0;
+                    
+                    // Check if there's a matching time entry within 15 minutes
+                    const hasTimeEntry = event.time_entry_id && event.time_entries;
+                    
+                    let statusBadge = '';
+                    let actionButton = '';
+                    
+                    if (event.event_type === 'entry') {
+                        // Entry event - check for clock-in
+                        if (hasTimeEntry) {
+                            const clockInTime = new Date(event.time_entries.clock_in_time);
+                            const diffMinutes = Math.abs((clockInTime - eventTime) / 60000);
+                            if (diffMinutes <= 15) {
+                                statusBadge = '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-200 text-green-800">Clocked In</span>';
+                            } else {
+                                statusBadge = '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-200 text-yellow-800">Late Clock-In (${Math.round(diffMinutes)}min)</span>';
+                            }
+                        } else {
+                            statusBadge = '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-200 text-red-800">No Clock-In</span>';
+                            actionButton = `
+                                <button onclick="createTimeEntry('${event.id}', '${event.user_id}', '${event.event_time}', 'clock_in')" 
+                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors mr-2">
+                                    <i class="fas fa-clock mr-1"></i>Create Clock-In
+                                </button>
+                            `;
+                        }
+                    } else {
+                        // Exit event - check for clock-out
+                        if (hasTimeEntry && event.time_entries.clock_out_time) {
+                            const clockOutTime = new Date(event.time_entries.clock_out_time);
+                            const diffMinutes = Math.abs((clockOutTime - eventTime) / 60000);
+                            if (diffMinutes <= 15) {
+                                statusBadge = '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-200 text-green-800">Clocked Out</span>';
+                            } else {
+                                statusBadge = '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-200 text-yellow-800">Late Clock-Out (${Math.round(diffMinutes)}min)</span>';
+                            }
+                        } else {
+                            statusBadge = '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-200 text-red-800">No Clock-Out</span>';
+                            actionButton = `
+                                <button onclick="createTimeEntry('${event.id}', '${event.user_id}', '${event.event_time}', 'clock_out')" 
+                                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors mr-2">
+                                    <i class="fas fa-clock mr-1"></i>Create Clock-Out
+                                </button>
+                            `;
+                        }
+                    }
                     
                     html += `
-                        <div class="${severityClass} p-4 rounded">
+                        <div class="bg-white p-4 rounded-lg border-l-4 ${event.event_type === 'entry' ? 'border-green-500' : 'border-red-500'} shadow-sm">
                             <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <h4 class="font-bold">${alert.employee_name}</h4>
-                                    <p class="text-sm text-gray-600">${alert.alert_message}</p>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-gray-900">${employeeName}</h4>
+                                    <p class="text-sm text-gray-700">
+                                        <i class="fas fa-${event.event_type === 'entry' ? 'sign-in-alt' : 'sign-out-alt'} mr-1"></i>
+                                        ${eventType} <strong>${location}</strong>
+                                    </p>
                                 </div>
-                                <span class="px-2 py-1 text-xs rounded-full bg-${alert.severity === 'high' ? 'red' : alert.severity === 'medium' ? 'yellow' : 'blue'}-200 text-${alert.severity === 'high' ? 'red' : alert.severity === 'medium' ? 'yellow' : 'blue'}-800">
-                                    ${alert.severity.toUpperCase()}
-                                </span>
+                                ${statusBadge}
                             </div>
                             <p class="text-xs text-gray-600 mb-3">
-                                <i class="fas fa-clock mr-1"></i>Event: ${eventTime} | 
-                                <i class="fas fa-map-marker-alt mr-1"></i>${alert.location_name || 'Unknown Location'}
+                                <i class="fas fa-clock mr-1"></i>${eventTimeStr}
+                                ${distance > 0 ? ` | <i class="fas fa-map-marker-alt mr-1"></i>${distance}m from location` : ''}
                             </p>
-                            ${!alert.is_resolved ? `
-                                <button onclick="resolveAlert('${alert.alert_id}', '${alert.geofence_event_id}', '${alert.user_id}', '${alert.event_time}')" 
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
-                                    <i class="fas fa-check mr-1"></i>Create Entry & Resolve
+                            <div class="flex items-center gap-2">
+                                ${actionButton}
+                                <button onclick="resolveEvent('${event.id}')" 
+                                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-check mr-1"></i>Mark Resolved
                                 </button>
-                            ` : ''}
+                            </div>
                         </div>
                     `;
                 });
@@ -654,7 +715,113 @@
 
             } catch (error) {
                 console.error('Error loading alerts:', error);
-                document.getElementById('alerts-list').innerHTML = '<p class="text-red-600">Error loading alerts</p>';
+                document.getElementById('alerts-list').innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-2"></i>
+                        <p class="text-red-600 font-semibold">Error loading geofence events</p>
+                        <p class="text-sm text-gray-600 mt-2">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function createTimeEntry(eventId, userId, eventTime, entryType) {
+            if (!confirm(`Create ${entryType === 'clock_in' ? 'clock-in' : 'clock-out'} entry at ${new Date(eventTime).toLocaleString()}?`)) return;
+
+            try {
+                if (entryType === 'clock_in') {
+                    // Create new time entry with clock-in
+                    const { data, error } = await adminClient
+                        .from('time_entries')
+                        .insert({
+                            user_id: userId,
+                            clock_in_time: eventTime,
+                            created_by_admin: true,
+                            created_by: currentUser.id
+                        })
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+
+                    // Link geofence event to time entry
+                    await adminClient
+                        .from('geofence_events')
+                        .update({
+                            time_entry_id: data.id
+                        })
+                        .eq('id', eventId);
+
+                    showMessage('Clock-in entry created successfully!', 'success');
+                } else {
+                    // Find most recent open entry for this user
+                    const { data: openEntries, error: findError } = await adminClient
+                        .from('time_entries')
+                        .select('*')
+                        .eq('user_id', userId)
+                        .is('clock_out_time', null)
+                        .order('clock_in_time', { ascending: false })
+                        .limit(1);
+
+                    if (findError) throw findError;
+
+                    if (!openEntries || openEntries.length === 0) {
+                        throw new Error('No open time entry found for this employee');
+                    }
+
+                    const entry = openEntries[0];
+
+                    // Update with clock-out
+                    const { error: updateError } = await adminClient
+                        .from('time_entries')
+                        .update({
+                            clock_out_time: eventTime,
+                            updated_by_admin: true,
+                            updated_by: currentUser.id
+                        })
+                        .eq('id', entry.id);
+
+                    if (updateError) throw updateError;
+
+                    // Link geofence event to time entry
+                    await adminClient
+                        .from('geofence_events')
+                        .update({
+                            time_entry_id: entry.id
+                        })
+                        .eq('id', eventId);
+
+                    showMessage('Clock-out entry created successfully!', 'success');
+                }
+
+                await loadAlerts();
+                await loadDashboardData();
+
+            } catch (error) {
+                console.error('Error creating time entry:', error);
+                showMessage('Failed to create time entry: ' + error.message, 'error');
+            }
+        }
+
+        async function resolveEvent(eventId) {
+            if (!confirm('Mark this geofence event as resolved?')) return;
+
+            try {
+                await adminClient
+                    .from('geofence_events')
+                    .update({
+                        is_resolved: true,
+                        resolved_by: currentUser.id,
+                        resolved_at: new Date().toISOString()
+                    })
+                    .eq('id', eventId);
+
+                showMessage('Event resolved!', 'success');
+                await loadAlerts();
+
+            } catch (error) {
+                console.error('Error resolving event:', error);
+                showMessage('Failed to resolve event: ' + error.message, 'error');
             }
         }
 
@@ -662,99 +829,62 @@
             if (!confirm('Create time entry for this event and resolve alert?')) return;
 
             try {
-                // Determine if this is clock in or clock out based on event type
-                const { data: geoEvent } = await adminClient
+                // Get the geofence event details
+                const { data: geoEvent, error: geoError } = await adminClient
                     .from('geofence_events')
-                    .select('event_type')
+                    .select('event_type, time_entry_id')
                     .eq('id', geofenceEventId)
                     .single();
 
-                if (geoEvent.event_type === 'entry') {
-                    // Create clock-in entry
-                    const { data: entry, error: entryError } = await adminClient
-                        .from('time_entries')
-                        .insert({
-                            user_id: userId,
-                            clock_in_time: eventTime,
-                            status: 'clocked_in',
-                            manually_adjusted: true,
-                            adjusted_by: currentUser.id,
-                            adjusted_at: new Date().toISOString(),
-                            adjustment_reason: 'Auto-created from geofence alert'
-                        })
-                        .select()
-                        .single();
+                if (geoError) throw geoError;
 
-                    if (entryError) throw entryError;
+                // Mark the geofence event as resolved
+                await adminClient
+                    .from('geofence_events')
+                    .update({
+                        is_resolved: true,
+                        resolved_by: currentUser.id,
+                        resolved_at: new Date().toISOString()
+                    })
+                    .eq('id', geofenceEventId);
 
-                    // Update geofence event
-                    await adminClient
-                        .from('geofence_events')
-                        .update({
-                            has_clock_entry: true,
-                            related_time_entry_id: entry.id,
-                            alert_resolved: true
-                        })
-                        .eq('id', geofenceEventId);
-                } else {
-                    // Find latest open entry and close it
-                    const { data: openEntry } = await adminClient
-                        .from('time_entries')
-                        .select('*')
-                        .eq('user_id', userId)
-                        .eq('status', 'clocked_in')
-                        .order('clock_in_time', { ascending: false })
-                        .limit(1)
-                        .single();
-
-                    if (openEntry) {
-                        const clockOutTime = new Date(eventTime);
-                        const clockInTime = new Date(openEntry.clock_in_time);
-                        const hours = (clockOutTime - clockInTime) / (1000 * 60 * 60);
-
-                        await adminClient
-                            .from('time_entries')
-                            .update({
-                                clock_out_time: eventTime,
-                                total_hours: hours.toFixed(2),
-                                status: 'completed',
-                                manually_adjusted: true,
-                                adjusted_by: currentUser.id,
-                                adjusted_at: new Date().toISOString(),
-                                adjustment_reason: 'Auto-completed from geofence alert'
-                            })
-                            .eq('id', openEntry.id);
-
-                        await adminClient
-                            .from('geofence_events')
-                            .update({
-                                has_clock_entry: true,
-                                related_time_entry_id: openEntry.id,
-                                alert_resolved: true
-                            })
-                            .eq('id', geofenceEventId);
-                    }
-                }
-
-                // Resolve the alert
+                // Mark the admin alert as resolved
                 await adminClient
                     .from('admin_alerts')
                     .update({
                         is_resolved: true,
                         resolved_by: currentUser.id,
-                        resolved_at: new Date().toISOString(),
-                        resolution_notes: 'Time entry created from geofence data'
+                        resolved_at: new Date().toISOString()
                     })
                     .eq('id', alertId);
 
-                alert('Alert resolved and time entry created!');
-                loadAlerts();
-                loadDashboardData();
+                showMessage('Alert resolved successfully!', 'success');
+                await loadAlerts();
+                await loadDashboardData();
 
             } catch (error) {
                 console.error('Error resolving alert:', error);
-                alert('Error resolving alert. Please try manually.');
+                showMessage('Failed to resolve alert: ' + error.message, 'error');
             }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            let bgColor = 'bg-red-500';
+            if (type === 'success') bgColor = 'bg-green-500';
+            if (type === 'warning') bgColor = 'bg-yellow-500';
+            
+            messageDiv.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${bgColor} text-white max-w-md`;
+            messageDiv.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(messageDiv);
+            setTimeout(() => messageDiv.remove(), 5000);
         }
 
         async function loadPayPeriods() {
