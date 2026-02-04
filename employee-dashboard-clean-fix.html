@@ -13,6 +13,15 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#667eea">
     
+    <!-- iOS/Apple PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DMH Time Clock">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-192x192.png">
+    
     <style>
         .clock-btn {
             transition: all 0.3s ease;
@@ -912,6 +921,21 @@
                     .catch(err => console.error('Service Worker registration failed:', err));
             }
 
+            // Check if iOS and not already installed
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isInstalled = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+            
+            if (isIOS && !isInstalled) {
+                // Show iOS install prompt after 5 seconds
+                setTimeout(() => {
+                    const installPrompt = document.getElementById('installPrompt');
+                    if (installPrompt) {
+                        installPrompt.style.display = 'block';
+                        installPrompt.querySelector('p').textContent = '📱 Install this app on your iPhone for the best experience!';
+                    }
+                }, 5000);
+            }
+
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
@@ -920,7 +944,19 @@
         }
 
         async function installPWA() {
-            if (!deferredPrompt) return;
+            // Detect iOS
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            
+            if (isIOS) {
+                // iOS doesn't support beforeinstallprompt, show manual instructions
+                alert('📱 To install on iPhone:\n\n1. Tap the Share button (□↑)\n2. Scroll and tap "Add to Home Screen"\n3. Tap "Add"\n\nThe app will appear on your home screen!');
+                return;
+            }
+            
+            if (!deferredPrompt) {
+                alert('📱 To install:\n\niPhone: Share → Add to Home Screen\nAndroid: Menu (⋮) → Install app');
+                return;
+            }
             
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
