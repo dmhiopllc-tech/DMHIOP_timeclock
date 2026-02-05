@@ -1153,8 +1153,8 @@
                         user_id: currentUser.id,
                         start_date: startDate,
                         end_date: endDate,
-                        type: type,
-                        reason: reason,
+                        request_type: type,
+                        employee_note: reason,
                         status: 'pending'
                     });
 
@@ -1189,12 +1189,12 @@
                         <div class="flex justify-between items-start mb-2">
                             <div>
                                 <p class="font-semibold text-gray-800">${formatDate(req.start_date)} - ${formatDate(req.end_date)}</p>
-                                <p class="text-sm text-gray-600">${capitalizeFirst(req.type)}</p>
+                                <p class="text-sm text-gray-600">${req.request_type ? capitalizeFirst(req.request_type) : 'N/A'}</p>
                             </div>
                             <span class="badge badge-${req.status}">${capitalizeFirst(req.status)}</span>
                         </div>
-                        ${req.reason ? `<p class="text-sm text-gray-600 mt-2">${req.reason}</p>` : ''}
-                        ${req.manager_notes ? `<p class="text-sm text-gray-500 mt-2 italic">Manager: ${req.manager_notes}</p>` : ''}
+                        ${req.employee_note ? `<p class="text-sm text-gray-600 mt-2">${req.employee_note}</p>` : ''}
+                        ${req.manager_note ? `<p class="text-sm text-gray-500 mt-2 italic">Manager: ${req.manager_note}</p>` : ''}
                     </div>
                 `).join('');
             } catch (error) {
@@ -1291,6 +1291,7 @@
         }
 
         function capitalizeFirst(str) {
+            if (!str) return '';
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
 
