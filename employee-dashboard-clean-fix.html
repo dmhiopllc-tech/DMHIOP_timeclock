@@ -522,6 +522,27 @@
             if (error) throw error;
 
             currentEntry = data;
+            
+            // Link to most recent geofence entry event (within last 10 minutes)
+            try {
+                const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+                await dashboardSupabase
+                    .from('geofence_events')
+                    .update({ 
+                        related_time_entry_id: data.id,
+                        time_entry_id: data.id,
+                        has_clock_entry: true
+                    })
+                    .eq('user_id', currentUser.id)
+                    .eq('event_type', 'entry')
+                    .gte('event_time', tenMinutesAgo)
+                    .is('related_time_entry_id', null)
+                    .order('event_time', { ascending: false })
+                    .limit(1);
+            } catch (linkError) {
+                console.log('Could not link to geofence event:', linkError);
+            }
+            
             showMessage(`✓ Clocked in at ${workLocation.name}!`, 'success');
         }
 
@@ -542,6 +563,26 @@
                 .eq('id', currentEntry.id);
 
             if (error) throw error;
+            
+            // Link to most recent geofence exit event (within last 10 minutes)
+            try {
+                const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+                await dashboardSupabase
+                    .from('geofence_events')
+                    .update({ 
+                        related_time_entry_id: currentEntry.id,
+                        time_entry_id: currentEntry.id,
+                        has_clock_entry: true
+                    })
+                    .eq('user_id', currentUser.id)
+                    .eq('event_type', 'exit')
+                    .gte('event_time', tenMinutesAgo)
+                    .is('related_time_entry_id', null)
+                    .order('event_time', { ascending: false })
+                    .limit(1);
+            } catch (linkError) {
+                console.log('Could not link to geofence event:', linkError);
+            }
             
             showMessage(`✓ Clocked out from ${workLocation.name}!`, 'success');
             currentEntry = null;
@@ -716,18 +757,29 @@
                 const locationName = validation.location?.name || validation.nearestLocation?.name || 'work location';
                 
                 try {
+                    // Get work location ID
+                    const { data: workLoc } = await dashboardSupabase
+                        .from('work_locations')
+                        .select('id')
+                        .eq('name', locationName)
+                        .single();
+                    
                     // Create geofence event
                     const { data: geofenceEvent, error: geoError } = await dashboardSupabase
                         .from('geofence_events')
                         .insert({
                             user_id: currentUser.id,
+                            location_id: workLoc?.id || (await dashboardSupabase.from('work_locations').select('id').limit(1).single()).data.id,
                             event_type: eventType,
                             event_time: eventTime,
                             latitude: location.latitude,
                             longitude: location.longitude,
                             distance_from_geofence: validation.distance || 0,
                             nearest_location: locationName,
-                            is_resolved: false
+                            is_resolved: false,
+                            has_clock_entry: false,
+                            alert_generated: true,
+                            alert_resolved: false
                         })
                         .select()
                         .single();
@@ -740,9 +792,20 @@
                     console.log(`Geofence ${eventType} logged:`, geofenceEvent);
                     
                     // Show notification to employee
+                    // Re-check current clock status from database to be accurate
+                    const { data: activeEntries } = await dashboardSupabase
+                        .from('time_entries')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .is('clock_out_time', null)
+                        .order('clock_in_time', { ascending: false })
+                        .limit(1);
+                    
+                    const isClockedIn = activeEntries && activeEntries.length > 0;
+                    
                     if (eventType === 'entry') {
                         // Entered geofence - check if already clocked in
-                        if (!currentEntry) {
+                        if (!isClockedIn) {
                             showReminderNotification(
                                 '🏢 You arrived at work!',
                                 `Don't forget to clock in at ${locationName}`,
@@ -756,7 +819,7 @@
                         }
                     } else {
                         // Exited geofence - check if still clocked in
-                        if (currentEntry) {
+                        if (isClockedIn) {
                             showReminderNotification(
                                 '🚗 You left work!',
                                 `Don't forget to clock out from ${locationName}`,
