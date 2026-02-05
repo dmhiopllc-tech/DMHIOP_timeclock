@@ -60,6 +60,10 @@
                 <button onclick="showTab('locations')" id="tab-locations" class="tab-btn py-4 px-2 border-b-2 border-transparent text-gray-600 hover:text-gray-800">
                     <i class="fas fa-map-marker-alt mr-2"></i>Locations
                 </button>
+                <button onclick="showTab('messages')" id="tab-messages" class="tab-btn py-4 px-2 border-b-2 border-transparent text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-envelope mr-2"></i>Messages
+                    <span id="message-badge" class="ml-2 px-2 py-1 text-xs rounded-full bg-blue-600 text-white hidden">0</span>
+                </button>
             </nav>
         </div>
     </div>
@@ -275,6 +279,25 @@
             </div>
         </div>
 
+        <!-- Messages Tab -->
+        <div id="content-messages" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800">
+                        <i class="fas fa-envelope mr-2"></i>Send Message to Employees
+                    </h3>
+                    <button onclick="showSendMessageModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-paper-plane mr-2"></i>New Message
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div id="messages-list">
+                        <p class="text-gray-600">Loading messages...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Edit PTO Modal -->
@@ -367,6 +390,97 @@
         </div>
     </div>
 
+    <!-- Send Message Modal -->
+    <div id="sendMessageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-4">Send Message to Employees</h3>
+            <form id="sendMessageForm" onsubmit="return sendMessage(event)">
+                
+                <!-- Message Templates -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Quick Templates</label>
+                    <select id="message-template" onchange="applyTemplate()" class="w-full border rounded px-3 py-2">
+                        <option value="">-- Select a template --</option>
+                        <option value="forgot_clock_out">Forgot to Clock Out</option>
+                        <option value="forgot_clock_in">Forgot to Clock In</option>
+                        <option value="schedule_change">Schedule Update</option>
+                        <option value="pto_approved">PTO Request Approved</option>
+                        <option value="general_reminder">General Reminder</option>
+                        <option value="custom">Custom Message</option>
+                    </select>
+                </div>
+
+                <!-- Recipient Type -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Send To</label>
+                    <select id="recipient-type" onchange="updateRecipientOptions()" class="w-full border rounded px-3 py-2" required>
+                        <option value="">-- Select recipient type --</option>
+                        <option value="all">All Employees</option>
+                        <option value="individual">Specific Employee</option>
+                        <option value="group">Group</option>
+                    </select>
+                </div>
+
+                <!-- Individual Recipient -->
+                <div id="individual-recipient" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Employee</label>
+                    <select id="recipient-id" class="w-full border rounded px-3 py-2">
+                        <option value="">Loading employees...</option>
+                    </select>
+                </div>
+
+                <!-- Group Recipient -->
+                <div id="group-recipient" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Group</label>
+                    <select id="recipient-group" class="w-full border rounded px-3 py-2">
+                        <option value="manager">Managers</option>
+                        <option value="employee">All Employees</option>
+                        <option value="admin">Admins</option>
+                    </select>
+                </div>
+
+                <!-- Priority -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                    <select id="message-priority" class="w-full border rounded px-3 py-2" required>
+                        <option value="normal">Normal</option>
+                        <option value="urgent">Urgent (Red Banner)</option>
+                        <option value="info">Info (Blue Banner)</option>
+                    </select>
+                </div>
+
+                <!-- Subject -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                    <input type="text" id="message-subject" class="w-full border rounded px-3 py-2" required placeholder="e.g., Time Entry Correction">
+                </div>
+
+                <!-- Message -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                    <textarea id="message-content" rows="6" class="w-full border rounded px-3 py-2" required placeholder="Type your message here..."></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Variables: {employee_name}, {admin_name}, {clock_in_time}, {clock_out_time}, {dates}</p>
+                </div>
+
+                <!-- Hidden fields for context -->
+                <input type="hidden" id="related-time-entry">
+                <input type="hidden" id="related-geofence-event">
+                <input type="hidden" id="context-employee-name">
+                <input type="hidden" id="context-clock-in-time">
+                <input type="hidden" id="context-clock-out-time">
+
+                <div class="flex space-x-3">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
+                        <i class="fas fa-paper-plane mr-2"></i>Send Message
+                    </button>
+                    <button type="button" onclick="closeSendMessageModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 py-2 rounded">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
@@ -439,6 +553,7 @@
             if (tabName === 'payroll') loadPayrollPreview();
             if (tabName === 'approvals') loadApprovals();
             if (tabName === 'locations') loadLocations();
+            if (tabName === 'messages') loadMessages();
         }
 
         async function loadDashboardData() {
@@ -611,7 +726,7 @@
                     .select(`
                         *,
                         users!geofence_events_user_id_fkey (full_name, email),
-                        time_entries!geofence_events_time_entry_id_fkey (clock_in_time, clock_out_time)
+                        time_entries!geofence_events_related_time_entry_id_fkey (clock_in_time, clock_out_time)
                     `)
                     .eq('is_resolved', false)
                     .order('event_time', { ascending: false })
@@ -638,7 +753,7 @@
                     const distance = event.distance_from_geofence || 0;
                     
                     // Check if there's a matching time entry within 15 minutes
-                    const hasTimeEntry = event.time_entry_id && event.time_entries;
+                    const hasTimeEntry = event.related_time_entry_id && event.time_entries;
                     
                     let statusBadge = '';
                     let actionButton = '';
@@ -701,6 +816,14 @@
                             </p>
                             <div class="flex items-center gap-2">
                                 ${actionButton}
+                                <button onclick="editGeofenceTime('${event.id}', '${event.user_id}', '${event.event_time}', '${event.event_type}')" 
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-edit mr-1"></i>Edit Time
+                                </button>
+                                <button onclick="sendMessageFromEvent('${event.id}', '${event.user_id}', '${employeeName}', '${event.event_type}', '${event.event_time}')" 
+                                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-envelope mr-1"></i>Send Message
+                                </button>
                                 <button onclick="resolveEvent('${event.id}')" 
                                     class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
                                     <i class="fas fa-check mr-1"></i>Mark Resolved
@@ -748,7 +871,9 @@
                     await adminClient
                         .from('geofence_events')
                         .update({
-                            time_entry_id: data.id
+                            related_time_entry_id: data.id,
+                            time_entry_id: data.id,
+                            has_clock_entry: true
                         })
                         .eq('id', eventId);
 
@@ -787,7 +912,9 @@
                     await adminClient
                         .from('geofence_events')
                         .update({
-                            time_entry_id: entry.id
+                            related_time_entry_id: entry.id,
+                            time_entry_id: entry.id,
+                            has_clock_entry: true
                         })
                         .eq('id', eventId);
 
@@ -822,6 +949,77 @@
             } catch (error) {
                 console.error('Error resolving event:', error);
                 showMessage('Failed to resolve event: ' + error.message, 'error');
+            }
+        }
+
+        async function editGeofenceTime(eventId, userId, eventTime, eventType) {
+            const currentTime = new Date(eventTime);
+            const dateStr = currentTime.toISOString().slice(0, 16); // Format for datetime-local input
+            
+            const newTime = prompt(
+                `Edit ${eventType === 'entry' ? 'arrival' : 'departure'} time:\n\nCurrent: ${currentTime.toLocaleString()}\n\nEnter new time (YYYY-MM-DD HH:MM):`,
+                dateStr.replace('T', ' ')
+            );
+            
+            if (!newTime) return; // Cancelled
+            
+            try {
+                // Parse the new time
+                const newDateTime = new Date(newTime.replace(' ', 'T'));
+                if (isNaN(newDateTime.getTime())) {
+                    throw new Error('Invalid date/time format. Please use YYYY-MM-DD HH:MM');
+                }
+                
+                const newTimeISO = newDateTime.toISOString();
+                
+                // Update the geofence event time
+                const { error: updateError } = await adminClient
+                    .from('geofence_events')
+                    .update({
+                        event_time: newTimeISO,
+                        updated_by_admin: true,
+                        updated_by: currentUser.id
+                    })
+                    .eq('id', eventId);
+                    
+                if (updateError) throw updateError;
+                
+                // If there's a linked time entry, update it too
+                const { data: event } = await adminClient
+                    .from('geofence_events')
+                    .select('related_time_entry_id')
+                    .eq('id', eventId)
+                    .single();
+                    
+                if (event && event.related_time_entry_id) {
+                    if (eventType === 'entry') {
+                        await adminClient
+                            .from('time_entries')
+                            .update({
+                                clock_in_time: newTimeISO,
+                                updated_by_admin: true,
+                                updated_by: currentUser.id
+                            })
+                            .eq('id', event.related_time_entry_id);
+                    } else {
+                        await adminClient
+                            .from('time_entries')
+                            .update({
+                                clock_out_time: newTimeISO,
+                                updated_by_admin: true,
+                                updated_by: currentUser.id
+                            })
+                            .eq('id', event.related_time_entry_id);
+                    }
+                }
+                
+                showMessage(`Time updated to ${newDateTime.toLocaleString()}!`, 'success');
+                await loadAlerts();
+                await loadDashboardData();
+                
+            } catch (error) {
+                console.error('Error editing time:', error);
+                showMessage('Failed to edit time: ' + error.message, 'error');
             }
         }
 
@@ -1533,6 +1731,363 @@
             }
             
             return false;
+        }
+
+        // ===============================================
+        // MESSAGING SYSTEM
+        // ===============================================
+
+        // Message templates
+        const messageTemplates = {
+            forgot_clock_out: {
+                subject: "Time Entry Correction - Clock Out",
+                message: "Hi {employee_name},\n\nWe noticed you forgot to clock out yesterday. We've created a clock-out entry for you at {clock_out_time}.\n\nPlease remember to clock out when leaving work to ensure accurate time tracking.\n\nThanks,\n{admin_name}",
+                priority: "normal",
+                type: "time_correction"
+            },
+            forgot_clock_in: {
+                subject: "Time Entry Correction - Clock In",
+                message: "Hi {employee_name},\n\nWe noticed you forgot to clock in today. We've created a clock-in entry for you at {clock_in_time} based on the geofence data.\n\nPlease remember to clock in when arriving at work.\n\nThanks,\n{admin_name}",
+                priority: "normal",
+                type: "time_correction"
+            },
+            schedule_change: {
+                subject: "Schedule Update",
+                message: "Hi {employee_name},\n\nYour schedule has been updated. Please check your schedule and confirm.\n\nIf you have any questions, please reach out.\n\nThanks,\n{admin_name}",
+                priority: "urgent",
+                type: "announcement"
+            },
+            pto_approved: {
+                subject: "PTO Request Approved ✅",
+                message: "Hi {employee_name},\n\nGreat news! Your PTO request for {dates} has been approved.\n\nEnjoy your time off!\n\n{admin_name}",
+                priority: "info",
+                type: "announcement"
+            },
+            general_reminder: {
+                subject: "Reminder",
+                message: "Hi Team,\n\n[Your message here]\n\nThanks,\n{admin_name}",
+                priority: "normal",
+                type: "reminder"
+            }
+        };
+
+        function showSendMessageModal(recipientId = null, employeeName = null, context = {}) {
+            // Load employees if not already loaded
+            loadEmployeesForMessaging();
+            
+            // Pre-fill if sending to specific employee
+            if (recipientId) {
+                document.getElementById('recipient-type').value = 'individual';
+                updateRecipientOptions();
+                setTimeout(() => {
+                    document.getElementById('recipient-id').value = recipientId;
+                }, 500);
+            }
+            
+            // Store context for template variables
+            if (context.timeEntryId) {
+                document.getElementById('related-time-entry').value = context.timeEntryId;
+            }
+            if (context.geofenceEventId) {
+                document.getElementById('related-geofence-event').value = context.geofenceEventId;
+            }
+            if (context.template) {
+                document.getElementById('message-template').value = context.template;
+                if (employeeName) {
+                    document.getElementById('context-employee-name').value = employeeName;
+                }
+                if (context.clockInTime) {
+                    document.getElementById('context-clock-in-time').value = context.clockInTime;
+                }
+                if (context.clockOutTime) {
+                    document.getElementById('context-clock-out-time').value = context.clockOutTime;
+                }
+                applyTemplate();
+            }
+            
+            document.getElementById('sendMessageModal').classList.remove('hidden');
+        }
+
+        function closeSendMessageModal() {
+            document.getElementById('sendMessageModal').classList.add('hidden');
+            document.getElementById('sendMessageForm').reset();
+            document.getElementById('related-time-entry').value = '';
+            document.getElementById('related-geofence-event').value = '';
+            document.getElementById('context-employee-name').value = '';
+            document.getElementById('context-clock-in-time').value = '';
+            document.getElementById('context-clock-out-time').value = '';
+            updateRecipientOptions();
+        }
+
+        async function loadEmployeesForMessaging() {
+            try {
+                const { data: employees, error } = await adminClient
+                    .from('users')
+                    .select('id, full_name, email')
+                    .eq('role', 'employee')
+                    .eq('is_active', true)
+                    .order('full_name');
+
+                if (error) throw error;
+
+                let options = '<option value="">-- Select an employee --</option>';
+                employees.forEach(emp => {
+                    options += `<option value="${emp.id}">${emp.full_name} (${emp.email})</option>`;
+                });
+
+                document.getElementById('recipient-id').innerHTML = options;
+
+            } catch (error) {
+                console.error('Error loading employees:', error);
+            }
+        }
+
+        function updateRecipientOptions() {
+            const recipientType = document.getElementById('recipient-type').value;
+            
+            document.getElementById('individual-recipient').classList.add('hidden');
+            document.getElementById('group-recipient').classList.add('hidden');
+            
+            if (recipientType === 'individual') {
+                document.getElementById('individual-recipient').classList.remove('hidden');
+                document.getElementById('recipient-id').required = true;
+                document.getElementById('recipient-group').required = false;
+            } else if (recipientType === 'group') {
+                document.getElementById('group-recipient').classList.remove('hidden');
+                document.getElementById('recipient-group').required = true;
+                document.getElementById('recipient-id').required = false;
+            } else {
+                document.getElementById('recipient-id').required = false;
+                document.getElementById('recipient-group').required = false;
+            }
+        }
+
+        function applyTemplate() {
+            const templateKey = document.getElementById('message-template').value;
+            if (!templateKey || templateKey === 'custom') return;
+
+            const template = messageTemplates[templateKey];
+            if (!template) return;
+
+            document.getElementById('message-subject').value = template.subject;
+            document.getElementById('message-priority').value = template.priority;
+            
+            let message = template.message;
+            
+            // Replace variables
+            message = message.replace('{admin_name}', currentUser.full_name || 'Admin');
+            
+            const employeeName = document.getElementById('context-employee-name').value;
+            if (employeeName) {
+                message = message.replace('{employee_name}', employeeName);
+            }
+            
+            const clockInTime = document.getElementById('context-clock-in-time').value;
+            if (clockInTime) {
+                message = message.replace('{clock_in_time}', new Date(clockInTime).toLocaleString());
+            }
+            
+            const clockOutTime = document.getElementById('context-clock-out-time').value;
+            if (clockOutTime) {
+                message = message.replace('{clock_out_time}', new Date(clockOutTime).toLocaleString());
+            }
+            
+            document.getElementById('message-content').value = message;
+        }
+
+        async function sendMessage(event) {
+            event.preventDefault();
+            
+            try {
+                const recipientType = document.getElementById('recipient-type').value;
+                const recipientId = document.getElementById('recipient-id').value || null;
+                const recipientGroup = document.getElementById('recipient-group').value || null;
+                const subject = document.getElementById('message-subject').value;
+                const message = document.getElementById('message-content').value;
+                const priority = document.getElementById('message-priority').value;
+                const relatedTimeEntry = document.getElementById('related-time-entry').value || null;
+                const relatedGeofenceEvent = document.getElementById('related-geofence-event').value || null;
+                
+                const { error } = await adminClient
+                    .from('admin_messages')
+                    .insert({
+                        sender_id: currentUser.id,
+                        sender_name: currentUser.full_name,
+                        subject: subject,
+                        message: message,
+                        priority: priority,
+                        message_type: 'general',
+                        recipient_type: recipientType,
+                        recipient_id: recipientId,
+                        recipient_group: recipientGroup,
+                        related_time_entry_id: relatedTimeEntry,
+                        related_geofence_event_id: relatedGeofenceEvent
+                    });
+
+                if (error) throw error;
+
+                let recipientText = '';
+                if (recipientType === 'all') {
+                    recipientText = 'all employees';
+                } else if (recipientType === 'individual') {
+                    const empName = document.getElementById('recipient-id').options[document.getElementById('recipient-id').selectedIndex].text;
+                    recipientText = empName;
+                } else {
+                    recipientText = recipientGroup;
+                }
+
+                showMessage(`Message sent to ${recipientText}!`, 'success');
+                closeSendMessageModal();
+                loadMessages();
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                showMessage('Failed to send message: ' + error.message, 'error');
+            }
+            
+            return false;
+        }
+
+        async function loadMessages() {
+            try {
+                const { data: messages, error } = await adminClient
+                    .from('admin_messages')
+                    .select('*')
+                    .eq('sender_id', currentUser.id)
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                if (!messages || messages.length === 0) {
+                    document.getElementById('messages-list').innerHTML = `
+                        <div class="text-center py-8">
+                            <i class="fas fa-envelope text-4xl text-gray-400 mb-2"></i>
+                            <p class="text-gray-600">No messages sent yet</p>
+                            <p class="text-sm text-gray-500 mt-2">Click "New Message" to send your first message</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '<div class="space-y-4">';
+
+                for (const msg of messages) {
+                    const createdDate = new Date(msg.created_at).toLocaleString();
+                    
+                    // Get read count
+                    const { count: readCount } = await adminClient
+                        .from('message_read_receipts')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('message_id', msg.id);
+                    
+                    let recipientText = '';
+                    let recipientBadge = '';
+                    if (msg.recipient_type === 'all') {
+                        recipientText = 'All Employees';
+                        recipientBadge = 'bg-blue-100 text-blue-800';
+                    } else if (msg.recipient_type === 'individual') {
+                        // Get employee name
+                        const { data: emp } = await adminClient
+                            .from('users')
+                            .select('full_name')
+                            .eq('id', msg.recipient_id)
+                            .single();
+                        recipientText = emp?.full_name || 'Unknown Employee';
+                        recipientBadge = 'bg-green-100 text-green-800';
+                    } else {
+                        recipientText = msg.recipient_group;
+                        recipientBadge = 'bg-purple-100 text-purple-800';
+                    }
+
+                    let priorityBadge = '';
+                    if (msg.priority === 'urgent') {
+                        priorityBadge = '<span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Urgent</span>';
+                    } else if (msg.priority === 'info') {
+                        priorityBadge = '<span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Info</span>';
+                    }
+
+                    html += `
+                        <div class="border rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 class="font-bold text-gray-900">${msg.subject}</h4>
+                                    <p class="text-sm text-gray-600">To: <span class="px-2 py-1 text-xs rounded-full ${recipientBadge}">${recipientText}</span> ${priorityBadge}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-500">${createdDate}</p>
+                                    <p class="text-xs text-gray-600 mt-1"><i class="fas fa-eye mr-1"></i>${readCount || 0} read</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-700 whitespace-pre-line">${msg.message.substring(0, 150)}${msg.message.length > 150 ? '...' : ''}</p>
+                            <div class="mt-3 flex space-x-2">
+                                <button onclick="viewMessageDetails('${msg.id}')" class="text-blue-600 hover:text-blue-800 text-sm">
+                                    <i class="fas fa-eye mr-1"></i>View Full
+                                </button>
+                                <button onclick="deactivateMessage('${msg.id}')" class="text-red-600 hover:text-red-800 text-sm">
+                                    <i class="fas fa-trash mr-1"></i>Deactivate
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+                document.getElementById('messages-list').innerHTML = html;
+
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                document.getElementById('messages-list').innerHTML = '<p class="text-red-600">Error loading messages</p>';
+            }
+        }
+
+        async function viewMessageDetails(messageId) {
+            try {
+                const { data: msg, error } = await adminClient
+                    .from('admin_messages')
+                    .select('*')
+                    .eq('id', messageId)
+                    .single();
+
+                if (error) throw error;
+
+                alert(`Subject: ${msg.subject}\n\nMessage:\n${msg.message}\n\nSent: ${new Date(msg.created_at).toLocaleString()}`);
+
+            } catch (error) {
+                console.error('Error loading message details:', error);
+            }
+        }
+
+        async function deactivateMessage(messageId) {
+            if (!confirm('Deactivate this message? It will no longer be visible to employees.')) return;
+
+            try {
+                const { error } = await adminClient
+                    .from('admin_messages')
+                    .update({ is_active: false })
+                    .eq('id', messageId);
+
+                if (error) throw error;
+
+                showMessage('Message deactivated!', 'success');
+                loadMessages();
+
+            } catch (error) {
+                console.error('Error deactivating message:', error);
+                showMessage('Failed to deactivate message', 'error');
+            }
+        }
+
+        function sendMessageFromEvent(eventId, userId, employeeName, eventType, eventTime) {
+            const template = eventType === 'entry' ? 'forgot_clock_in' : 'forgot_clock_out';
+            const context = {
+                geofenceEventId: eventId,
+                template: template,
+                clockInTime: eventType === 'entry' ? eventTime : null,
+                clockOutTime: eventType === 'exit' ? eventTime : null
+            };
+            
+            showSendMessageModal(userId, employeeName, context);
         }
     </script>
 </body>
