@@ -1147,6 +1147,20 @@
                 const type = document.getElementById('ptoType').value;
                 const reason = document.getElementById('ptoReason').value;
 
+                // Calculate hours requested (business days * 8 hours)
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                let businessDays = 0;
+                
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    const dayOfWeek = d.getDay();
+                    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Skip weekends
+                        businessDays++;
+                    }
+                }
+                
+                const hoursRequested = businessDays * 8;
+
                 const { error } = await dashboardSupabase
                     .from('time_off_requests')
                     .insert({
@@ -1155,6 +1169,7 @@
                         end_date: endDate,
                         request_type: type,
                         employee_note: reason,
+                        hours_requested: hoursRequested,
                         status: 'pending'
                     });
 
