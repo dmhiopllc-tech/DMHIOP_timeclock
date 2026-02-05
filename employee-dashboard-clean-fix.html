@@ -148,14 +148,35 @@
                     <p class="text-sm text-gray-600" id="userInfo">Loading...</p>
                 </div>
             </div>
-            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
-                <i class="fas fa-sign-out-alt mr-2"></i>Logout
-            </button>
+            <div class="flex items-center space-x-4">
+                <button onclick="openMessageCenter()" class="relative hover:bg-gray-100 p-2 rounded-lg transition">
+                    <i class="fas fa-envelope text-xl text-gray-600"></i>
+                    <span id="message-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                </button>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+            </div>
         </div>
     </header>
 
     <!-- Location Status Badge -->
     <div id="locationStatus" class="location-status"></div>
+
+    <!-- Message Center Modal -->
+    <div id="messageCenter" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center bg-indigo-600 text-white">
+                <h2 class="text-xl font-bold"><i class="fas fa-envelope mr-2"></i>Messages</h2>
+                <button onclick="closeMessageCenter()" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="messageList" class="p-4 overflow-y-auto max-h-[60vh]">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- PWA Install Prompt -->
     <div id="installPrompt">
@@ -305,6 +326,8 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuth();
             await loadDashboardData();
+            await checkUnreadMessagesOnLogin();
+            startMessagePolling();
             setupPWA();
             requestLocationPermission();
             startLocationMonitoring();
@@ -352,11 +375,181 @@
 
         async function logout() {
             try {
+                stopMessagePolling();
                 await dashboardSupabase.auth.signOut();
                 window.location.href = 'login-standalone.html';
             } catch (error) {
                 console.error('Logout error:', error);
                 showMessage('Logout failed', 'error');
+            }
+        }
+
+        // ===== MESSAGING SYSTEM =====
+        let messagePollInterval = null;
+
+        async function loadMessages() {
+            try {
+                if (!currentUser) return [];
+                
+                const { data: messages, error } = await dashboardSupabase
+                    .from('admin_messages')
+                    .select(`
+                        *,
+                        read_receipt:message_read_receipts!message_read_receipts_message_id_fkey(read_at)
+                    `)
+                    .or(`recipient_type.eq.all,and(recipient_type.eq.individual,recipient_id.eq.${currentUser.id})`)
+                    .eq('is_active', true)
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                // Count unread messages
+                const unreadCount = messages.filter(msg => !msg.read_receipt || msg.read_receipt.length === 0).length;
+                
+                updateMessageBadge(unreadCount);
+                displayMessages(messages);
+                
+                return messages;
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                return [];
+            }
+        }
+
+        function updateMessageBadge(count) {
+            const badge = document.getElementById('message-badge');
+            if (count > 0) {
+                badge.textContent = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function displayMessages(messages) {
+            const messageList = document.getElementById('messageList');
+            
+            if (!messages || messages.length === 0) {
+                messageList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-3"></i>
+                        <p>No messages yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            messageList.innerHTML = messages.map(msg => {
+                const isRead = msg.read_receipt && msg.read_receipt.length > 0;
+                const priorityClass = msg.priority === 'urgent' ? 'border-l-4 border-red-500 bg-red-50' : '';
+                const unreadClass = !isRead ? 'bg-blue-50 font-semibold' : '';
+                
+                return `
+                    <div class="mb-4 p-4 border rounded-lg ${priorityClass} ${unreadClass}">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex-1">
+                                ${msg.priority === 'urgent' ? '<span class="text-red-600 text-xs font-bold mr-2">🔴 URGENT</span>' : ''}
+                                <h3 class="font-bold text-lg">${msg.subject}</h3>
+                                <p class="text-sm text-gray-600">From: ${msg.sender_name}</p>
+                                <p class="text-xs text-gray-500">${new Date(msg.created_at).toLocaleString()}</p>
+                            </div>
+                            ${!isRead ? `
+                                <button onclick="markAsRead('${msg.id}')" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Mark Read
+                                </button>
+                            ` : `
+                                <span class="text-green-600 text-sm"><i class="fas fa-check-circle"></i> Read</span>
+                            `}
+                        </div>
+                        <p class="text-gray-700 whitespace-pre-wrap">${msg.message}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function markAsRead(messageId) {
+            try {
+                if (!currentUser) return;
+
+                // Insert read receipt
+                const { error } = await dashboardSupabase
+                    .from('message_read_receipts')
+                    .insert({
+                        message_id: messageId,
+                        user_id: currentUser.id,
+                        read_at: new Date().toISOString()
+                    });
+
+                if (error) throw error;
+
+                // Reload messages to update UI
+                await loadMessages();
+                
+                showMessage('Message marked as read', 'success');
+            } catch (error) {
+                console.error('Error marking message as read:', error);
+                showMessage('Failed to mark as read', 'error');
+            }
+        }
+
+        function openMessageCenter() {
+            document.getElementById('messageCenter').classList.remove('hidden');
+            loadMessages();
+        }
+
+        function closeMessageCenter() {
+            document.getElementById('messageCenter').classList.add('hidden');
+        }
+
+        async function checkForNewMessages() {
+            const messages = await loadMessages();
+            
+            // Check for urgent unread messages
+            const urgentUnread = messages.filter(msg => 
+                msg.priority === 'urgent' && 
+                (!msg.read_receipt || msg.read_receipt.length === 0)
+            );
+
+            // Show browser notification for urgent messages
+            if (urgentUnread.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
+                urgentUnread.slice(0, 1).forEach(msg => {
+                    new Notification('🔴 Urgent Message', {
+                        body: msg.subject,
+                        icon: '/icons/icon-192x192.png',
+                        badge: '/icons/icon-192x192.png'
+                    });
+                });
+            }
+        }
+
+        function startMessagePolling() {
+            // Check for messages immediately
+            checkForNewMessages();
+            
+            // Then check every 30 seconds
+            messagePollInterval = setInterval(checkForNewMessages, 30000);
+        }
+
+        function stopMessagePolling() {
+            if (messagePollInterval) {
+                clearInterval(messagePollInterval);
+                messagePollInterval = null;
+            }
+        }
+
+        // Show login pop-up if unread messages
+        async function checkUnreadMessagesOnLogin() {
+            const messages = await loadMessages();
+            const unread = messages.filter(msg => !msg.read_receipt || msg.read_receipt.length === 0);
+            
+            if (unread.length > 0) {
+                // Show first unread message
+                const msg = unread[0];
+                const shouldOpen = confirm(`📬 You have ${unread.length} new message(s)!\n\n"${msg.subject}"\n\nOpen Message Center?`);
+                if (shouldOpen) {
+                    openMessageCenter();
+                }
             }
         }
 
