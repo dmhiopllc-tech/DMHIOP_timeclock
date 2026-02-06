@@ -1066,10 +1066,10 @@
                             user_id: currentUser.id,
                             geofence_event_id: geofenceEvent.id,
                             alert_type: 'geofence_tracking',
-                            severity: 'LOW',
-                            message: `${currentUser.full_name || currentUser.email} ${eventType === 'entry' ? 'entered' : 'exited'} ${locationName}`,
+                            severity: 'low',
+                            alert_message: `${currentUser.full_name || currentUser.email} ${eventType === 'entry' ? 'entered' : 'exited'} ${locationName}`,
                             is_resolved: false,
-                            created_at: eventTime
+                            alert_time: eventTime
                         });
                         
                 } catch (error) {
