@@ -907,34 +907,88 @@
                     if (findError) throw findError;
 
                     if (!openEntries || openEntries.length === 0) {
-                        throw new Error('No open time entry found for this employee');
+                        // No open entry found - ask admin if they want to create a full entry
+                        const createFull = confirm(
+                            'No open clock-in found for this employee.\n\n' +
+                            'Would you like to create a FULL time entry (both clock-in and clock-out)?\n\n' +
+                            'Click OK to create full entry, or Cancel to skip.'
+                        );
+                        
+                        if (createFull) {
+                            // Ask for clock-in time (default to 8 hours before clock-out)
+                            const eventDate = new Date(eventTime);
+                            const defaultClockIn = new Date(eventDate.getTime() - (8 * 60 * 60 * 1000));
+                            const clockInStr = defaultClockIn.toISOString().slice(0, 16).replace('T', ' ');
+                            
+                            const clockInInput = prompt(
+                                'Enter clock-in time (YYYY-MM-DD HH:MM):',
+                                clockInStr
+                            );
+                            
+                            if (!clockInInput) {
+                                showMessage('Clock-out creation cancelled', 'warning');
+                                return;
+                            }
+                            
+                            const clockInTime = new Date(clockInInput.replace(' ', 'T')).toISOString();
+                            
+                            // Create full entry
+                            const { data: newEntry, error: createError } = await adminClient
+                                .from('time_entries')
+                                .insert({
+                                    user_id: userId,
+                                    clock_in_time: clockInTime,
+                                    clock_out_time: eventTime,
+                                    created_by_admin: true,
+                                    created_by: currentUser.id
+                                })
+                                .select()
+                                .single();
+                            
+                            if (createError) throw createError;
+                            
+                            // Link geofence event to time entry
+                            await adminClient
+                                .from('geofence_events')
+                                .update({
+                                    related_time_entry_id: newEntry.id,
+                                    time_entry_id: newEntry.id,
+                                    has_clock_entry: true
+                                })
+                                .eq('id', eventId);
+                            
+                            showMessage('Full time entry created successfully!', 'success');
+                        } else {
+                            showMessage('Clock-out creation cancelled', 'warning');
+                            return;
+                        }
+                    } else {
+                        const entry = openEntries[0];
+
+                        // Update with clock-out
+                        const { error: updateError } = await adminClient
+                            .from('time_entries')
+                            .update({
+                                clock_out_time: eventTime,
+                                updated_by_admin: true,
+                                updated_by: currentUser.id
+                            })
+                            .eq('id', entry.id);
+
+                        if (updateError) throw updateError;
+
+                        // Link geofence event to time entry
+                        await adminClient
+                            .from('geofence_events')
+                            .update({
+                                related_time_entry_id: entry.id,
+                                time_entry_id: entry.id,
+                                has_clock_entry: true
+                            })
+                            .eq('id', eventId);
+
+                        showMessage('Clock-out entry created successfully!', 'success');
                     }
-
-                    const entry = openEntries[0];
-
-                    // Update with clock-out
-                    const { error: updateError } = await adminClient
-                        .from('time_entries')
-                        .update({
-                            clock_out_time: eventTime,
-                            updated_by_admin: true,
-                            updated_by: currentUser.id
-                        })
-                        .eq('id', entry.id);
-
-                    if (updateError) throw updateError;
-
-                    // Link geofence event to time entry
-                    await adminClient
-                        .from('geofence_events')
-                        .update({
-                            related_time_entry_id: entry.id,
-                            time_entry_id: entry.id,
-                            has_clock_entry: true
-                        })
-                        .eq('id', eventId);
-
-                    showMessage('Clock-out entry created successfully!', 'success');
                 }
 
                 await loadAlerts();
