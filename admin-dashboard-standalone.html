@@ -972,12 +972,20 @@
 
                     showMessage('Clock-in entry created successfully!', 'success');
                 } else {
-                    // Find most recent open entry for this user
+                    // Find open entry from THE SAME DAY (prevent multi-day shifts)
+                    const eventDate = new Date(eventTime);
+                    const startOfDay = new Date(eventDate);
+                    startOfDay.setHours(0, 0, 0, 0);
+                    const endOfDay = new Date(eventDate);
+                    endOfDay.setHours(23, 59, 59, 999);
+                    
                     const { data: openEntries, error: findError } = await adminClient
                         .from('time_entries')
                         .select('*')
                         .eq('user_id', userId)
                         .is('clock_out_time', null)
+                        .gte('clock_in_time', startOfDay.toISOString())
+                        .lte('clock_in_time', endOfDay.toISOString())
                         .order('clock_in_time', { ascending: false })
                         .limit(1);
 
