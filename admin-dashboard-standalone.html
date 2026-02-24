@@ -920,6 +920,28 @@
             if (!confirm(`Create ${entryType === 'clock_in' ? 'clock-in' : 'clock-out'} entry at ${new Date(eventTime).toLocaleString()}?`)) return;
 
             try {
+                // Get the geofence location coordinates if lat/lon are null
+                let finalLat = latitude;
+                let finalLon = longitude;
+                
+                if (!finalLat || !finalLon || finalLat === 'null' || finalLon === 'null') {
+                    // Fetch location coordinates from geofence_locations
+                    const { data: location } = await adminClient
+                        .from('geofence_locations')
+                        .select('latitude, longitude')
+                        .eq('id', locationId)
+                        .single();
+                    
+                    if (location) {
+                        finalLat = location.latitude;
+                        finalLon = location.longitude;
+                    } else {
+                        // Default coordinates if location not found
+                        finalLat = 35.0844; // Albuquerque default
+                        finalLon = -106.6504;
+                    }
+                }
+
                 if (entryType === 'clock_in') {
                     // Create new time entry with clock-in
                     const { data, error } = await adminClient
@@ -927,8 +949,8 @@
                         .insert({
                             user_id: userId,
                             clock_in_time: eventTime,
-                            clock_in_latitude: latitude || 0,
-                            clock_in_longitude: longitude || 0,
+                            clock_in_latitude: parseFloat(finalLat),
+                            clock_in_longitude: parseFloat(finalLon),
                             clock_in_location_id: locationId || null,
                             created_by_admin: true,
                             created_by: currentUser.id
@@ -993,12 +1015,12 @@
                                 .insert({
                                     user_id: userId,
                                     clock_in_time: clockInTime,
-                                    clock_in_latitude: latitude || 0,
-                                    clock_in_longitude: longitude || 0,
+                                    clock_in_latitude: parseFloat(finalLat),
+                                    clock_in_longitude: parseFloat(finalLon),
                                     clock_in_location_id: locationId || null,
                                     clock_out_time: eventTime,
-                                    clock_out_latitude: latitude || 0,
-                                    clock_out_longitude: longitude || 0,
+                                    clock_out_latitude: parseFloat(finalLat),
+                                    clock_out_longitude: parseFloat(finalLon),
                                     clock_out_location_id: locationId || null,
                                     created_by_admin: true,
                                     created_by: currentUser.id
