@@ -29,6 +29,9 @@
                 </div>
             </div>
             <div class="flex items-center space-x-4">
+                <a href="login-standalone.html" class="text-blue-600 hover:text-blue-700 font-semibold">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login
+                </a>
                 <button onclick="handleLogout()" class="text-red-600 hover:text-red-700 font-semibold">
                     <i class="fas fa-sign-out-alt mr-2"></i>Logout
                 </button>
@@ -166,12 +169,17 @@
                 
                 if (sessionError) {
                     console.error('❌ Session error:', sessionError);
-                    throw sessionError;
+                    isAuthChecking = false;
+                    document.getElementById('userName').textContent = 'Error loading session';
+                    document.getElementById('payroll-preview').innerHTML = '<div class="bg-red-50 p-4 rounded"><p class="text-red-600"><strong>Session error.</strong> Please clear cookies and <a href="login-standalone.html" class="underline">log in again</a>.</p></div>';
+                    return;
                 }
                 
-                if (!session) {
-                    console.log('❌ No session found, redirecting to login...');
-                    window.location.href = 'login-standalone.html';
+                if (!session || !session.user) {
+                    console.log('❌ No session found');
+                    document.getElementById('userName').textContent = 'Not logged in';
+                    document.getElementById('payroll-preview').innerHTML = '<div class="bg-yellow-50 p-4 rounded"><p class="text-yellow-700"><strong>Not logged in.</strong> Please <a href="login-standalone.html" class="underline font-semibold">log in</a> first.</p></div>';
+                    isAuthChecking = false;
                     return;
                 }
 
@@ -185,16 +193,17 @@
 
                 if (profileError) {
                     console.error('❌ Error fetching profile:', profileError);
-                    alert('Error loading profile: ' + profileError.message);
+                    document.getElementById('userName').textContent = 'Profile error';
+                    document.getElementById('payroll-preview').innerHTML = '<div class="bg-red-50 p-4 rounded"><p class="text-red-600"><strong>Error loading profile:</strong> ' + profileError.message + '</p></div>';
                     isAuthChecking = false;
                     return;
                 }
 
                 if (!userProfile) {
                     console.error('❌ No user profile found');
-                    alert('User profile not found in database.');
-                    await adminClient.auth.signOut();
-                    window.location.href = 'login-standalone.html';
+                    document.getElementById('userName').textContent = 'Profile not found';
+                    document.getElementById('payroll-preview').innerHTML = '<div class="bg-red-50 p-4 rounded"><p class="text-red-600"><strong>User profile not found.</strong> Contact IT support.</p></div>';
+                    isAuthChecking = false;
                     return;
                 }
 
@@ -202,9 +211,9 @@
 
                 if (userProfile.role !== 'admin') {
                     console.error('❌ User is not admin, role:', userProfile.role);
-                    alert('Access denied. Admin privileges required. Your role: ' + userProfile.role);
-                    await adminClient.auth.signOut();
-                    window.location.href = 'employee-dashboard-clean-fix.html';
+                    document.getElementById('userName').textContent = userProfile.full_name + ' (Access Denied)';
+                    document.getElementById('payroll-preview').innerHTML = '<div class="bg-red-50 p-4 rounded"><p class="text-red-600"><strong>Access denied.</strong> Admin role required. Your role: <code>' + userProfile.role + '</code></p></div>';
+                    isAuthChecking = false;
                     return;
                 }
 
@@ -216,7 +225,8 @@
                 
             } catch (error) {
                 console.error('❌ Auth error:', error);
-                alert('Authentication error: ' + error.message);
+                document.getElementById('userName').textContent = 'Auth error';
+                document.getElementById('payroll-preview').innerHTML = '<div class="bg-red-50 p-4 rounded"><p class="text-red-600"><strong>Authentication error:</strong> ' + error.message + '</p></div>';
                 isAuthChecking = false;
             }
         }
