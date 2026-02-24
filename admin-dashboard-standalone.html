@@ -390,6 +390,47 @@
         </div>
     </div>
 
+    <!-- Edit Pay Rate Modal -->
+    <div id="editPayRateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 class="text-lg font-bold mb-4">Edit Pay Rate & Settings</h3>
+            <form id="editPayRateForm" onsubmit="return savePayRateEdit(event)">
+                <input type="hidden" id="edit-payrate-user-id">
+                <div class="mb-4">
+                    <p class="font-semibold" id="edit-payrate-employee-name"></p>
+                    <p class="text-sm text-gray-600" id="edit-payrate-email"></p>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Hourly Pay Rate ($)</label>
+                        <input type="number" step="0.01" id="edit-pay-rate" class="w-full border rounded px-3 py-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Overtime Threshold (hours/week)</label>
+                        <input type="number" step="0.1" id="edit-overtime-threshold" class="w-full border rounded px-3 py-2" required>
+                        <p class="text-xs text-gray-500 mt-1">Usually 40 hours per week</p>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="edit-overtime-eligible" class="mr-2">
+                        <label class="text-sm font-medium">Overtime Eligible</label>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Reason for Change</label>
+                        <textarea id="edit-payrate-reason" class="w-full border rounded px-3 py-2" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex space-x-3">
+                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded">
+                        Save Changes
+                    </button>
+                    <button type="button" onclick="closePayRateModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 py-2 rounded">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Send Message Modal -->
     <div id="sendMessageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -671,6 +712,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pay Rate</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pay Period Hours</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">PTO Balance</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sick Balance</th>
@@ -700,7 +742,10 @@
                         pto_accrual_rate: emp.pto_accrual_rate || 0,
                         sick_accrual_rate: emp.sick_accrual_rate || 0,
                         pto_annual_cap: emp.pto_annual_cap || 40,
-                        sick_annual_cap: emp.sick_annual_cap || 16
+                        sick_annual_cap: emp.sick_annual_cap || 16,
+                        pay_rate: emp.pay_rate || 0,
+                        overtime_eligible: emp.overtime_eligible || false,
+                        overtime_threshold: emp.overtime_threshold || 40
                     }).replace(/"/g, '&quot;');
                     
                     html += `
@@ -711,14 +756,21 @@
                                     <div class="text-xs text-gray-500">${emp.email}</div>
                                 </div>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="font-semibold text-green-600">$${(emp.pay_rate || 0).toFixed(2)}/hr</div>
+                                <div class="text-xs text-gray-500">${emp.overtime_eligible ? 'OT Eligible' : 'No OT'}</div>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap font-semibold">${(emp.current_period_hours || 0).toFixed(2)} hrs</td>
                             <td class="px-6 py-4 whitespace-nowrap">${(emp.pto_balance || 0).toFixed(2)} / ${emp.pto_annual_cap || 40} hrs</td>
                             <td class="px-6 py-4 whitespace-nowrap">${(emp.sick_balance || 0).toFixed(2)} / ${emp.sick_annual_cap || 16} hrs</td>
                             <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
                             <td class="px-6 py-4 whitespace-nowrap">${alertBadge}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
+                                <button onclick='editPayRate(${empData})' class="text-green-600 hover:text-green-800 text-sm mr-2">
+                                    <i class="fas fa-dollar-sign"></i> Pay
+                                </button>
                                 <button onclick='editPTO(${empData})' class="text-blue-600 hover:text-blue-800 text-sm">
-                                    <i class="fas fa-edit"></i> Edit PTO
+                                    <i class="fas fa-calendar"></i> PTO
                                 </button>
                             </td>
                         </tr>
@@ -1753,6 +1805,106 @@
             } catch (error) {
                 console.error('Error saving PTO edit:', error);
                 alert('Error saving changes: ' + error.message);
+            }
+            
+            return false;
+        }
+
+        // ===============================================
+        // PAY RATE EDITING
+        // ===============================================
+
+        let currentEditPayRate = null;
+
+        function editPayRate(empData) {
+            currentEditPayRate = empData;
+            
+            document.getElementById('edit-payrate-user-id').value = empData.user_id;
+            document.getElementById('edit-payrate-employee-name').textContent = empData.full_name;
+            document.getElementById('edit-payrate-email').textContent = empData.email;
+            document.getElementById('edit-pay-rate').value = empData.pay_rate || 0;
+            document.getElementById('edit-overtime-threshold').value = empData.overtime_threshold || 40;
+            document.getElementById('edit-overtime-eligible').checked = empData.overtime_eligible || false;
+            document.getElementById('edit-payrate-reason').value = '';
+            
+            document.getElementById('editPayRateModal').classList.remove('hidden');
+        }
+
+        function closePayRateModal() {
+            document.getElementById('editPayRateModal').classList.add('hidden');
+            currentEditPayRate = null;
+        }
+
+        async function savePayRateEdit(event) {
+            event.preventDefault();
+            
+            if (!currentEditPayRate) {
+                alert('Error: No employee selected');
+                return false;
+            }
+            
+            const userId = document.getElementById('edit-payrate-user-id').value;
+            const payRate = parseFloat(document.getElementById('edit-pay-rate').value);
+            const overtimeThreshold = parseFloat(document.getElementById('edit-overtime-threshold').value);
+            const overtimeEligible = document.getElementById('edit-overtime-eligible').checked;
+            const reason = document.getElementById('edit-payrate-reason').value;
+            
+            if (!reason.trim()) {
+                alert('Please provide a reason for the change');
+                return false;
+            }
+            
+            if (payRate < 0) {
+                alert('Pay rate cannot be negative');
+                return false;
+            }
+            
+            try {
+                // Create audit trail
+                const { error: auditError } = await adminClient
+                    .from('pay_rate_audit')
+                    .insert({
+                        user_id: userId,
+                        admin_id: currentUser.id,
+                        adjustment_reason: reason,
+                        old_pay_rate: currentEditPayRate.pay_rate,
+                        new_pay_rate: payRate,
+                        old_overtime_threshold: currentEditPayRate.overtime_threshold,
+                        new_overtime_threshold: overtimeThreshold,
+                        old_overtime_eligible: currentEditPayRate.overtime_eligible,
+                        new_overtime_eligible: overtimeEligible
+                    });
+                
+                if (auditError) {
+                    console.error('Audit error:', auditError);
+                    // Continue even if audit fails
+                }
+                
+                // Update the user's pay rate
+                const { error: updateError } = await adminClient
+                    .from('users')
+                    .update({
+                        pay_rate: payRate,
+                        overtime_threshold: overtimeThreshold,
+                        overtime_eligible: overtimeEligible
+                    })
+                    .eq('id', userId);
+                
+                if (updateError) {
+                    console.error('Update error:', updateError);
+                    throw updateError;
+                }
+                
+                showMessage(`Pay rate updated to $${payRate.toFixed(2)}/hr for ${currentEditPayRate.full_name}!`, 'success');
+                closePayRateModal();
+                
+                // Refresh the employees list
+                loadEmployees();
+                loadDashboardData();
+                
+            } catch (error) {
+                console.error('Error saving pay rate:', error);
+                showMessage('Error saving changes: ' + error.message, 'error');
             }
             
             return false;
