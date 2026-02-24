@@ -839,7 +839,7 @@
                         } else {
                             statusBadge = '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-200 text-red-800">No Clock-In</span>';
                             actionButton = `
-                                <button onclick="createTimeEntry('${event.id}', '${event.user_id}', '${event.event_time}', 'clock_in')" 
+                                <button onclick="createTimeEntry('${event.id}', '${event.user_id}', '${event.event_time}', 'clock_in', ${event.latitude}, ${event.longitude}, '${event.location_id || ''}')" 
                                     class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors mr-2">
                                     <i class="fas fa-clock mr-1"></i>Create Clock-In
                                 </button>
@@ -858,7 +858,7 @@
                         } else {
                             statusBadge = '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-200 text-red-800">No Clock-Out</span>';
                             actionButton = `
-                                <button onclick="createTimeEntry('${event.id}', '${event.user_id}', '${event.event_time}', 'clock_out')" 
+                                <button onclick="createTimeEntry('${event.id}', '${event.user_id}', '${event.event_time}', 'clock_out', ${event.latitude}, ${event.longitude}, '${event.location_id || ''}')" 
                                     class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors mr-2">
                                     <i class="fas fa-clock mr-1"></i>Create Clock-Out
                                 </button>
@@ -916,7 +916,7 @@
             }
         }
 
-        async function createTimeEntry(eventId, userId, eventTime, entryType) {
+        async function createTimeEntry(eventId, userId, eventTime, entryType, latitude, longitude, locationId) {
             if (!confirm(`Create ${entryType === 'clock_in' ? 'clock-in' : 'clock-out'} entry at ${new Date(eventTime).toLocaleString()}?`)) return;
 
             try {
@@ -927,6 +927,9 @@
                         .insert({
                             user_id: userId,
                             clock_in_time: eventTime,
+                            clock_in_latitude: latitude || 0,
+                            clock_in_longitude: longitude || 0,
+                            clock_in_location_id: locationId || null,
                             created_by_admin: true,
                             created_by: currentUser.id
                         })
@@ -990,7 +993,13 @@
                                 .insert({
                                     user_id: userId,
                                     clock_in_time: clockInTime,
+                                    clock_in_latitude: latitude || 0,
+                                    clock_in_longitude: longitude || 0,
+                                    clock_in_location_id: locationId || null,
                                     clock_out_time: eventTime,
+                                    clock_out_latitude: latitude || 0,
+                                    clock_out_longitude: longitude || 0,
+                                    clock_out_location_id: locationId || null,
                                     created_by_admin: true,
                                     created_by: currentUser.id
                                 })
