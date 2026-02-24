@@ -916,8 +916,318 @@
             }
         }
 
+        // ============================================================
+        // ENHANCED SMART CLOCK-IN/OUT SYSTEM
+        // ============================================================
+
+        // Check if time entry already exists within 30-minute window
+        async function hasExistingEntry(userId, eventTime, entryType) {
+            const eventDate = new Date(eventTime);
+            const thirtyMinBefore = new Date(eventDate.getTime() - 30 * 60000);
+            const thirtyMinAfter = new Date(eventDate.getTime() + 30 * 60000);
+            
+            if (entryType === 'clock_in') {
+                const { data } = await adminClient
+                    .from('time_entries')
+                    .select('id, clock_in_time')
+                    .eq('user_id', userId)
+                    .gte('clock_in_time', thirtyMinBefore.toISOString())
+                    .lte('clock_in_time', thirtyMinAfter.toISOString())
+                    .limit(1);
+                return data && data.length > 0;
+            } else {
+                const { data } = await adminClient
+                    .from('time_entries')
+                    .select('id, clock_out_time')
+                    .eq('user_id', userId)
+                    .not('clock_out_time', 'is', null)
+                    .gte('clock_out_time', thirtyMinBefore.toISOString())
+                    .lte('clock_out_time', thirtyMinAfter.toISOString())
+                    .limit(1);
+                return data && data.length > 0;
+            }
+        }
+
+        // Validate business hours (Mon-Fri 8am-8pm with 30-min buffer)
+        function isWithinBusinessHours(eventTime) {
+            const date = new Date(eventTime);
+            const day = date.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            const totalMinutes = hours * 60 + minutes;
+            
+            // Monday-Friday only
+            if (day === 0 || day === 6) {
+                return { valid: false, reason: 'Weekend (not Mon-Fri)', severity: 'high' };
+            }
+            
+            // 7:30 AM - 8:30 PM (with 30-min buffer)
+            const startTime = 7 * 60 + 30; // 7:30 AM
+            const endTime = 20 * 60 + 30;  // 8:30 PM
+            
+            if (totalMinutes < startTime) {
+                const hoursEarly = Math.floor((startTime - totalMinutes) / 60);
+                const minsEarly = (startTime - totalMinutes) % 60;
+                return { valid: false, reason: `${hoursEarly}h ${minsEarly}m before opening (7:30 AM)`, severity: 'medium' };
+            }
+            if (totalMinutes > endTime) {
+                const hoursLate = Math.floor((totalMinutes - endTime) / 60);
+                const minsLate = (totalMinutes - endTime) % 60;
+                return { valid: false, reason: `${hoursLate}h ${minsLate}m after closing (8:30 PM)`, severity: 'medium' };
+            }
+            
+            return { valid: true };
+        }
+
+        // Process entire day for an employee
+        async function processDayEntries(userId, userName, dateStr, entries, exits) {
+            if (!confirm(`Process all entries for ${userName} on ${dateStr}?\n\n${entries.length} entry events\n${exits.length} exit events`)) {
+                return;
+            }
+
+            const results = {
+                created: 0,
+                skipped: 0,
+                errors: [],
+                warnings: []
+            };
+            
+            // Sort by time
+            entries.sort((a, b) => new Date(a.event_time) - new Date(b.event_time));
+            exits.sort((a, b) => new Date(a.event_time) - new Date(b.event_time));
+            
+            showMessage('Processing entries...', 'info');
+            
+            // Match entries to exits
+            for (let i = 0; i < Math.max(entries.length, exits.length); i++) {
+                const entry = entries[i];
+                const exit = exits[i];
+                
+                try {
+                    // Create clock-in if needed
+                    if (entry && !entry.related_time_entry_id) {
+                        const hasExisting = await hasExistingEntry(userId, entry.event_time, 'clock_in');
+                        if (!hasExisting) {
+                            // Validate business hours
+                            const validation = isWithinBusinessHours(entry.event_time);
+                            if (!validation.valid && validation.severity === 'high') {
+                                results.warnings.push(`Clock-in skipped: ${validation.reason} at ${new Date(entry.event_time).toLocaleString()}`);
+                                continue;
+                            }
+                            
+                            await createTimeEntryInternal(
+                                entry.id,
+                                userId,
+                                entry.event_time,
+                                'clock_in',
+                                entry.latitude,
+                                entry.longitude,
+                                entry.location_id
+                            );
+                            results.created++;
+                        } else {
+                            results.skipped++;
+                        }
+                    }
+                    
+                    // Create clock-out if needed
+                    if (exit && !exit.related_time_entry_id) {
+                        const hasExisting = await hasExistingEntry(userId, exit.event_time, 'clock_out');
+                        if (!hasExisting) {
+                            // Validate business hours
+                            const validation = isWithinBusinessHours(exit.event_time);
+                            if (!validation.valid && validation.severity === 'high') {
+                                results.warnings.push(`Clock-out skipped: ${validation.reason} at ${new Date(exit.event_time).toLocaleString()}`);
+                                continue;
+                            }
+                            
+                            await createTimeEntryInternal(
+                                exit.id,
+                                userId,
+                                exit.event_time,
+                                'clock_out',
+                                exit.latitude,
+                                exit.longitude,
+                                exit.location_id
+                            );
+                            results.created++;
+                        } else {
+                            results.skipped++;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Process day error:', error);
+                    results.errors.push(`${new Date(entry?.event_time || exit?.event_time).toLocaleTimeString()}: ${error.message}`);
+                }
+            }
+            
+            // Show results
+            let message = `✅ Created: ${results.created}\n⏭️ Skipped: ${results.skipped}`;
+            if (results.warnings.length > 0) {
+                message += `\n\n⚠️ Warnings:\n${results.warnings.join('\n')}`;
+            }
+            if (results.errors.length > 0) {
+                message += `\n\n❌ Errors:\n${results.errors.join('\n')}`;
+            }
+            
+            alert(message);
+            await loadAlerts();
+            await loadDashboardData();
+        }
+
+        // Internal function to create time entry without confirmation
+        async function createTimeEntryInternal(eventId, userId, eventTime, entryType, latitude, longitude, locationId) {
+            // Get the geofence location coordinates if lat/lon are null
+            let finalLat = latitude;
+            let finalLon = longitude;
+            
+            if (!finalLat || !finalLon || finalLat === 'null' || finalLon === 'null') {
+                const { data: location } = await adminClient
+                    .from('geofence_locations')
+                    .select('latitude, longitude')
+                    .eq('id', locationId)
+                    .single();
+                
+                if (location) {
+                    finalLat = location.latitude;
+                    finalLon = location.longitude;
+                } else {
+                    finalLat = 35.0844;
+                    finalLon = -106.6504;
+                }
+            }
+
+            if (entryType === 'clock_in') {
+                const { data, error } = await adminClient
+                    .from('time_entries')
+                    .insert({
+                        user_id: userId,
+                        clock_in_time: eventTime,
+                        clock_in_latitude: parseFloat(finalLat),
+                        clock_in_longitude: parseFloat(finalLon),
+                        clock_in_location_id: locationId || null,
+                        created_by_admin: true,
+                        created_by: currentUser.id
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                await adminClient
+                    .from('geofence_events')
+                    .update({
+                        related_time_entry_id: data.id,
+                        time_entry_id: data.id,
+                        has_clock_entry: true
+                    })
+                    .eq('id', eventId);
+            } else {
+                // Find open entry from THE SAME DAY
+                const eventDate = new Date(eventTime);
+                const startOfDay = new Date(eventDate);
+                startOfDay.setHours(0, 0, 0, 0);
+                const endOfDay = new Date(eventDate);
+                endOfDay.setHours(23, 59, 59, 999);
+                
+                const { data: openEntries, error: findError } = await adminClient
+                    .from('time_entries')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .is('clock_out_time', null)
+                    .gte('clock_in_time', startOfDay.toISOString())
+                    .lte('clock_in_time', endOfDay.toISOString())
+                    .order('clock_in_time', { ascending: false })
+                    .limit(1);
+
+                if (findError) throw findError;
+
+                if (!openEntries || openEntries.length === 0) {
+                    // Create full entry with estimated clock-in (8 hours before)
+                    const clockInTime = new Date(new Date(eventTime).getTime() - 8 * 60 * 60 * 1000);
+                    
+                    const { data: newEntry, error: insertError } = await adminClient
+                        .from('time_entries')
+                        .insert({
+                            user_id: userId,
+                            clock_in_time: clockInTime.toISOString(),
+                            clock_in_latitude: parseFloat(finalLat),
+                            clock_in_longitude: parseFloat(finalLon),
+                            clock_in_location_id: locationId || null,
+                            clock_out_time: eventTime,
+                            clock_out_latitude: parseFloat(finalLat),
+                            clock_out_longitude: parseFloat(finalLon),
+                            clock_out_location_id: locationId || null,
+                            created_by_admin: true,
+                            created_by: currentUser.id
+                        })
+                        .select()
+                        .single();
+
+                    if (insertError) throw insertError;
+
+                    await adminClient
+                        .from('geofence_events')
+                        .update({
+                            related_time_entry_id: newEntry.id,
+                            time_entry_id: newEntry.id,
+                            has_clock_entry: true
+                        })
+                        .eq('id', eventId);
+                } else {
+                    const entry = openEntries[0];
+
+                    const { error: updateError } = await adminClient
+                        .from('time_entries')
+                        .update({
+                            clock_out_time: eventTime,
+                            clock_out_latitude: parseFloat(finalLat),
+                            clock_out_longitude: parseFloat(finalLon),
+                            clock_out_location_id: locationId || null,
+                            updated_by_admin: true,
+                            updated_by: currentUser.id
+                        })
+                        .eq('id', entry.id);
+
+                    if (updateError) throw updateError;
+
+                    await adminClient
+                        .from('geofence_events')
+                        .update({
+                            related_time_entry_id: entry.id,
+                            time_entry_id: entry.id,
+                            has_clock_entry: true
+                        })
+                        .eq('id', eventId);
+                }
+            }
+        }
+
         async function createTimeEntry(eventId, userId, eventTime, entryType, latitude, longitude, locationId) {
-            if (!confirm(`Create ${entryType === 'clock_in' ? 'clock-in' : 'clock-out'} entry at ${new Date(eventTime).toLocaleString()}?`)) return;
+            try {
+                // Check for duplicate within 30 minutes
+                const hasDuplicate = await hasExistingEntry(userId, eventTime, entryType);
+                if (hasDuplicate) {
+                    if (!confirm(`⚠️ WARNING: A ${entryType === 'clock_in' ? 'clock-in' : 'clock-out'} already exists within 30 minutes of this time.\n\nDo you still want to create this entry?`)) {
+                        return;
+                    }
+                }
+
+                // Validate business hours
+                const validation = isWithinBusinessHours(eventTime);
+                let confirmMessage = `Create ${entryType === 'clock_in' ? 'clock-in' : 'clock-out'} entry at ${new Date(eventTime).toLocaleString()}?`;
+                
+                if (!validation.valid) {
+                    const warningIcon = validation.severity === 'high' ? '🚫' : '⚠️';
+                    confirmMessage = `${warningIcon} WARNING: ${validation.reason}\n\nTime: ${new Date(eventTime).toLocaleString()}\n\nBusiness hours: Monday-Friday, 8:00 AM - 8:00 PM\n\nDo you still want to create this entry?`;
+                }
+                
+                if (!confirm(confirmMessage)) return;
+
+            } catch (checkError) {
+                console.error('Validation error:', checkError);
+                if (!confirm(`Unable to validate entry. Create anyway at ${new Date(eventTime).toLocaleString()}?`)) return;
+            }
 
             try {
                 // Get the geofence location coordinates if lat/lon are null
