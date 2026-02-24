@@ -190,9 +190,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Supabase Configuration
-        const SUPABASE_URL = 'https://vlyzsmycpfezibbyvzsc.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZseXpzbXljcGZlemlkYnl2enNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkwMDE2NjAsImV4cCI6MjA1NDU3NzY2MH0.oD6mS3YmC6njJ1x3f8KvVqE8SgcovbQmkULNMmj-uqM';
+        // ✅ CORRECT TIME CLOCK DATABASE
+        const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
         const adminClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Global State
@@ -202,7 +202,8 @@
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🔄 Admin Dashboard Loading...');
+            console.log('🔄 Time Clock Admin Dashboard Loading...');
+            console.log('📡 Using database:', SUPABASE_URL);
             await checkAuth();
         });
 
@@ -452,6 +453,7 @@
 
         // Logout
         async function handleLogout() {
+            console.log('🚪 Logging out...');
             await adminClient.auth.signOut();
             window.location.href = 'login-standalone.html';
         }
