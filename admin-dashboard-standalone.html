@@ -2458,10 +2458,11 @@
                 
                 showMessage(`Pay rate updated to $${payRate.toFixed(2)}/hr for ${currentEditPayRate.full_name}!`, 'success');
                 closePayRateModal();
-                
-                // Refresh the employees list
-                loadEmployees();
-                loadDashboardData();
+
+// Refresh the employees list and payroll
+loadEmployees();
+loadDashboardData();
+loadPayrollPreview();
                 
             } catch (error) {
                 console.error('Error saving pay rate:', error);
