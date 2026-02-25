@@ -662,10 +662,12 @@
                 document.getElementById('stat-approvals').textContent = approvals?.length || 0;
 
                 // Update badges
-                if (alerts && alerts.length > 0) {
-                    document.getElementById('alert-badge').textContent = alerts.length;
-                    document.getElementById('alert-badge').classList.remove('hidden');
-                }
+               if (alerts && alerts.length > 0) {
+    document.getElementById('alert-badge').textContent = alerts.length;
+    document.getElementById('alert-badge').classList.remove('hidden');
+} else {
+    document.getElementById('alert-badge').classList.add('hidden');
+}
                 if (approvals && approvals.length > 0) {
                     document.getElementById('approval-badge').textContent = approvals.length;
                     document.getElementById('approval-badge').classList.remove('hidden');
