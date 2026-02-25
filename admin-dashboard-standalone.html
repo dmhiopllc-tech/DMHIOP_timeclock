@@ -646,10 +646,10 @@
                     .select('id', { count: 'exact' })
                     .eq('status', 'clocked_in');
 
-                const { data: alerts } = await adminClient
-                    .from('admin_alerts')
-                    .select('id', { count: 'exact' })
-                    .eq('is_resolved', false);
+               const { data: alerts } = await adminClient
+    .from('geofence_events')
+    .select('id', { count: 'exact' })
+    .eq('is_resolved', false);
 
                 const { data: approvals } = await adminClient
                     .from('time_off_requests')
