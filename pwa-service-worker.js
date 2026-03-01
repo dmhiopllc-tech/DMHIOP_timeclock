@@ -1,7 +1,7 @@
 // PWA Service Worker - DMH Time Clock
 // Version 2.0 - Automatic Updates with Network-First Strategy
 
-const CACHE_VERSION = 'dmh-timeclock-v2.0';
+const CACHE_VERSION = 'dmh-timeclock-v2.1';
 const CACHE_NAME = `${CACHE_VERSION}-${Date.now()}`;
 
 // Files to cache for offline use
