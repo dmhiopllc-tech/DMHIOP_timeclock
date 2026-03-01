@@ -396,14 +396,13 @@
     </main>
 
     <script>
-        // ✅ FIXED VERSION 2025-03-01 - This file has been corrected
-        console.log('🎉 LOADING FIXED ADMIN DASHBOARD - VERSION 2025-03-01');
-        console.log('✅ This is the corrected file with proper column names');
+        console.log('🔥 ADMIN DASHBOARD - NO CONFLICT VERSION - March 1, 2025');
+        console.log('✅ Using "db" variable instead of "supabase" to avoid naming conflicts');
         
         // Initialize Supabase
         const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUser = null;
         let allEmployees = [];
@@ -421,7 +420,7 @@
         async function checkAuth() {
             console.log('🔐 Admin Dashboard: Checking auth...');
             
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            const { data: { user }, error: userError } = await db.auth.getUser();
             console.log('👤 Auth User:', user?.email, userError);
             
             if (!user) {
@@ -432,7 +431,7 @@
 
             // Get user profile
             console.log('📋 Fetching profile for user:', user.id);
-            const { data: profile, error: profileError } = await supabase
+            const { data: profile, error: profileError } = await db
                 .from('users')
                 .select('*')
                 .eq('id', user.id)
@@ -460,7 +459,7 @@
 
         // Logout
         async function logout() {
-            await supabase.auth.signOut();
+            await db.auth.signOut();
             window.location.href = 'login-standalone.html';
         }
 
@@ -502,7 +501,7 @@
         async function loadDashboardData() {
             try {
                 // Get total employees
-                const { data: employees, error: empError } = await supabase
+                const { data: employees, error: empError } = await db
                     .from('users')
                     .select('id, full_name, email, role, employee_id')
                     .neq('role', 'admin');
@@ -512,7 +511,7 @@
                 document.getElementById('stat-employees').textContent = allEmployees.length;
 
                 // Get clocked in count
-                const { data: clockedIn, error: clockError } = await supabase
+                const { data: clockedIn, error: clockError } = await db
                     .from('time_entries')
                     .select('id')
                     .eq('status', 'clocked_in');
@@ -521,7 +520,7 @@
                 document.getElementById('stat-clocked-in').textContent = clockedIn?.length || 0;
 
                 // Get pending approvals
-                const { data: pending, error: pendError } = await supabase
+                const { data: pending, error: pendError } = await db
                     .from('time_entries')
                     .select('id')
                     .eq('status', 'pending_approval');
@@ -530,8 +529,8 @@
                 document.getElementById('stat-pending').textContent = pending?.length || 0;
 
                 // Get active alerts
-                const { data: alerts, error: alertError } = await supabase
-                    .from('alerts')
+                const { data: alerts, error: alertError } = await db
+                    .from('admin_alerts')
                     .select('id')
                     .eq('status', 'active');
 
@@ -550,7 +549,7 @@
         // Load recent activity
         async function loadRecentActivity() {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('time_entries')
                     .select(`
                         id,
@@ -613,7 +612,7 @@
         // Load employees
         async function loadEmployees() {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('users')
                     .select('*')
                     .neq('role', 'admin')
@@ -692,8 +691,8 @@
         // Load alerts
         async function loadAlerts() {
             try {
-                const { data, error } = await supabase
-                    .from('alerts')
+                const { data, error } = await db
+                    .from('admin_alerts')
                     .select(`
                         *,
                         users:user_id (full_name, employee_id),
@@ -772,8 +771,8 @@
         // Resolve alert
         async function resolveAlert(alertId) {
             try {
-                const { error } = await supabase
-                    .from('alerts')
+                const { error } = await db
+                    .from('admin_alerts')
                     .update({ status: 'resolved', resolved_at: new Date().toISOString() })
                     .eq('id', alertId);
 
@@ -792,8 +791,8 @@
         // Dismiss alert
         async function dismissAlert(alertId) {
             try {
-                const { error } = await supabase
-                    .from('alerts')
+                const { error } = await db
+                    .from('admin_alerts')
                     .update({ status: 'dismissed', resolved_at: new Date().toISOString() })
                     .eq('id', alertId);
 
@@ -873,7 +872,7 @@
                 }
 
                 // Call RPC function to get payroll data
-                const { data, error } = await supabase.rpc('get_paychex_payroll', {
+                const { data, error } = await db.rpc('get_paychex_payroll', {
                     start_date: startDate,
                     end_date: endDate
                 });
@@ -889,7 +888,7 @@
 
                 // For each employee, fetch their individual time entries
                 const detailedData = await Promise.all(data.map(async (record) => {
-                    const { data: entries, error: entriesError } = await supabase
+                    const { data: entries, error: entriesError } = await db
                         .from('time_entries')
                         .select('*')
                         .eq('user_id', record.employee_id || record.user_id)
@@ -1123,7 +1122,7 @@
             
             try {
                 // Insert audit trail FIRST
-                const { error: auditError } = await supabase
+                const { error: auditError } = await db
                     .from('time_entry_audit')
                     .insert({
                         time_entry_id: entryId,
@@ -1155,7 +1154,7 @@
                     updateData.total_hours = hours;
                 }
                 
-                const { error: updateError } = await supabase
+                const { error: updateError } = await db
                     .from('time_entries')
                     .update(updateData)
                     .eq('id', entryId);
@@ -1191,7 +1190,7 @@
                 }
 
                 // Call RPC function to get payroll data
-                const { data, error } = await supabase.rpc('get_paychex_payroll', {
+                const { data, error } = await db.rpc('get_paychex_payroll', {
                     start_date: startDate,
                     end_date: endDate
                 });
@@ -1231,7 +1230,7 @@
 
                 // Log the export to payroll_exports table
                 const totalHours = data.reduce((sum, record) => sum + parseFloat(record.total_hours || 0), 0);
-                await supabase.from('payroll_exports').insert({
+                await db.from('payroll_exports').insert({
                     exported_by_user_id: currentUser.id,
                     start_date: startDate,
                     end_date: endDate,
@@ -1253,7 +1252,7 @@
         // Load approvals
         async function loadApprovals() {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('time_entries')
                     .select(`
                         *,
@@ -1320,7 +1319,7 @@
         // Approve time entry
         async function approveTimeEntry(entryId) {
             try {
-                const { error } = await supabase
+                const { error } = await db
                     .from('time_entries')
                     .update({ 
                         status: 'approved',
@@ -1331,7 +1330,7 @@
                 if (error) throw error;
 
                 // Create approval record
-                await supabase.from('approvals').insert({
+                await db.from('approvals').insert({
                     time_entry_id: entryId,
                     approved_by: currentUser.id,
                     status: 'approved',
@@ -1354,7 +1353,7 @@
             if (!notes) return;
 
             try {
-                const { error } = await supabase
+                const { error } = await db
                     .from('time_entries')
                     .update({ 
                         status: 'rejected',
@@ -1365,7 +1364,7 @@
                 if (error) throw error;
 
                 // Create approval record
-                await supabase.from('approvals').insert({
+                await db.from('approvals').insert({
                     time_entry_id: entryId,
                     approved_by: currentUser.id,
                     status: 'rejected',
@@ -1386,7 +1385,7 @@
         // Load locations
         async function loadLocations() {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('work_locations')
                     .select('*')
                     .order('name');
@@ -1445,7 +1444,7 @@
         // Load messages
         async function loadMessages() {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('messages')
                     .select(`
                         *,
@@ -1507,7 +1506,7 @@
                     return;
                 }
 
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('time_entries')
                     .select(`
                         *,
