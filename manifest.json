@@ -2,7 +2,7 @@
   "name": "DMH Time Clock",
   "short_name": "Time Clock",
   "description": "Desert Mountain Healing IOP Time Clock Application",
-  "start_url": "/employee-dashboard-clean-fix.html",
+  "start_url": "/login-standalone.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#667eea",
