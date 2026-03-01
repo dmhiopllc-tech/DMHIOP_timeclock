@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Test - DMHIOP</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; overflow-x: auto; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Database Connection Test</h1>
+    <p>Testing Supabase connection for: <strong>sean_roberts@dmhiop.com</strong></p>
+    
+    <button onclick="runTests()">▶ Run All Tests</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
+        
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function runTests() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Running tests...</p>';
+            let html = '';
+            
+            // Test 1: Client Creation
+            html += `<div class="test success">
+                <h3>✅ Test 1: Supabase Client</h3>
+                <p>Client created successfully</p>
+                <pre>typeof db: ${typeof db}
+typeof db.from: ${typeof db.from}
+typeof db.auth: ${typeof db.auth}</pre>
+            </div>`;
+            
+            // Test 2: Authentication
+            try {
+                const { data: { user }, error } = await db.auth.getUser();
+                if (error) throw error;
+                
+                if (user) {
+                    html += `<div class="test success">
+                        <h3>✅ Test 2: Authentication</h3>
+                        <p>User is logged in</p>
+                        <pre>Email: ${user.email}
+User ID: ${user.id}</pre>
+                    </div>`;
+                } else {
+                    html += `<div class="test error">
+                        <h3>❌ Test 2: Authentication</h3>
+                        <p>No user logged in</p>
+                    </div>`;
+                    results.innerHTML = html;
+                    return;
+                }
+                
+                // Test 3: Get User Profile
+                try {
+                    const { data: profile, error: profileError } = await db
+                        .from('users')
+                        .select('*')
+                        .eq('id', user.id)
+                        .single();
+                    
+                    if (profileError) throw profileError;
+                    
+                    html += `<div class="test success">
+                        <h3>✅ Test 3: User Profile</h3>
+                        <pre>${JSON.stringify(profile, null, 2)}</pre>
+                    </div>`;
+                } catch (err) {
+                    html += `<div class="test error">
+                        <h3>❌ Test 3: User Profile</h3>
+                        <p>Error: ${err.message}</p>
+                        <pre>${JSON.stringify(err, null, 2)}</pre>
+                    </div>`;
+                }
+                
+                // Test 4: Count Employees
+                try {
+                    const { data: employees, error: empError, count } = await db
+                        .from('users')
+                        .select('id, full_name, email, role', { count: 'exact' })
+                        .neq('role', 'admin');
+                    
+                    if (empError) throw empError;
+                    
+                    html += `<div class="test success">
+                        <h3>✅ Test 4: Employees Query</h3>
+                        <p>Found ${employees?.length || 0} employees</p>
+                        <pre>${JSON.stringify(employees, null, 2)}</pre>
+                    </div>`;
+                } catch (err) {
+                    html += `<div class="test error">
+                        <h3>❌ Test 4: Employees Query</h3>
+                        <p>Error: ${err.message}</p>
+                        <pre>${JSON.stringify(err, null, 2)}</pre>
+                    </div>`;
+                }
+                
+                // Test 5: Time Entries
+                try {
+                    const { data: entries, error: entriesError } = await db
+                        .from('time_entries')
+                        .select('id, clock_in_time, status')
+                        .limit(5);
+                    
+                    if (entriesError) throw entriesError;
+                    
+                    html += `<div class="test success">
+                        <h3>✅ Test 5: Time Entries Query</h3>
+                        <p>Found ${entries?.length || 0} recent entries</p>
+                        <pre>${JSON.stringify(entries, null, 2)}</pre>
+                    </div>`;
+                } catch (err) {
+                    html += `<div class="test error">
+                        <h3>❌ Test 5: Time Entries Query</h3>
+                        <p>Error: ${err.message}</p>
+                        <pre>${JSON.stringify(err, null, 2)}</pre>
+                    </div>`;
+                }
+                
+                // Test 6: Alerts
+                try {
+                    const { data: alerts, error: alertsError } = await db
+                        .from('alerts')
+                        .select('id, alert_type, status')
+                        .eq('status', 'active')
+                        .limit(5);
+                    
+                    if (alertsError) throw alertsError;
+                    
+                    html += `<div class="test success">
+                        <h3>✅ Test 6: Alerts Query</h3>
+                        <p>Found ${alerts?.length || 0} active alerts</p>
+                        <pre>${JSON.stringify(alerts, null, 2)}</pre>
+                    </div>`;
+                } catch (err) {
+                    html += `<div class="test error">
+                        <h3>❌ Test 6: Alerts Query</h3>
+                        <p>Error: ${err.message}</p>
+                        <pre>${JSON.stringify(err, null, 2)}</pre>
+                    </div>`;
+                }
+                
+            } catch (err) {
+                html += `<div class="test error">
+                    <h3>❌ Test 2: Authentication</h3>
+                    <p>Error: ${err.message}</p>
+                </div>`;
+            }
+            
+            results.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
