@@ -582,7 +582,7 @@
 
                     const statusColor = statusColors[entry.status] || 'bg-gray-100 text-gray-800';
                     const userName = entry.users?.full_name || 'Unknown';
-                    const empId = entry.users?.employee_id || 'N/A';
+                    const empId = entry.users?.employee_number || 'N/A';
                     const clockIn = new Date(entry.clock_in_time).toLocaleString();
                     const clockOut = entry.clock_out_time ? new Date(entry.clock_out_time).toLocaleString() : 'Still clocked in';
 
@@ -695,7 +695,7 @@
                     .from('admin_alerts')
                     .select(`
                         *,
-                        users:user_id (full_name, employee_id),
+                        users:user_id (full_name, employee_number),
                         time_entries:time_entry_id (clock_in_time, clock_out_time)
                     `)
                     .eq('status', 'active')
@@ -729,7 +729,7 @@
                     const borderColor = typeColors[alert.alert_type] || 'border-gray-500 bg-gray-50';
                     const icon = typeIcons[alert.alert_type] || 'fa-info-circle text-gray-600';
                     const userName = alert.users?.full_name || 'Unknown';
-                    const empId = alert.users?.employee_id || 'N/A';
+                    const empId = alert.users?.employee_number || 'N/A';
                     const createdAt = new Date(alert.created_at).toLocaleString();
 
                     html += `
@@ -743,7 +743,7 @@
                                             <p class="text-sm text-gray-600">${userName} (${empId})</p>
                                         </div>
                                     </div>
-                                    <p class="text-gray-700 ml-9">${alert.message}</p>
+                                    <p class="text-gray-700 ml-9">${alert.alert_message || 'No details'}</p>
                                     <p class="text-xs text-gray-500 ml-9 mt-2">${createdAt}</p>
                                 </div>
                                 <div class="flex space-x-2">
@@ -1256,7 +1256,7 @@
                     .from('time_entries')
                     .select(`
                         *,
-                        users (full_name, employee_id, email)
+                        users (full_name, employee_number, email)
                     `)
                     .eq('status', 'pending_approval')
                     .order('clock_in_time', { ascending: false });
@@ -1274,7 +1274,7 @@
 
                 data.forEach(entry => {
                     const userName = entry.users?.full_name || 'Unknown';
-                    const empId = entry.users?.employee_id || 'N/A';
+                    const empId = entry.users?.employee_number || 'N/A';
                     const email = entry.users?.email || '';
                     const clockIn = new Date(entry.clock_in_time).toLocaleString();
                     const clockOut = entry.clock_out_time ? new Date(entry.clock_out_time).toLocaleString() : 'Still clocked in';
@@ -1510,7 +1510,7 @@
                     .from('time_entries')
                     .select(`
                         *,
-                        users (full_name, employee_id),
+                        users (full_name, employee_number),
                         clock_in_location:clock_in_location_id (name),
                         clock_out_location:clock_out_location_id (name)
                     `)
@@ -1546,7 +1546,7 @@
 
                     const statusColor = statusColors[entry.status] || 'bg-gray-100 text-gray-800';
                     const userName = entry.users?.full_name || 'Unknown';
-                    const empId = entry.users?.employee_id || 'N/A';
+                    const empId = entry.users?.employee_number || 'N/A';
                     const clockIn = new Date(entry.clock_in_time).toLocaleString();
                     const clockOut = entry.clock_out_time ? new Date(entry.clock_out_time).toLocaleString() : '-';
                     const hours = entry.total_hours ? entry.total_hours.toFixed(2) : '-';
