@@ -400,10 +400,11 @@
         console.log('🎉 LOADING FIXED ADMIN DASHBOARD - VERSION 2025-03-01');
         console.log('✅ This is the corrected file with proper column names');
         
-        // Initialize Supabase
+        // Initialize Supabase - using 'db' variable to avoid conflicts
+        console.log('🔧 Using "db" variable to avoid naming conflicts');
         const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUser = null;
         let allEmployees = [];
@@ -421,7 +422,7 @@
         async function checkAuth() {
             console.log('🔐 Admin Dashboard: Checking auth...');
             
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            const { data: { user }, error: userError } = await db.auth.getUser();
             console.log('👤 Auth User:', user?.email, userError);
             
             if (!user) {
@@ -460,7 +461,7 @@
 
         // Logout
         async function logout() {
-            await supabase.auth.signOut();
+            await db.auth.signOut();
             window.location.href = 'login-standalone.html';
         }
 
@@ -883,7 +884,7 @@
                 }
 
                 // Call RPC function to get payroll data
-                const { data, error } = await supabase.rpc('get_paychex_payroll', {
+                const { data, error } = await db.rpc('get_paychex_payroll', {
                     start_date: startDate,
                     end_date: endDate
                 });
@@ -1201,7 +1202,7 @@
                 }
 
                 // Call RPC function to get payroll data
-                const { data, error } = await supabase.rpc('get_paychex_payroll', {
+                const { data, error } = await db.rpc('get_paychex_payroll', {
                     start_date: startDate,
                     end_date: endDate
                 });
@@ -1241,7 +1242,7 @@
 
                 // Log the export to payroll_exports table
                 const totalHours = data.reduce((sum, record) => sum + parseFloat(record.total_hours || 0), 0);
-                await supabase.from('payroll_exports').insert({
+                await db.from('payroll_exports').insert({
                     exported_by_user_id: currentUser.id,
                     start_date: startDate,
                     end_date: endDate,
@@ -1341,7 +1342,7 @@
                 if (error) throw error;
 
                 // Create approval record
-                await supabase.from('approvals').insert({
+                await db.from('approvals').insert({
                     time_entry_id: entryId,
                     approved_by: currentUser.id,
                     status: 'approved',
@@ -1375,7 +1376,7 @@
                 if (error) throw error;
 
                 // Create approval record
-                await supabase.from('approvals').insert({
+                await db.from('approvals').insert({
                     time_entry_id: entryId,
                     approved_by: currentUser.id,
                     status: 'rejected',
