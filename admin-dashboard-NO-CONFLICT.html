@@ -431,7 +431,7 @@
 
             // Get user profile
             console.log('📋 Fetching profile for user:', user.id);
-            const { data: profile, error: profileError } = await supabase
+            const { data: profile, error: profileError } = await db
                 .from('users')
                 .select('*')
                 .eq('id', user.id)
