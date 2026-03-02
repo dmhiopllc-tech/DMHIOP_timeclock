@@ -468,8 +468,10 @@
                 console.log('👤 Auth User:', user?.email, error);
 
                 if (error || !user) {
-                    console.log('❌ No authenticated user, redirecting to login');
-                    window.location.href = 'login-standalone.html';
+                    console.log('❌ No authenticated user');
+                    console.error('Auth error details:', error);
+                    alert('AUTH FAILED: No authenticated user. Check console for details.');
+                    // TEMPORARILY DISABLED: window.location.href = 'login-standalone.html';
                     return;
                 }
 
@@ -511,8 +513,8 @@
 
             } catch (error) {
                 console.error('Error during authentication:', error);
-                alert('Authentication error. Please try logging in again.');
-                window.location.href = 'login-standalone.html';
+                alert(`AUTH ERROR: ${error.message}\n\nCheck console for full details.`);
+                // TEMPORARILY DISABLED: window.location.href = 'login-standalone.html';
             }
         }
 
