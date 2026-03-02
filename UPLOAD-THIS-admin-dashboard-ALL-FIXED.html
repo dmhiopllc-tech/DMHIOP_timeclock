@@ -412,7 +412,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuth();
             await loadDashboardData();
-            populatePayPeriodDropdown();
+            await populatePayPeriodDropdown(); // Now properly awaited
             setDefaultDateRange();
         });
 
@@ -808,12 +808,63 @@
             }
         }
 
-        // Populate pay period dropdown
-        function populatePayPeriodDropdown() {
-            const select = document.getElementById('payroll-period');
+        // Populate pay period dropdown from database
+        async function populatePayPeriodDropdown() {
+            try {
+                const select = document.getElementById('payroll-period');
+                
+                // Fetch pay periods from database
+                const { data: periods, error } = await db
+                    .from('pay_periods')
+                    .select('*')
+                    .eq('year', 2026)
+                    .order('period_number', { ascending: false }); // Newest first
+                
+                if (error) {
+                    console.error('Error loading pay periods:', error);
+                    // Fallback to manual generation if DB fails
+                    generateFallbackPeriods(select);
+                    return;
+                }
+                
+                if (!periods || periods.length === 0) {
+                    console.warn('No pay periods found in database');
+                    generateFallbackPeriods(select);
+                    return;
+                }
+                
+                // Clear existing options except the first "Select Period..." option
+                select.innerHTML = '<option value="">Select Period...</option>';
+                
+                // Add each period from database
+                periods.forEach(period => {
+                    const option = document.createElement('option');
+                    option.value = JSON.stringify({
+                        start: period.start_date,
+                        end: period.end_date
+                    });
+                    
+                    // Format dates nicely
+                    const start = new Date(period.start_date);
+                    const end = new Date(period.end_date);
+                    option.textContent = `${start.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})} - ${end.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}`;
+                    
+                    select.appendChild(option);
+                });
+                
+                console.log(`✅ Loaded ${periods.length} pay periods from database`);
+                
+            } catch (error) {
+                console.error('Error populating pay periods:', error);
+                generateFallbackPeriods(document.getElementById('payroll-period'));
+            }
+        }
+        
+        // Fallback: Generate periods manually if database fails
+        function generateFallbackPeriods(select) {
+            console.log('⚠️ Using fallback pay period generation');
             const today = new Date();
             
-            // Generate last 12 bi-weekly periods
             for (let i = 0; i < 12; i++) {
                 const endDate = new Date(today);
                 endDate.setDate(endDate.getDate() - (i * 14));
@@ -1311,9 +1362,8 @@
 
             } catch (error) {
                 console.error('Error loading approvals:', error);
-                // Show friendly message if no pending approvals or error
                 document.getElementById('approvals-container').innerHTML = 
-                    '<p class="text-gray-500 text-center py-4">No pending approvals at this time</p>';
+                    '<p class="text-red-500 text-center py-4">Error loading approvals</p>';
             }
         }
 
@@ -1491,9 +1541,8 @@
 
             } catch (error) {
                 console.error('Error loading messages:', error);
-                // Messages feature not yet implemented
                 document.getElementById('messages-container').innerHTML = 
-                    '<p class="text-gray-500 text-center py-4">📧 Messaging feature coming soon!</p>';
+                    '<p class="text-red-500 text-center py-4">Error loading messages</p>';
             }
         }
 
@@ -1582,11 +1631,10 @@
 
             } catch (error) {
                 console.error('Error loading time entries:', error);
-                console.log('🔍 Error details:', error.message || error);
                 document.getElementById('time-entries-table-body').innerHTML = `
                     <tr>
                         <td colspan="7" class="px-6 py-8 text-center text-red-500">
-                            Error loading time entries. Please check database permissions.
+                            Error loading time entries
                         </td>
                     </tr>
                 `;
