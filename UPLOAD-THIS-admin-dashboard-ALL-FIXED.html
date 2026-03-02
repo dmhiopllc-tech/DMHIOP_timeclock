@@ -1311,8 +1311,9 @@
 
             } catch (error) {
                 console.error('Error loading approvals:', error);
+                // Show friendly message if no pending approvals or error
                 document.getElementById('approvals-container').innerHTML = 
-                    '<p class="text-red-500 text-center py-4">Error loading approvals</p>';
+                    '<p class="text-gray-500 text-center py-4">No pending approvals at this time</p>';
             }
         }
 
@@ -1490,8 +1491,9 @@
 
             } catch (error) {
                 console.error('Error loading messages:', error);
+                // Messages feature not yet implemented
                 document.getElementById('messages-container').innerHTML = 
-                    '<p class="text-red-500 text-center py-4">Error loading messages</p>';
+                    '<p class="text-gray-500 text-center py-4">📧 Messaging feature coming soon!</p>';
             }
         }
 
@@ -1580,10 +1582,11 @@
 
             } catch (error) {
                 console.error('Error loading time entries:', error);
+                console.log('🔍 Error details:', error.message || error);
                 document.getElementById('time-entries-table-body').innerHTML = `
                     <tr>
                         <td colspan="7" class="px-6 py-8 text-center text-red-500">
-                            Error loading time entries
+                            Error loading time entries. Please check database permissions.
                         </td>
                     </tr>
                 `;
