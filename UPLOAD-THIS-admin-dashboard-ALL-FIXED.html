@@ -1115,18 +1115,28 @@
                     .from('time_off_requests')
                     .select(`
                         *,
-                        users!time_off_requests_user_id_fkey (full_name, employee_number, email),
-                        time_off_approvals (
-                            id,
-                            approver_id,
-                            approval_action,
-                            approval_date,
-                            notes,
-                            users!time_off_approvals_approver_id_fkey (full_name, email)
-                        )
+                        users!time_off_requests_user_id_fkey (full_name, employee_number, email)
                     `)
                     .eq('status', 'pending')
                     .order('created_at', { ascending: false });
+                
+                // Load approvals separately for each request
+                if (data && data.length > 0) {
+                    for (let request of data) {
+                        const { data: approvals } = await db
+                            .from('time_off_approvals')
+                            .select(`
+                                id,
+                                approver_id,
+                                approval_action,
+                                approval_date,
+                                notes,
+                                users!time_off_approvals_approver_id_fkey (full_name, email)
+                            `)
+                            .eq('time_off_request_id', request.id);
+                        request.time_off_approvals = approvals || [];
+                    }
+                }
 
                 if (error) throw error;
 
