@@ -452,7 +452,7 @@
 
         // Initialize Supabase
         const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc2Njc1MzAsImV4cCI6MjA1MzI0MzUzMH0.KFa-vDWy5HI9Z1nQCxYsqNVrIczGNLMX3p7c2-Bx_qA';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
         
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         console.log('✅ Using "db" variable for Supabase client');
@@ -468,10 +468,8 @@
                 console.log('👤 Auth User:', user?.email, error);
 
                 if (error || !user) {
-                    console.log('❌ No authenticated user');
-                    console.error('Auth error details:', error);
-                    alert('AUTH FAILED: No authenticated user. Check console for details.');
-                    // TEMPORARILY DISABLED: window.location.href = 'login-standalone.html';
+                    console.log('❌ No authenticated user, redirecting to login');
+                    window.location.href = 'login-standalone.html';
                     return;
                 }
 
@@ -513,8 +511,8 @@
 
             } catch (error) {
                 console.error('Error during authentication:', error);
-                alert(`AUTH ERROR: ${error.message}\n\nCheck console for full details.`);
-                // TEMPORARILY DISABLED: window.location.href = 'login-standalone.html';
+                alert('Authentication error. Please try logging in again.');
+                window.location.href = 'login-standalone.html';
             }
         }
 
