@@ -481,11 +481,17 @@
                     .eq('id', user.id)
                     .single();
 
-                console.log('👤 Profile data:', profile, profileError);
+                console.log('👤 Profile data:', profile, 'Error:', profileError);
 
-                if (profileError || !profile) {
-                    console.log('❌ No profile found');
-                    alert('Profile not found');
+                if (profileError) {
+                    console.error('❌ Profile query error:', profileError.message, profileError);
+                    alert(`Database error: ${profileError.message}\n\nPlease contact your administrator.`);
+                    return;
+                }
+                
+                if (!profile) {
+                    console.log('❌ No profile found for user ID:', user.id);
+                    alert('Profile not found. Please contact your administrator.');
                     return;
                 }
 
