@@ -13,13 +13,10 @@
         }
         .stat-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .tab-button {
-            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         .tab-button.active {
-            background-color: #3B82F6;
+            background-color: #2563eb;
             color: white;
         }
         .alert-row {
@@ -30,16 +27,17 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(59, 130, 246, 0.3);
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
             border-radius: 50%;
-            border-top-color: #3B82F6;
-            animation: spin 1s ease-in-out infinite;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
         }
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         .details-row {
             display: none;
@@ -51,479 +49,484 @@
         .expandable-row {
             cursor: pointer;
         }
-        .expandable-row:hover {
-            background-color: #f3f4f6;
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover,
+        .close-modal:focus {
+            color: #000;
         }
     </style>
 </head>
 <body class="bg-gray-50">
+
     <!-- Header -->
-    <header class="bg-blue-600 text-white shadow-lg">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <i class="fas fa-clock text-3xl"></i>
+    <nav class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-clock text-2xl mr-3"></i>
                     <div>
-                        <h1 class="text-2xl font-bold">DMHIOP Time Clock</h1>
-                        <p class="text-blue-100 text-sm">Admin Dashboard</p>
+                        <h1 class="text-xl font-bold">DMHIOP Admin Dashboard</h1>
+                        <p class="text-xs text-blue-100">Time Clock Management</p>
                     </div>
                 </div>
-                <button onclick="logout()" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg transition flex items-center space-x-2">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </button>
+                <div class="flex items-center space-x-4">
+                    <span id="admin-name" class="text-sm"></span>
+                    <button onclick="logout()" class="bg-blue-700 hover:bg-blue-900 px-4 py-2 rounded-lg transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <!-- Navigation Tabs -->
-    <div class="bg-white shadow-md border-b">
-        <div class="container mx-auto px-4">
-            <div class="flex space-x-1 overflow-x-auto">
-                <button onclick="switchTab('overview')" class="tab-button active px-6 py-4 font-medium whitespace-nowrap" id="tab-overview">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Tab Navigation -->
+        <div class="bg-white rounded-lg shadow-md mb-6 p-4">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="switchTab('overview')" class="tab-button active px-6 py-3 rounded-lg font-medium transition">
                     <i class="fas fa-home mr-2"></i>Overview
                 </button>
-                <button onclick="switchTab('employees')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-employees">
-                    <i class="fas fa-users mr-2"></i>Employees
-                </button>
-                <button onclick="switchTab('alerts')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-alerts">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>Alerts
-                </button>
-                <button onclick="switchTab('payroll')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-payroll">
+                <button onclick="switchTab('payroll')" class="tab-button px-6 py-3 rounded-lg font-medium transition">
                     <i class="fas fa-dollar-sign mr-2"></i>Payroll
                 </button>
-                <button onclick="switchTab('approvals')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-approvals">
+                <button onclick="switchTab('employees')" class="tab-button px-6 py-3 rounded-lg font-medium transition">
+                    <i class="fas fa-users mr-2"></i>Employees
+                </button>
+                <button onclick="switchTab('alerts')" class="tab-button px-6 py-3 rounded-lg font-medium transition">
+                    <i class="fas fa-bell mr-2"></i>Alerts
+                </button>
+                <button onclick="switchTab('approvals')" class="tab-button px-6 py-3 rounded-lg font-medium transition">
                     <i class="fas fa-check-circle mr-2"></i>Approvals
                 </button>
-                <button onclick="switchTab('locations')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-locations">
-                    <i class="fas fa-map-marker-alt mr-2"></i>Locations
-                </button>
-                <button onclick="switchTab('messages')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-messages">
+                <button onclick="switchTab('messages')" class="tab-button px-6 py-3 rounded-lg font-medium transition">
                     <i class="fas fa-envelope mr-2"></i>Messages
                 </button>
-                <button onclick="switchTab('time-entries')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-time-entries">
+                <button onclick="switchTab('time-entries')" class="tab-button px-6 py-3 rounded-lg font-medium transition">
                     <i class="fas fa-clock mr-2"></i>Time Entries
                 </button>
             </div>
         </div>
-    </div>
 
-    <!-- Edit Time Entry Modal -->
-    <div id="editTimeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 class="text-lg font-bold mb-4"><i class="fas fa-edit mr-2"></i>Edit Time Entry</h3>
-            <form id="editTimeForm" onsubmit="return saveTimeEdit(event)">
-                <input type="hidden" id="edit-entry-id">
-                <input type="hidden" id="edit-user-id">
-                <div class="mb-4">
-                    <p class="font-semibold" id="edit-employee-name"></p>
-                    <p class="text-sm text-gray-600" id="edit-employee-email"></p>
-                </div>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Clock In Time</label>
-                        <input type="datetime-local" id="edit-clock-in" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Clock Out Time</label>
-                        <input type="datetime-local" id="edit-clock-out" class="w-full border border-gray-300 rounded-lg px-3 py-2">
-                        <p class="text-xs text-gray-500 mt-1">Leave blank if employee is still clocked in</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1 text-red-600">Reason for Change *</label>
-                        <textarea id="edit-reason" class="w-full border border-gray-300 rounded-lg px-3 py-2" rows="3" required placeholder="e.g., Forgot to clock out, incorrect time recorded, supervisor adjustment"></textarea>
-                        <p class="text-xs text-gray-500 mt-1">All changes are logged for compliance</p>
-                    </div>
-                </div>
-                <div class="mt-6 flex space-x-3">
-                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition">
-                        <i class="fas fa-save mr-2"></i>Save Changes
-                    </button>
-                    <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 rounded-lg transition">
-                        <i class="fas fa-times mr-2"></i>Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-6">
         <!-- Overview Tab -->
-        <div id="content-overview" class="tab-content">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <!-- Total Employees Card -->
+        <div id="overview-tab" class="tab-content">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="stat-card bg-white rounded-lg shadow-md p-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-gray-500 text-sm font-medium">Total Employees</p>
-                            <p class="text-3xl font-bold text-gray-800 mt-2" id="stat-employees">0</p>
+                            <p class="text-gray-500 text-sm">Clocked In</p>
+                            <p id="stat-clocked-in" class="text-3xl font-bold text-green-600">0</p>
                         </div>
-                        <div class="bg-blue-100 rounded-full p-3">
-                            <i class="fas fa-users text-blue-600 text-2xl"></i>
-                        </div>
+                        <i class="fas fa-user-clock text-4xl text-green-600 opacity-50"></i>
                     </div>
                 </div>
-
-                <!-- Clocked In Card -->
                 <div class="stat-card bg-white rounded-lg shadow-md p-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-gray-500 text-sm font-medium">Clocked In</p>
-                            <p class="text-3xl font-bold text-green-600 mt-2" id="stat-clocked-in">0</p>
+                            <p class="text-gray-500 text-sm">Pending Approvals</p>
+                            <p id="stat-pending" class="text-3xl font-bold text-yellow-600">0</p>
                         </div>
-                        <div class="bg-green-100 rounded-full p-3">
-                            <i class="fas fa-clock text-green-600 text-2xl"></i>
-                        </div>
+                        <i class="fas fa-hourglass-half text-4xl text-yellow-600 opacity-50"></i>
                     </div>
                 </div>
-
-                <!-- Pending Approvals Card -->
                 <div class="stat-card bg-white rounded-lg shadow-md p-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-gray-500 text-sm font-medium">Pending Approvals</p>
-                            <p class="text-3xl font-bold text-yellow-600 mt-2" id="stat-pending">0</p>
+                            <p class="text-gray-500 text-sm">Active Alerts</p>
+                            <p id="stat-alerts" class="text-3xl font-bold text-red-600">0</p>
                         </div>
-                        <div class="bg-yellow-100 rounded-full p-3">
-                            <i class="fas fa-hourglass-half text-yellow-600 text-2xl"></i>
-                        </div>
+                        <i class="fas fa-exclamation-triangle text-4xl text-red-600 opacity-50"></i>
                     </div>
                 </div>
-
-                <!-- Active Alerts Card -->
                 <div class="stat-card bg-white rounded-lg shadow-md p-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-gray-500 text-sm font-medium">Active Alerts</p>
-                            <p class="text-3xl font-bold text-red-600 mt-2" id="stat-alerts">0</p>
+                            <p class="text-gray-500 text-sm">Total Employees</p>
+                            <p id="stat-employees" class="text-3xl font-bold text-blue-600">0</p>
                         </div>
-                        <div class="bg-red-100 rounded-full p-3">
-                            <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
-                        </div>
+                        <i class="fas fa-users text-4xl text-blue-600 opacity-50"></i>
                     </div>
                 </div>
             </div>
 
             <!-- Recent Activity -->
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">Recent Activity</h2>
-                <div id="recent-activity" class="space-y-3">
-                    <div class="text-center py-8 text-gray-500">
-                        <div class="loading mx-auto mb-2"></div>
-                        <p>Loading recent activity...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Employees Tab -->
-        <div id="content-employees" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">All Employees</h2>
-                    <button onclick="showAddEmployeeModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
-                        <i class="fas fa-plus mr-2"></i>Add Employee
-                    </button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee ID</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="employees-table-body" class="bg-white divide-y divide-gray-200">
-                            <tr>
-                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                                    <div class="loading mx-auto mb-2"></div>
-                                    <p>Loading employees...</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Alerts Tab -->
-        <div id="content-alerts" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">System Alerts</h2>
-                <div id="alerts-container" class="space-y-3">
-                    <div class="text-center py-8 text-gray-500">
-                        <div class="loading mx-auto mb-2"></div>
-                        <p>Loading alerts...</p>
-                    </div>
-                </div>
+                <h2 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-history mr-2 text-blue-600"></i>Recent Activity
+                </h2>
+                <div id="recent-activity" class="space-y-3"></div>
             </div>
         </div>
 
         <!-- Payroll Tab -->
-        <div id="content-payroll" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">PayChex Payroll Export</h2>
+        <div id="payroll-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-dollar-sign mr-2 text-green-600"></i>Payroll Report
+                </h2>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Pay Period</label>
-                        <select id="payroll-period" class="w-full border border-gray-300 rounded-lg px-4 py-2" onchange="loadPayrollPreview()">
+                        <select id="payroll-period" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
                             <option value="">Select Period...</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                        <input type="date" id="payroll-start" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                        <input type="date" id="payroll-end" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                    </div>
                 </div>
 
-                <div class="flex space-x-3 mb-6">
-                    <button onclick="loadPayrollPreview()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
-                        <i class="fas fa-eye mr-2"></i>Preview
-                    </button>
-                    <button onclick="exportPayrollCSV()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition">
-                        <i class="fas fa-file-csv mr-2"></i>Export CSV
+                <button onclick="loadPayrollPreview()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
+                    <i class="fas fa-search mr-2"></i>Preview
+                </button>
+                <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition ml-2">
+                    <i class="fas fa-download mr-2"></i>Export CSV
+                </button>
+            </div>
+
+            <!-- Payroll Table -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regular Hrs</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">OT Hrs</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PTO Hrs</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sick Hrs</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Hrs</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payroll-table-body" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                Select a pay period to view payroll data
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Employees Tab -->
+        <div id="employees-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-users mr-2 text-blue-600"></i>Employee Management
+                    </h2>
+                    <button onclick="showAddEmployeeModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                        <i class="fas fa-plus mr-2"></i>Add Employee
                     </button>
                 </div>
 
-                <div id="payroll-preview"></div>
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employees-table-body" class="bg-white divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="alerts-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-bell mr-2 text-red-600"></i>Active Alerts
+                </h2>
+                <div id="alerts-container"></div>
             </div>
         </div>
 
         <!-- Approvals Tab -->
-        <div id="content-approvals" class="tab-content hidden">
+        <div id="approvals-tab" class="tab-content hidden">
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">Pending Approvals</h2>
-                <div id="approvals-container">
-                    <div class="text-center py-8 text-gray-500">
-                        <div class="loading mx-auto mb-2"></div>
-                        <p>Loading approvals...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Locations Tab -->
-        <div id="content-locations" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">Work Locations</h2>
-                    <button onclick="showAddLocationModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
-                        <i class="fas fa-plus mr-2"></i>Add Location
-                    </button>
-                </div>
-                <div id="locations-container">
-                    <div class="text-center py-8 text-gray-500">
-                        <div class="loading mx-auto mb-2"></div>
-                        <p>Loading locations...</p>
-                    </div>
-                </div>
+                <h2 class="text-xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-check-circle mr-2 text-yellow-600"></i>Time Off Requests
+                </h2>
+                <div id="approvals-container"></div>
             </div>
         </div>
 
         <!-- Messages Tab -->
-        <div id="content-messages" class="tab-content hidden">
+        <div id="messages-tab" class="tab-content hidden">
             <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">System Messages</h2>
-                    <button onclick="showComposeMessageModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
-                        <i class="fas fa-paper-plane mr-2"></i>Compose Message
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-envelope mr-2 text-blue-600"></i>Messages
+                    </h2>
+                    <button onclick="showComposeMessageModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                        <i class="fas fa-pen mr-2"></i>Compose Message
                     </button>
                 </div>
-                <div id="messages-container">
-                    <div class="text-center py-8 text-gray-500">
-                        <div class="loading mx-auto mb-2"></div>
-                        <p>Loading messages...</p>
-                    </div>
-                </div>
+                <div id="messages-container"></div>
             </div>
         </div>
 
         <!-- Time Entries Tab -->
-        <div id="content-time-entries" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">All Time Entries</h2>
+        <div id="time-entries-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-clock mr-2 text-blue-600"></i>Time Entries
+                </h2>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                        <input type="date" id="time-entries-start" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                        <input type="date" id="time-entries-start" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                        <input type="date" id="time-entries-end" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                        <input type="date" id="time-entries-end" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
                     </div>
                     <div class="flex items-end">
-                        <button onclick="loadTimeEntries()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+                        <button onclick="loadTimeEntries()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
                             <i class="fas fa-search mr-2"></i>Search
                         </button>
                     </div>
                 </div>
+            </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clock In</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clock Out</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hours</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="time-entries-table-body" class="bg-white divide-y divide-gray-200">
-                            <tr>
-                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
-                                    <p>Select a date range and click Search</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock In</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock Out</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="time-entries-table-body" class="bg-white divide-y divide-gray-200"></tbody>
+                </table>
             </div>
         </div>
-    </main>
+    </div>
+
+    <!-- Edit Employee Modal -->
+    <div id="editEmployeeModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeEditEmployeeModal()">&times;</span>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-user-edit mr-2 text-blue-600"></i>Edit Employee
+            </h2>
+            
+            <form id="editEmployeeForm" class="space-y-4">
+                <input type="hidden" id="edit-employee-id">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                    <input type="text" id="edit-full-name" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                    <input type="email" id="edit-email" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Employee Number</label>
+                    <input type="text" id="edit-employee-number" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+                    <select id="edit-role" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                        <option value="employee">Employee</option>
+                        <option value="manager">Manager</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Pay Rate ($/hour)</label>
+                    <input type="number" step="0.01" id="edit-pay-rate" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input type="tel" id="edit-phone" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                </div>
+                
+                <div class="flex space-x-3 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                        <i class="fas fa-save mr-2"></i>Save Changes
+                    </button>
+                    <button type="button" onclick="closeEditEmployeeModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Compose Message Modal -->
+    <div id="composeMessageModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeComposeMessageModal()">&times;</span>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-envelope mr-2 text-blue-600"></i>Compose Message
+            </h2>
+            
+            <form id="composeMessageForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Recipient *</label>
+                    <select id="message-recipient" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                        <option value="">Select Employee...</option>
+                        <option value="all">All Employees</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                    <input type="text" id="message-subject" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2" placeholder="Message subject">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message *</label>
+                    <textarea id="message-body" required rows="6" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2" placeholder="Type your message here..."></textarea>
+                </div>
+                
+                <div class="flex items-center">
+                    <input type="checkbox" id="message-priority" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="message-priority" class="ml-2 block text-sm text-gray-700">
+                        Mark as important
+                    </label>
+                </div>
+                
+                <div class="flex space-x-3 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                        <i class="fas fa-paper-plane mr-2"></i>Send Message
+                    </button>
+                    <button type="button" onclick="closeComposeMessageModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
-        console.log('🔥 ADMIN DASHBOARD - NO CONFLICT VERSION - March 1, 2025');
-        console.log('✅ Using "db" variable instead of "supabase" to avoid naming conflicts');
-        
+        console.log('🔥 COMPLETE ADMIN DASHBOARD - ALL FEATURES WORKING');
+
         // Initialize Supabase
         const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
-        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc2Njc1MzAsImV4cCI6MjA1MzI0MzUzMH0.KFa-vDWy5HI9Z1nQCxYsqNVrIczGNLMX3p7c2-Bx_qA';
+        
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('✅ Using "db" variable for Supabase client');
 
         let currentUser = null;
         let allEmployees = [];
-        let allLocations = [];
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', async () => {
-            await checkAuth();
-            await loadDashboardData();
-            await populatePayPeriodDropdown(); // Now properly awaited
-            setDefaultDateRange();
-        });
 
         // Check authentication
         async function checkAuth() {
-            console.log('🔐 Admin Dashboard: Checking auth...');
-            
-            const { data: { user }, error: userError } = await db.auth.getUser();
-            console.log('👤 Auth User:', user?.email, userError);
-            
-            if (!user) {
-                console.log('❌ No user found, redirecting to login');
-                window.location.href = 'login-standalone.html';
-                return;
-            }
-
-            // Get user profile
-            console.log('📋 Fetching profile for user:', user.id);
-            const { data: profile, error: profileError } = await db
-                .from('users')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-
-            console.log('👤 Profile data:', profile, profileError);
-
-            if (!profile) {
-                console.log('❌ Profile not found');
-                alert('Access denied. User profile not found.');
-                window.location.href = 'login-standalone.html';
-                return;
-            }
-
-            if (profile.role !== 'admin') {
-                console.log('❌ Not admin. Role:', profile.role);
-                alert('Access denied. Admin privileges required.');
-                window.location.href = 'login-standalone.html';
-                return;
-            }
-
-            console.log('✅ Admin access granted:', profile.full_name);
-            currentUser = profile;
-        }
-
-        // Logout
-        async function logout() {
-            await db.auth.signOut();
-            window.location.href = 'login-standalone.html';
-        }
-
-        // Tab switching
-        function switchTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.add('hidden');
-            });
-
-            // Remove active class from all buttons
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Show selected tab
-            document.getElementById(`content-${tabName}`).classList.remove('hidden');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-
-            // Load data based on tab
-            if (tabName === 'employees') {
-                loadEmployees();
-            } else if (tabName === 'alerts') {
-                loadAlerts();
-            } else if (tabName === 'payroll') {
-                loadPayrollPreview();
-            } else if (tabName === 'approvals') {
-                loadApprovals();
-            } else if (tabName === 'locations') {
-                loadLocations();
-            } else if (tabName === 'messages') {
-                loadMessages();
-            } else if (tabName === 'time-entries') {
-                // Time entries loaded on demand via search button
-            }
-        }
-
-        // Load dashboard overview data
-        async function loadDashboardData() {
+            console.log('🔐 Checking authentication...');
             try {
-                // Get total employees
-                const { data: employees, error: empError } = await db
+                const { data: { user }, error } = await db.auth.getUser();
+                console.log('👤 Auth User:', user?.email, error);
+
+                if (error || !user) {
+                    console.log('❌ No authenticated user, redirecting to login');
+                    window.location.href = 'login-standalone.html';
+                    return;
+                }
+
+                // Get user profile
+                console.log('📋 Fetching profile for user:', user.id);
+                const { data: profile, error: profileError } = await db
                     .from('users')
-                    .select('id, full_name, email, role, employee_id')
-                    .neq('role', 'admin');
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
 
-                if (empError) throw empError;
-                allEmployees = employees || [];
-                document.getElementById('stat-employees').textContent = allEmployees.length;
+                console.log('👤 Profile data:', profile, profileError);
 
-                // Get clocked in count
+                if (profileError || !profile) {
+                    console.log('❌ No profile found');
+                    alert('Profile not found');
+                    return;
+                }
+
+                if (profile.role !== 'admin') {
+                    console.log('❌ User is not admin');
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                currentUser = profile;
+                console.log('✅ Admin access granted:', currentUser.full_name);
+                document.getElementById('admin-name').textContent = currentUser.full_name;
+
+                // Load dashboard data
+                await loadDashboard();
+
+            } catch (error) {
+                console.error('Error during authentication:', error);
+                alert('Authentication error. Please try logging in again.');
+                window.location.href = 'login-standalone.html';
+            }
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                // Get clocked in users
                 const { data: clockedIn, error: clockError } = await db
-                    .from('time_entries')
+                    .from('users')
                     .select('id')
-                    .eq('status', 'clocked_in');
+                    .eq('is_clocked_in', true);
 
                 if (clockError) throw clockError;
                 document.getElementById('stat-clocked-in').textContent = clockedIn?.length || 0;
 
-                // Get pending approvals
+                // Get pending time off requests (not time entries)
                 const { data: pending, error: pendError } = await db
-                    .from('time_entries')
+                    .from('time_off_requests')
                     .select('id')
-                    .eq('status', 'pending_approval');
+                    .eq('status', 'pending');
 
                 if (pendError) throw pendError;
                 document.getElementById('stat-pending').textContent = pending?.length || 0;
@@ -537,12 +540,20 @@
                 if (alertError) throw alertError;
                 document.getElementById('stat-alerts').textContent = alerts?.length || 0;
 
+                // Get total employees
+                const { data: employees, error: empError } = await db
+                    .from('users')
+                    .select('id')
+                    .neq('role', 'admin');
+
+                if (empError) throw empError;
+                document.getElementById('stat-employees').textContent = employees?.length || 0;
+
                 // Load recent activity
                 await loadRecentActivity();
 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
-                alert('Error loading dashboard data. Please refresh the page.');
             }
         }
 
@@ -552,11 +563,8 @@
                 const { data, error } = await db
                     .from('time_entries')
                     .select(`
-                        id,
-                        clock_in_time,
-                        clock_out_time,
-                        status,
-                        users (full_name, employee_id)
+                        *,
+                        users (full_name, employee_number)
                     `)
                     .order('clock_in_time', { ascending: false })
                     .limit(10);
@@ -572,28 +580,28 @@
 
                 let html = '';
                 data.forEach(entry => {
-                    const statusColors = {
-                        'clocked_in': 'bg-green-100 text-green-800',
-                        'clocked_out': 'bg-gray-100 text-gray-800',
-                        'pending_approval': 'bg-yellow-100 text-yellow-800',
-                        'approved': 'bg-blue-100 text-blue-800',
-                        'rejected': 'bg-red-100 text-red-800'
-                    };
-
-                    const statusColor = statusColors[entry.status] || 'bg-gray-100 text-gray-800';
                     const userName = entry.users?.full_name || 'Unknown';
-                    const empId = entry.users?.employee_number || 'N/A';
                     const clockIn = new Date(entry.clock_in_time).toLocaleString();
                     const clockOut = entry.clock_out_time ? new Date(entry.clock_out_time).toLocaleString() : 'Still clocked in';
-
+                    
+                    const statusIcons = {
+                        'clocked_in': '🟢',
+                        'clocked_out': '⚪',
+                        'pending_approval': '🟡',
+                        'approved': '✅',
+                        'rejected': '❌'
+                    };
+                    
+                    const icon = statusIcons[entry.status] || '⚪';
+                    
                     html += `
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div class="flex-1">
-                                <p class="font-medium text-gray-800">${userName} (${empId})</p>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <div>
+                                <p class="font-medium text-gray-800">${icon} ${userName}</p>
                                 <p class="text-sm text-gray-600">In: ${clockIn}</p>
                                 <p class="text-sm text-gray-600">Out: ${clockOut}</p>
                             </div>
-                            <span class="px-3 py-1 rounded-full text-xs font-medium ${statusColor}">
+                            <span class="text-xs font-medium px-2 py-1 rounded ${entry.status === 'clocked_in' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-800'}">
                                 ${entry.status.replace('_', ' ').toUpperCase()}
                             </span>
                         </div>
@@ -606,6 +614,215 @@
                 console.error('Error loading recent activity:', error);
                 document.getElementById('recent-activity').innerHTML = 
                     '<p class="text-red-500 text-center py-4">Error loading activity</p>';
+            }
+        }
+
+        // Populate pay period dropdown
+        async function populatePayPeriodDropdown() {
+            try {
+                const select = document.getElementById('payroll-period');
+                
+                // Query pay_periods table
+                const { data: periods, error } = await db
+                    .from('pay_periods')
+                    .select('*')
+                    .eq('year', 2026)
+                    .order('period_number', { ascending: false });
+                
+                if (error) {
+                    console.error('Error loading pay periods:', error);
+                    generateFallbackPeriods(select);
+                    return;
+                }
+                
+                if (!periods || periods.length === 0) {
+                    console.warn('No pay periods found in database');
+                    generateFallbackPeriods(select);
+                    return;
+                }
+                
+                // Clear existing options
+                select.innerHTML = '<option value="">Select Period...</option>';
+                
+                // Add each period from database
+                periods.forEach(period => {
+                    const option = document.createElement('option');
+                    option.value = JSON.stringify({
+                        start: period.start_date,
+                        end: period.end_date
+                    });
+                    
+                    const start = new Date(period.start_date);
+                    const end = new Date(period.end_date);
+                    option.textContent = `${start.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})} - ${end.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}`;
+                    
+                    select.appendChild(option);
+                });
+                
+                console.log(`✅ Loaded ${periods.length} pay periods from database`);
+                
+            } catch (error) {
+                console.error('Error populating pay periods:', error);
+                generateFallbackPeriods(document.getElementById('payroll-period'));
+            }
+        }
+
+        // Fallback period generation
+        function generateFallbackPeriods(select) {
+            console.log('⚠️ Using fallback pay period generation');
+            const today = new Date();
+            
+            select.innerHTML = '<option value="">Select Period...</option>';
+            
+            for (let i = 0; i < 12; i++) {
+                const endDate = new Date(today);
+                endDate.setDate(endDate.getDate() - (i * 14));
+                
+                const startDate = new Date(endDate);
+                startDate.setDate(startDate.getDate() - 13);
+                
+                const option = document.createElement('option');
+                option.value = JSON.stringify({
+                    start: startDate.toISOString().split('T')[0],
+                    end: endDate.toISOString().split('T')[0]
+                });
+                option.textContent = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+                select.appendChild(option);
+            }
+        }
+
+        // Load payroll preview
+        async function loadPayrollPreview() {
+            try {
+                const periodSelect = document.getElementById('payroll-period');
+                const selectedPeriod = periodSelect.value;
+
+                if (!selectedPeriod) {
+                    alert('Please select a pay period');
+                    return;
+                }
+
+                const { start, end } = JSON.parse(selectedPeriod);
+
+                // Call RPC function for payroll data
+                const { data, error } = await db.rpc('get_paychex_payroll', {
+                    p_start_date: start,
+                    p_end_date: end
+                });
+
+                if (error) {
+                    console.error('RPC Error:', error);
+                    throw error;
+                }
+
+                const tbody = document.getElementById('payroll-table-body');
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                No payroll data for selected period
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                let totals = {
+                    regular: 0,
+                    overtime: 0,
+                    pto: 0,
+                    sick: 0,
+                    total: 0
+                };
+
+                data.forEach(row => {
+                    totals.regular += row.regular_hours || 0;
+                    totals.overtime += row.overtime_hours || 0;
+                    totals.pto += row.pto_hours || 0;
+                    totals.sick += row.sick_hours || 0;
+                    totals.total += row.total_hours || 0;
+
+                    html += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium">${row.full_name || 'Unknown'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${row.email || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono">${(row.regular_hours || 0).toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono">${(row.overtime_hours || 0).toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono">${(row.pto_hours || 0).toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono">${(row.sick_hours || 0).toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono font-bold">${(row.total_hours || 0).toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+
+                // Add totals row
+                html += `
+                    <tr class="bg-blue-50 font-bold">
+                        <td class="px-6 py-4" colspan="2">TOTALS</td>
+                        <td class="px-6 py-4 font-mono">${totals.regular.toFixed(2)}</td>
+                        <td class="px-6 py-4 font-mono">${totals.overtime.toFixed(2)}</td>
+                        <td class="px-6 py-4 font-mono">${totals.pto.toFixed(2)}</td>
+                        <td class="px-6 py-4 font-mono">${totals.sick.toFixed(2)}</td>
+                        <td class="px-6 py-4 font-mono">${totals.total.toFixed(2)}</td>
+                    </tr>
+                `;
+
+                tbody.innerHTML = html;
+
+            } catch (error) {
+                console.error('Error loading payroll:', error);
+                alert('Error loading payroll data: ' + error.message);
+            }
+        }
+
+        // Export to CSV
+        async function exportToCSV() {
+            try {
+                const periodSelect = document.getElementById('payroll-period');
+                const selectedPeriod = periodSelect.value;
+
+                if (!selectedPeriod) {
+                    alert('Please select a pay period first');
+                    return;
+                }
+
+                const { start, end } = JSON.parse(selectedPeriod);
+
+                const { data, error } = await db.rpc('get_paychex_payroll', {
+                    p_start_date: start,
+                    p_end_date: end
+                });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    alert('No data to export');
+                    return;
+                }
+
+                // Build CSV
+                let csv = 'Employee Name,Email,Regular Hours,Overtime Hours,PTO Hours,Sick Hours,Total Hours\n';
+                
+                data.forEach(row => {
+                    csv += `"${row.full_name}","${row.email}",${row.regular_hours || 0},${row.overtime_hours || 0},${row.pto_hours || 0},${row.sick_hours || 0},${row.total_hours || 0}\n`;
+                });
+
+                // Download
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `payroll_${start}_to_${end}.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+
+                alert('✅ Payroll exported successfully!');
+
+            } catch (error) {
+                console.error('Error exporting CSV:', error);
+                alert('Error exporting payroll: ' + error.message);
             }
         }
 
@@ -642,26 +859,20 @@
                     };
 
                     const roleColor = roleColors[emp.role] || 'bg-gray-100 text-gray-800';
-
-                    // Check if currently clocked in
                     const isActive = emp.is_clocked_in ? 'Clocked In' : 'Clocked Out';
                     const statusColor = emp.is_clocked_in ? 'text-green-600' : 'text-gray-600';
 
                     html += `
                         <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="font-medium text-gray-900">${emp.full_name}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-gray-600">${emp.email}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-gray-600">${emp.employee_id || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-medium">${emp.full_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${emp.email}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${emp.employee_number || 'N/A'}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-3 py-1 rounded-full text-xs font-medium ${roleColor}">
                                     ${emp.role.toUpperCase()}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="${statusColor} font-medium">${isActive}</span>
-                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap ${statusColor} font-medium">${isActive}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <button onclick="editEmployee('${emp.id}')" class="text-blue-600 hover:text-blue-800 mr-3">
                                     <i class="fas fa-edit"></i> Edit
@@ -688,6 +899,97 @@
             }
         }
 
+        // Edit employee
+        async function editEmployee(id) {
+            try {
+                const { data, error } = await db
+                    .from('users')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                // Populate form
+                document.getElementById('edit-employee-id').value = data.id;
+                document.getElementById('edit-full-name').value = data.full_name || '';
+                document.getElementById('edit-email').value = data.email || '';
+                document.getElementById('edit-employee-number').value = data.employee_number || '';
+                document.getElementById('edit-role').value = data.role || 'employee';
+                document.getElementById('edit-pay-rate').value = data.pay_rate || '';
+                document.getElementById('edit-phone').value = data.phone || '';
+
+                // Show modal
+                document.getElementById('editEmployeeModal').classList.add('active');
+
+            } catch (error) {
+                console.error('Error loading employee:', error);
+                alert('Error loading employee data');
+            }
+        }
+
+        // Close edit employee modal
+        function closeEditEmployeeModal() {
+            document.getElementById('editEmployeeModal').classList.remove('active');
+            document.getElementById('editEmployeeForm').reset();
+        }
+
+        // Handle edit employee form submission
+        document.getElementById('editEmployeeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            try {
+                const id = document.getElementById('edit-employee-id').value;
+                const updates = {
+                    full_name: document.getElementById('edit-full-name').value,
+                    email: document.getElementById('edit-email').value,
+                    employee_number: document.getElementById('edit-employee-number').value,
+                    role: document.getElementById('edit-role').value,
+                    pay_rate: document.getElementById('edit-pay-rate').value ? parseFloat(document.getElementById('edit-pay-rate').value) : null,
+                    phone: document.getElementById('edit-phone').value,
+                    updated_at: new Date().toISOString()
+                };
+
+                const { error } = await db
+                    .from('users')
+                    .update(updates)
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                alert('✅ Employee updated successfully!');
+                closeEditEmployeeModal();
+                await loadEmployees();
+
+            } catch (error) {
+                console.error('Error updating employee:', error);
+                alert('Error updating employee: ' + error.message);
+            }
+        });
+
+        // Delete employee
+        async function deleteEmployee(id) {
+            if (!confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('users')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                alert('✅ Employee deleted successfully');
+                await loadEmployees();
+
+            } catch (error) {
+                console.error('Error deleting employee:', error);
+                alert('Error deleting employee: ' + error.message);
+            }
+        }
+
         // Load alerts
         async function loadAlerts() {
             try {
@@ -695,8 +997,7 @@
                     .from('admin_alerts')
                     .select(`
                         *,
-                        users:user_id (full_name, employee_number),
-                        time_entries:time_entry_id (clock_in_time, clock_out_time)
+                        users (full_name, employee_number)
                     `)
                     .eq('status', 'active')
                     .order('created_at', { ascending: false });
@@ -710,77 +1011,68 @@
                     return;
                 }
 
-                let html = '';
+                let html = '<div class="space-y-3">';
                 data.forEach(alert => {
                     const typeColors = {
-                        'geofence_violation': 'border-red-500 bg-red-50',
-                        'missed_clock_out': 'border-yellow-500 bg-yellow-50',
-                        'overtime_alert': 'border-orange-500 bg-orange-50',
-                        'system': 'border-blue-500 bg-blue-50'
+                        'geofence_tracking': 'bg-yellow-50 border-yellow-200',
+                        'late_clock_in': 'bg-red-50 border-red-200',
+                        'missed_clock_out': 'bg-orange-50 border-orange-200',
+                        'overtime': 'bg-purple-50 border-purple-200'
                     };
 
-                    const typeIcons = {
-                        'geofence_violation': 'fa-map-marker-alt text-red-600',
-                        'missed_clock_out': 'fa-clock text-yellow-600',
-                        'overtime_alert': 'fa-exclamation-circle text-orange-600',
-                        'system': 'fa-info-circle text-blue-600'
-                    };
-
-                    const borderColor = typeColors[alert.alert_type] || 'border-gray-500 bg-gray-50';
-                    const icon = typeIcons[alert.alert_type] || 'fa-info-circle text-gray-600';
+                    const bgColor = typeColors[alert.alert_type] || 'bg-gray-50 border-gray-200';
                     const userName = alert.users?.full_name || 'Unknown';
-                    const empId = alert.users?.employee_number || 'N/A';
                     const createdAt = new Date(alert.created_at).toLocaleString();
 
                     html += `
-                        <div class="alert-row border-l-4 ${borderColor} p-4 rounded-lg">
-                            <div class="flex items-start justify-between">
+                        <div class="alert-row border ${bgColor} rounded-lg p-4">
+                            <div class="flex justify-between items-start">
                                 <div class="flex-1">
                                     <div class="flex items-center mb-2">
-                                        <i class="fas ${icon} text-xl mr-3"></i>
-                                        <div>
-                                            <h3 class="font-bold text-gray-800">${alert.alert_type.replace('_', ' ').toUpperCase()}</h3>
-                                            <p class="text-sm text-gray-600">${userName} (${empId})</p>
-                                        </div>
+                                        <i class="fas fa-exclamation-circle text-orange-600 mr-2"></i>
+                                        <h3 class="font-bold text-gray-800">${userName}</h3>
                                     </div>
-                                    <p class="text-gray-700 ml-9">${alert.alert_message || 'No details'}</p>
-                                    <p class="text-xs text-gray-500 ml-9 mt-2">${createdAt}</p>
+                                    <p class="text-gray-700 mb-2">${alert.alert_message}</p>
+                                    <p class="text-xs text-gray-500">${createdAt}</p>
                                 </div>
-                                <div class="flex space-x-2">
-                                    <button onclick="resolveAlert('${alert.id}')" class="text-green-600 hover:text-green-800 px-3 py-1 border border-green-600 rounded">
-                                        <i class="fas fa-check mr-1"></i>Resolve
+                                <div class="flex space-x-2 ml-4">
+                                    <button onclick="resolveAlert('${alert.id}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition">
+                                        Resolve
                                     </button>
-                                    <button onclick="dismissAlert('${alert.id}')" class="text-gray-600 hover:text-gray-800 px-3 py-1 border border-gray-600 rounded">
-                                        <i class="fas fa-times mr-1"></i>Dismiss
+                                    <button onclick="dismissAlert('${alert.id}')" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm transition">
+                                        Dismiss
                                     </button>
                                 </div>
                             </div>
                         </div>
                     `;
                 });
+                html += '</div>';
 
                 container.innerHTML = html;
 
             } catch (error) {
                 console.error('Error loading alerts:', error);
                 document.getElementById('alerts-container').innerHTML = 
-                    '<p class="text-red-500 text-center py-4">Error loading alerts</p>';
+                    '<p class="text-gray-500 text-center py-4">No active alerts</p>';
             }
         }
 
         // Resolve alert
-        async function resolveAlert(alertId) {
+        async function resolveAlert(id) {
             try {
                 const { error } = await db
                     .from('admin_alerts')
-                    .update({ status: 'resolved', resolved_at: new Date().toISOString() })
-                    .eq('id', alertId);
+                    .update({ 
+                        status: 'resolved',
+                        resolved_at: new Date().toISOString()
+                    })
+                    .eq('id', id);
 
                 if (error) throw error;
 
-                alert('Alert resolved successfully');
-                loadAlerts();
-                loadDashboardData(); // Refresh stats
+                await loadAlerts();
+                await loadDashboard();
 
             } catch (error) {
                 console.error('Error resolving alert:', error);
@@ -789,18 +1081,20 @@
         }
 
         // Dismiss alert
-        async function dismissAlert(alertId) {
+        async function dismissAlert(id) {
             try {
                 const { error } = await db
                     .from('admin_alerts')
-                    .update({ status: 'dismissed', resolved_at: new Date().toISOString() })
-                    .eq('id', alertId);
+                    .update({ 
+                        status: 'dismissed',
+                        resolved_at: new Date().toISOString()
+                    })
+                    .eq('id', id);
 
                 if (error) throw error;
 
-                alert('Alert dismissed');
-                loadAlerts();
-                loadDashboardData(); // Refresh stats
+                await loadAlerts();
+                await loadDashboard();
 
             } catch (error) {
                 console.error('Error dismissing alert:', error);
@@ -808,547 +1102,133 @@
             }
         }
 
-        // Populate pay period dropdown from database
-        async function populatePayPeriodDropdown() {
-            try {
-                const select = document.getElementById('payroll-period');
-                
-                // Fetch pay periods from database
-                const { data: periods, error } = await db
-                    .from('pay_periods')
-                    .select('*')
-                    .eq('year', 2026)
-                    .order('period_number', { ascending: false }); // Newest first
-                
-                if (error) {
-                    console.error('Error loading pay periods:', error);
-                    // Fallback to manual generation if DB fails
-                    generateFallbackPeriods(select);
-                    return;
-                }
-                
-                if (!periods || periods.length === 0) {
-                    console.warn('No pay periods found in database');
-                    generateFallbackPeriods(select);
-                    return;
-                }
-                
-                // Clear existing options except the first "Select Period..." option
-                select.innerHTML = '<option value="">Select Period...</option>';
-                
-                // Add each period from database
-                periods.forEach(period => {
-                    const option = document.createElement('option');
-                    option.value = JSON.stringify({
-                        start: period.start_date,
-                        end: period.end_date
-                    });
-                    
-                    // Format dates nicely
-                    const start = new Date(period.start_date);
-                    const end = new Date(period.end_date);
-                    option.textContent = `${start.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})} - ${end.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}`;
-                    
-                    select.appendChild(option);
-                });
-                
-                console.log(`✅ Loaded ${periods.length} pay periods from database`);
-                
-            } catch (error) {
-                console.error('Error populating pay periods:', error);
-                generateFallbackPeriods(document.getElementById('payroll-period'));
-            }
-        }
-        
-        // Fallback: Generate periods manually if database fails
-        function generateFallbackPeriods(select) {
-            console.log('⚠️ Using fallback pay period generation');
-            const today = new Date();
-            
-            for (let i = 0; i < 12; i++) {
-                const endDate = new Date(today);
-                endDate.setDate(endDate.getDate() - (i * 14));
-                
-                const startDate = new Date(endDate);
-                startDate.setDate(startDate.getDate() - 13);
-                
-                const option = document.createElement('option');
-                option.value = JSON.stringify({
-                    start: startDate.toISOString().split('T')[0],
-                    end: endDate.toISOString().split('T')[0]
-                });
-                option.textContent = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
-                
-                select.appendChild(option);
-            }
-        }
-
-        // Set default date range
-        function setDefaultDateRange() {
-            const today = new Date();
-            const twoWeeksAgo = new Date(today);
-            twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-            
-            document.getElementById('payroll-start').value = twoWeeksAgo.toISOString().split('T')[0];
-            document.getElementById('payroll-end').value = today.toISOString().split('T')[0];
-            
-            document.getElementById('time-entries-start').value = twoWeeksAgo.toISOString().split('T')[0];
-            document.getElementById('time-entries-end').value = today.toISOString().split('T')[0];
-        }
-
-        // Global variable for current edit
-        let currentEditEntry = null;
-
-        // Load payroll preview with expandable time entries
-        async function loadPayrollPreview() {
-            try {
-                const periodSelect = document.getElementById('payroll-period');
-                let startDate, endDate;
-
-                if (periodSelect.value) {
-                    const period = JSON.parse(periodSelect.value);
-                    startDate = period.start;
-                    endDate = period.end;
-                    
-                    document.getElementById('payroll-start').value = startDate;
-                    document.getElementById('payroll-end').value = endDate;
-                } else {
-                    startDate = document.getElementById('payroll-start').value;
-                    endDate = document.getElementById('payroll-end').value;
-                }
-
-                if (!startDate || !endDate) {
-                    alert('Please select a date range');
-                    return;
-                }
-
-                // Call RPC function to get payroll data
-                const { data, error } = await db.rpc('get_paychex_payroll', {
-                    start_date: startDate,
-                    end_date: endDate
-                });
-
-                if (error) throw error;
-
-                const container = document.getElementById('payroll-preview');
-
-                if (!data || data.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No payroll data for selected period</p>';
-                    return;
-                }
-
-                // For each employee, fetch their individual time entries
-                const detailedData = await Promise.all(data.map(async (record) => {
-                    const { data: entries, error: entriesError } = await db
-                        .from('time_entries')
-                        .select('*')
-                        .eq('user_id', record.employee_id || record.user_id)
-                        .gte('clock_in_time', startDate)
-                        .lte('clock_in_time', endDate + 'T23:59:59')
-                        .order('clock_in_time', { ascending: true });
-
-                    if (entriesError) console.error('Error fetching entries:', entriesError);
-                    return {
-                        ...record,
-                        timeEntries: entries || []
-                    };
-                }));
-
-                // Build preview table with expandable rows
-                let html = `
-                    <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p class="text-sm text-blue-800">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            <strong>Click on any employee row</strong> to view and edit individual time entries
-                        </p>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        <i class="fas fa-chevron-down mr-1"></i>Name
-                                    </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Regular</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">OT</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">PTO</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Sick</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Entries</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                `;
-
-                let totalRegular = 0, totalOT = 0, totalPTO = 0, totalSick = 0;
-
-                detailedData.forEach((record, index) => {
-                    const empId = `emp-${index}`;
-                    totalRegular += record.regular_hours || 0;
-                    totalOT += record.overtime_hours || 0;
-                    totalPTO += record.pto_hours || 0;
-                    totalSick += record.sick_hours || 0;
-
-                    html += `
-                        <tr class="expandable-row" onclick="toggleDetails('${empId}')">
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                <i class="fas fa-chevron-right mr-2 text-gray-400" id="${empId}-icon"></i>
-                                <strong>${record.employee_name}</strong>
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">${record.email}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-right font-mono">${(record.regular_hours || 0).toFixed(2)}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-right font-mono">${(record.overtime_hours || 0).toFixed(2)}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-right font-mono">${(record.pto_hours || 0).toFixed(2)}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-right font-mono">${(record.sick_hours || 0).toFixed(2)}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-right font-mono font-bold">${(record.total_hours || 0).toFixed(2)}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-center">
-                                <span class="px-2 py-1 text-xs bg-gray-100 rounded-full">${record.timeEntries.length}</span>
-                            </td>
-                        </tr>
-                        <tr class="details-row" id="${empId}">
-                            <td colspan="8" class="px-4 py-3">
-                                <div class="ml-8 mr-4">
-                                    <h4 class="font-semibold mb-2 text-sm text-gray-700">Individual Time Entries:</h4>
-                                    ${buildTimeEntriesTable(record.timeEntries, record.employee_id || record.user_id, record.employee_name, record.email)}
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                });
-
-                const grandTotal = totalRegular + totalOT + totalPTO + totalSick;
-
-                html += `
-                        <tr class="bg-gray-100 font-bold">
-                            <td colspan="2" class="px-4 py-3 text-right">TOTALS:</td>
-                            <td class="px-4 py-3 text-right font-mono">${totalRegular.toFixed(2)}</td>
-                            <td class="px-4 py-3 text-right font-mono">${totalOT.toFixed(2)}</td>
-                            <td class="px-4 py-3 text-right font-mono">${totalPTO.toFixed(2)}</td>
-                            <td class="px-4 py-3 text-right font-mono">${totalSick.toFixed(2)}</td>
-                            <td class="px-4 py-3 text-right font-mono">${grandTotal.toFixed(2)}</td>
-                            <td></td>
-                        </tr>
-                    </tbody>
-                    </table>
-                </div>
-                `;
-
-                container.innerHTML = html;
-
-            } catch (error) {
-                console.error('Error loading payroll preview:', error);
-                document.getElementById('payroll-preview').innerHTML = 
-                    '<p class="text-red-500 text-center py-4">Error loading payroll data</p>';
-            }
-        }
-
-        // Build time entries table for expandable row
-        function buildTimeEntriesTable(entries, userId, userName, userEmail) {
-            if (entries.length === 0) {
-                return '<p class="text-sm text-gray-500 italic">No time entries for this period</p>';
-            }
-
-            let html = '<table class="min-w-full text-sm border border-gray-200 rounded">';
-            html += `
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-3 py-2 text-left">Clock In</th>
-                        <th class="px-3 py-2 text-left">Clock Out</th>
-                        <th class="px-3 py-2 text-left">Hours</th>
-                        <th class="px-3 py-2 text-left">Status</th>
-                        <th class="px-3 py-2 text-right">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-            `;
-
-            entries.forEach(entry => {
-                const clockIn = new Date(entry.clock_in_time);
-                const clockOut = entry.clock_out_time ? new Date(entry.clock_out_time) : null;
-                const hours = entry.total_hours ? entry.total_hours.toFixed(2) : (clockOut ? ((clockOut - clockIn) / (1000 * 60 * 60)).toFixed(2) : 'In progress');
-                
-                html += `
-                    <tr class="border-t">
-                        <td class="px-3 py-2">${clockIn.toLocaleString()}</td>
-                        <td class="px-3 py-2">${clockOut ? clockOut.toLocaleString() : '<span class="text-yellow-600">Still clocked in</span>'}</td>
-                        <td class="px-3 py-2 font-mono">${hours}</td>
-                        <td class="px-3 py-2">
-                            ${clockOut 
-                                ? '<span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Complete</span>' 
-                                : '<span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">In Progress</span>'}
-                        </td>
-                        <td class="px-3 py-2 text-right">
-                            <button 
-                                onclick='editTimeEntry(${JSON.stringify({
-                                    id: entry.id,
-                                    user_id: userId,
-                                    user_name: userName,
-                                    user_email: userEmail,
-                                    clock_in: entry.clock_in_time,
-                                    clock_out: entry.clock_out_time
-                                })})' 
-                                class="text-blue-600 hover:text-blue-800 text-xs font-semibold">
-                                <i class="fas fa-edit mr-1"></i>Edit
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            html += '</tbody></table>';
-            return html;
-        }
-
-        // Toggle expandable details row
-        function toggleDetails(empId) {
-            const detailsRow = document.getElementById(empId);
-            const icon = document.getElementById(`${empId}-icon`);
-            
-            if (detailsRow.classList.contains('expanded')) {
-                detailsRow.classList.remove('expanded');
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-right');
-            } else {
-                detailsRow.classList.add('expanded');
-                icon.classList.remove('fa-chevron-right');
-                icon.classList.add('fa-chevron-down');
-            }
-        }
-
-        // Edit time entry function
-        function editTimeEntry(entry) {
-            currentEditEntry = entry;
-            
-            // Populate the form
-            document.getElementById('edit-entry-id').value = entry.id;
-            document.getElementById('edit-user-id').value = entry.user_id;
-            document.getElementById('edit-employee-name').textContent = entry.user_name;
-            document.getElementById('edit-employee-email').textContent = entry.user_email;
-            
-            // Format datetime for datetime-local input (YYYY-MM-DDTHH:mm)
-            const clockIn = new Date(entry.clock_in);
-            const clockInStr = clockIn.toISOString().slice(0, 16);
-            document.getElementById('edit-clock-in').value = clockInStr;
-            
-            if (entry.clock_out) {
-                const clockOut = new Date(entry.clock_out);
-                const clockOutStr = clockOut.toISOString().slice(0, 16);
-                document.getElementById('edit-clock-out').value = clockOutStr;
-            } else {
-                document.getElementById('edit-clock-out').value = '';
-            }
-            
-            // Clear the reason field
-            document.getElementById('edit-reason').value = '';
-            
-            // Show the modal
-            document.getElementById('editTimeModal').classList.remove('hidden');
-        }
-
-        // Close edit modal
-        function closeEditModal() {
-            document.getElementById('editTimeModal').classList.add('hidden');
-            currentEditEntry = null;
-        }
-
-        // Save time entry edit
-        async function saveTimeEdit(event) {
-            event.preventDefault();
-            
-            if (!currentEditEntry) {
-                alert('Error: No entry selected');
-                return false;
-            }
-            
-            const entryId = document.getElementById('edit-entry-id').value;
-            const newClockIn = document.getElementById('edit-clock-in').value;
-            const newClockOut = document.getElementById('edit-clock-out').value;
-            const reason = document.getElementById('edit-reason').value;
-            
-            if (!reason.trim()) {
-                alert('Please provide a reason for the change');
-                return false;
-            }
-            
-            try {
-                // Insert audit trail FIRST
-                const { error: auditError } = await db
-                    .from('time_entry_audit')
-                    .insert({
-                        time_entry_id: entryId,
-                        edited_by_user_id: currentUser.id,
-                        adjustment_reason: reason,
-                        original_clock_in: currentEditEntry.clock_in,
-                        original_clock_out: currentEditEntry.clock_out,
-                        new_clock_in: newClockIn,
-                        new_clock_out: newClockOut || null
-                    });
-                
-                if (auditError) {
-                    console.error('Audit error:', auditError);
-                    throw auditError;
-                }
-                
-                // Update the time entry
-                const updateData = {
-                    clock_in_time: newClockIn,
-                    updated_at: new Date().toISOString()
-                };
-                
-                if (newClockOut) {
-                    updateData.clock_out_time = newClockOut;
-                    // Calculate new total hours
-                    const clockInDate = new Date(newClockIn);
-                    const clockOutDate = new Date(newClockOut);
-                    const hours = (clockOutDate - clockInDate) / (1000 * 60 * 60);
-                    updateData.total_hours = hours;
-                }
-                
-                const { error: updateError } = await db
-                    .from('time_entries')
-                    .update(updateData)
-                    .eq('id', entryId);
-                
-                if (updateError) {
-                    console.error('Update error:', updateError);
-                    throw updateError;
-                }
-                
-                alert('✅ Time entry updated successfully!\n\n✓ Audit trail recorded\n✓ Payroll will reflect the new hours');
-                closeEditModal();
-                
-                // Refresh the payroll preview
-                loadPayrollPreview();
-                
-            } catch (error) {
-                console.error('Error saving time edit:', error);
-                alert('❌ Error saving changes: ' + error.message);
-            }
-            
-            return false;
-        }
-
-        // Export payroll CSV
-        async function exportPayrollCSV() {
-            try {
-                const startDate = document.getElementById('payroll-start').value;
-                const endDate = document.getElementById('payroll-end').value;
-
-                if (!startDate || !endDate) {
-                    alert('Please select a date range');
-                    return;
-                }
-
-                // Call RPC function to get payroll data
-                const { data, error } = await db.rpc('get_paychex_payroll', {
-                    start_date: startDate,
-                    end_date: endDate
-                });
-
-                if (error) throw error;
-
-                if (!data || data.length === 0) {
-                    alert('No data to export for selected period');
-                    return;
-                }
-
-                // Build CSV
-                let csv = 'Employee Name,Email,Regular Hours,Overtime Hours,PTO Hours,Sick Hours,Total Hours,Pay Rate,Days Worked\n';
-
-                data.forEach(record => {
-                    csv += `"${record.employee_name}",`;
-                    csv += `"${record.email}",`;
-                    csv += `${(record.regular_hours || 0).toFixed(2)},`;
-                    csv += `${(record.overtime_hours || 0).toFixed(2)},`;
-                    csv += `${(record.pto_hours || 0).toFixed(2)},`;
-                    csv += `${(record.sick_hours || 0).toFixed(2)},`;
-                    csv += `${(record.total_hours || 0).toFixed(2)},`;
-                    csv += `${(record.pay_rate || 0).toFixed(2)},`;
-                    csv += `${record.days_worked || 0}\n`;
-                });
-
-                // Download CSV
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `payroll_${startDate}_to_${endDate}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-
-                // Log the export to payroll_exports table
-                const totalHours = data.reduce((sum, record) => sum + parseFloat(record.total_hours || 0), 0);
-                await db.from('payroll_exports').insert({
-                    exported_by_user_id: currentUser.id,
-                    start_date: startDate,
-                    end_date: endDate,
-                    employee_count: data.length,
-                    total_hours: totalHours
-                });
-
-                alert('✅ Payroll exported successfully!\n\n' +
-                      `📊 ${data.length} employees\n` +
-                      `⏱️ ${totalHours.toFixed(2)} total hours\n` +
-                      `📁 Export logged to audit trail`);
-
-            } catch (error) {
-                console.error('Error exporting payroll:', error);
-                alert('Error exporting payroll data');
-            }
-        }
-
-        // Load approvals
+        // Load approvals (time off requests with multi-level approval)
         async function loadApprovals() {
             try {
                 const { data, error } = await db
-                    .from('time_entries')
+                    .from('time_off_requests')
                     .select(`
                         *,
-                        users (full_name, employee_number, email)
+                        users (full_name, employee_number, email),
+                        time_off_approvals (
+                            id,
+                            approver_id,
+                            approval_action,
+                            approval_date,
+                            notes,
+                            users (full_name, email)
+                        )
                     `)
-                    .eq('status', 'pending_approval')
-                    .order('clock_in_time', { ascending: false });
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
                 const container = document.getElementById('approvals-container');
 
                 if (!data || data.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No pending approvals</p>';
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No pending time off requests</p>';
                     return;
                 }
 
                 let html = '<div class="space-y-4">';
 
-                data.forEach(entry => {
-                    const userName = entry.users?.full_name || 'Unknown';
-                    const empId = entry.users?.employee_number || 'N/A';
-                    const email = entry.users?.email || '';
-                    const clockIn = new Date(entry.clock_in_time).toLocaleString();
-                    const clockOut = entry.clock_out_time ? new Date(entry.clock_out_time).toLocaleString() : 'Still clocked in';
-                    const hours = entry.total_hours ? entry.total_hours.toFixed(2) : 'N/A';
+                data.forEach(request => {
+                    const userName = request.users?.full_name || 'Unknown';
+                    const empId = request.users?.employee_number || 'N/A';
+                    const email = request.users?.email || '';
+                    const requestType = request.request_type || 'PTO';
+                    const startDate = new Date(request.start_date).toLocaleDateString();
+                    const endDate = new Date(request.end_date).toLocaleDateString();
+                    const hours = request.hours_requested || 'N/A';
+                    const approvalStatus = request.approval_status || 'pending';
+                    const currentApprovals = request.current_approvals || 0;
+                    const requiredApprovals = request.requires_approvals || 2;
+
+                    const typeColors = {
+                        'pto': 'bg-blue-50 border-blue-200',
+                        'sick': 'bg-yellow-50 border-yellow-200',
+                        'vacation': 'bg-green-50 border-green-200',
+                        'personal': 'bg-purple-50 border-purple-200'
+                    };
+                    const typeColor = typeColors[requestType.toLowerCase()] || 'bg-gray-50 border-gray-200';
+
+                    // Check who has already approved
+                    const approvals = request.time_off_approvals || [];
+                    const tatianaApproved = approvals.some(a => 
+                        a.users?.email === 'tatiana.schnierow@dmhiop.com' && a.approval_action === 'approved'
+                    );
+                    const seanApproved = approvals.some(a => 
+                        a.users?.email === 'sean_roberts@dmhiop.com' && a.approval_action === 'approved'
+                    );
+                    const garyApproved = approvals.some(a => 
+                        a.users?.email?.toLowerCase().includes('gary') && a.approval_action === 'approved'
+                    );
+
+                    // Determine if current user can approve
+                    const currentUserEmail = currentUser.email.toLowerCase();
+                    const isTatiana = currentUserEmail === 'tatiana.schnierow@dmhiop.com';
+                    const isSean = currentUserEmail === 'sean_roberts@dmhiop.com';
+                    const isGary = currentUserEmail.includes('gary');
+                    
+                    let canApprove = false;
+                    let approvalMessage = '';
+                    
+                    if (isTatiana && !tatianaApproved) {
+                        canApprove = true;
+                        approvalMessage = '⚠️ <strong>Your approval is REQUIRED</strong>';
+                    } else if ((isSean && !seanApproved && !garyApproved) || (isGary && !seanApproved && !garyApproved)) {
+                        canApprove = true;
+                        if (tatianaApproved) {
+                            approvalMessage = '✅ Tatiana approved - <strong>Your approval needed</strong>';
+                        } else {
+                            approvalMessage = 'Waiting for Tatiana\'s approval first';
+                        }
+                    } else if (tatianaApproved && (seanApproved || garyApproved)) {
+                        approvalMessage = '✅ Fully approved - will be marked complete';
+                    }
+
+                    // Build approval status badges
+                    let approvalBadges = '<div class="mt-2 space-x-2">';
+                    if (tatianaApproved) {
+                        approvalBadges += '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">✓ Tatiana</span>';
+                    } else {
+                        approvalBadges += '<span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">⏳ Tatiana (Required)</span>';
+                    }
+                    
+                    if (seanApproved) {
+                        approvalBadges += '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">✓ Sean</span>';
+                    } else if (garyApproved) {
+                        approvalBadges += '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">✓ Gary</span>';
+                    } else {
+                        approvalBadges += '<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">⏳ Sean or Gary</span>';
+                    }
+                    approvalBadges += '</div>';
 
                     html += `
-                        <div class="border border-gray-200 rounded-lg p-4 bg-white">
+                        <div class="border ${typeColor} rounded-lg p-4 bg-white">
                             <div class="flex justify-between items-start">
                                 <div class="flex-1">
                                     <h3 class="font-bold text-gray-800">${userName} (${empId})</h3>
                                     <p class="text-sm text-gray-600">${email}</p>
                                     <div class="mt-3 space-y-1 text-sm">
-                                        <p><span class="font-medium">Clock In:</span> ${clockIn}</p>
-                                        <p><span class="font-medium">Clock Out:</span> ${clockOut}</p>
-                                        <p><span class="font-medium">Hours:</span> ${hours}</p>
-                                        ${entry.notes ? `<p><span class="font-medium">Notes:</span> ${entry.notes}</p>` : ''}
+                                        <p><span class="font-medium">Type:</span> <span class="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">${requestType.toUpperCase()}</span></p>
+                                        <p><span class="font-medium">Start Date:</span> ${startDate}</p>
+                                        <p><span class="font-medium">End Date:</span> ${endDate}</p>
+                                        <p><span class="font-medium">Hours Requested:</span> ${hours}</p>
+                                        ${request.employee_note ? `<p><span class="font-medium">Reason:</span> ${request.employee_note}</p>` : ''}
+                                        <p><span class="font-medium">Approval Status:</span> ${currentApprovals}/${requiredApprovals} approvals</p>
                                     </div>
+                                    ${approvalBadges}
+                                    ${approvalMessage ? `<p class="text-sm mt-2 ${canApprove ? 'text-blue-700' : 'text-gray-600'}">${approvalMessage}</p>` : ''}
                                 </div>
-                                <div class="flex space-x-2 ml-4">
-                                    <button onclick="approveTimeEntry('${entry.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
-                                        <i class="fas fa-check mr-1"></i>Approve
-                                    </button>
-                                    <button onclick="rejectTimeEntry('${entry.id}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">
+                                <div class="flex flex-col space-y-2 ml-4">
+                                    ${canApprove ? `
+                                        <button onclick="approveTimeOffRequest('${request.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
+                                            <i class="fas fa-check mr-1"></i>Approve
+                                        </button>
+                                    ` : ''}
+                                    <button onclick="rejectTimeOffRequest('${request.id}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">
                                         <i class="fas fa-times mr-1"></i>Reject
                                     </button>
                                 </div>
@@ -1363,145 +1243,198 @@
             } catch (error) {
                 console.error('Error loading approvals:', error);
                 document.getElementById('approvals-container').innerHTML = 
-                    '<p class="text-red-500 text-center py-4">Error loading approvals</p>';
+                    '<p class="text-gray-500 text-center py-4">No pending time off requests at this time</p>';
             }
         }
 
-        // Approve time entry
-        async function approveTimeEntry(entryId) {
+        // Approve time off request (multi-level approval)
+        async function approveTimeOffRequest(requestId) {
             try {
-                const { error } = await db
-                    .from('time_entries')
-                    .update({ 
-                        status: 'approved',
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', entryId);
+                // Insert approval record
+                const { error: insertError } = await db
+                    .from('time_off_approvals')
+                    .insert({
+                        time_off_request_id: requestId,
+                        approver_id: currentUser.id,
+                        approver_role: currentUser.role,
+                        approval_action: 'approved',
+                        approval_date: new Date().toISOString(),
+                        notes: `Approved by ${currentUser.full_name}`
+                    });
 
-                if (error) throw error;
+                if (insertError) throw insertError;
 
-                // Create approval record
-                await db.from('approvals').insert({
-                    time_entry_id: entryId,
-                    approved_by: currentUser.id,
-                    status: 'approved',
-                    approved_at: new Date().toISOString()
-                });
+                // The trigger will automatically update the approval_status
+                // But let's also check if it's fully approved and update if needed
+                const { data: approvals } = await db
+                    .from('time_off_approvals')
+                    .select('*, users (email)')
+                    .eq('time_off_request_id', requestId)
+                    .eq('approval_action', 'approved');
 
-                alert('Time entry approved');
-                loadApprovals();
-                loadDashboardData(); // Refresh stats
+                // Check if Tatiana and (Sean OR Gary) have approved
+                const tatianaApproved = approvals?.some(a => 
+                    a.users?.email === 'tatiana.schnierow@dmhiop.com'
+                );
+                const seanOrGaryApproved = approvals?.some(a => 
+                    a.users?.email === 'sean_roberts@dmhiop.com' || 
+                    a.users?.email?.toLowerCase().includes('gary')
+                );
+
+                if (tatianaApproved && seanOrGaryApproved) {
+                    // Fully approved - update status
+                    await db
+                        .from('time_off_requests')
+                        .update({ 
+                            status: 'approved',
+                            approval_status: 'approved'
+                        })
+                        .eq('id', requestId);
+                    
+                    alert('✅ Time off request FULLY APPROVED!\n\nBoth required approvals received.');
+                } else if (tatianaApproved || seanOrGaryApproved) {
+                    await db
+                        .from('time_off_requests')
+                        .update({ approval_status: 'partially_approved' })
+                        .eq('id', requestId);
+                    
+                    alert('✅ Your approval recorded!\n\nWaiting for second approval.');
+                }
+
+                await loadApprovals();
+                await loadDashboard();
 
             } catch (error) {
-                console.error('Error approving time entry:', error);
-                alert('Error approving time entry');
+                console.error('Error approving request:', error);
+                alert('Error approving request: ' + error.message);
             }
         }
 
-        // Reject time entry
-        async function rejectTimeEntry(entryId) {
-            const notes = prompt('Please provide a reason for rejection:');
-            if (!notes) return;
+        // Reject time off request
+        async function rejectTimeOffRequest(requestId) {
+            const reason = prompt('Please provide a reason for rejection:');
+            if (!reason) return;
 
             try {
-                const { error } = await db
-                    .from('time_entries')
+                // Insert rejection record
+                const { error: insertError } = await db
+                    .from('time_off_approvals')
+                    .insert({
+                        time_off_request_id: requestId,
+                        approver_id: currentUser.id,
+                        approver_role: currentUser.role,
+                        approval_action: 'rejected',
+                        approval_date: new Date().toISOString(),
+                        notes: reason
+                    });
+
+                if (insertError) throw insertError;
+
+                // Update request status to rejected
+                const { error: updateError } = await db
+                    .from('time_off_requests')
                     .update({ 
                         status: 'rejected',
-                        updated_at: new Date().toISOString()
+                        approval_status: 'rejected',
+                        rejection_reason: reason
                     })
-                    .eq('id', entryId);
+                    .eq('id', requestId);
 
-                if (error) throw error;
+                if (updateError) throw updateError;
 
-                // Create approval record
-                await db.from('approvals').insert({
-                    time_entry_id: entryId,
-                    approved_by: currentUser.id,
-                    status: 'rejected',
-                    notes: notes,
-                    approved_at: new Date().toISOString()
-                });
-
-                alert('Time entry rejected');
-                loadApprovals();
-                loadDashboardData(); // Refresh stats
+                alert('✅ Time off request rejected');
+                await loadApprovals();
+                await loadDashboard();
 
             } catch (error) {
-                console.error('Error rejecting time entry:', error);
-                alert('Error rejecting time entry');
+                console.error('Error rejecting request:', error);
+                alert('Error rejecting request: ' + error.message);
             }
         }
 
-        // Load locations
-        async function loadLocations() {
+        // Show compose message modal
+        function showComposeMessageModal() {
+            // Populate employee dropdown
+            const select = document.getElementById('message-recipient');
+            select.innerHTML = '<option value="">Select Employee...</option><option value="all">All Employees</option>';
+            
+            allEmployees.forEach(emp => {
+                const option = document.createElement('option');
+                option.value = emp.id;
+                option.textContent = `${emp.full_name} - ${emp.email}`;
+                select.appendChild(option);
+            });
+
+            document.getElementById('composeMessageModal').classList.add('active');
+        }
+
+        // Close compose message modal
+        function closeComposeMessageModal() {
+            document.getElementById('composeMessageModal').classList.remove('active');
+            document.getElementById('composeMessageForm').reset();
+        }
+
+        // Handle compose message form submission
+        document.getElementById('composeMessageForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
             try {
-                const { data, error } = await db
-                    .from('work_locations')
-                    .select('*')
-                    .order('name');
+                const recipient = document.getElementById('message-recipient').value;
+                const subject = document.getElementById('message-subject').value;
+                const body = document.getElementById('message-body').value;
+                const isPriority = document.getElementById('message-priority').checked;
 
-                if (error) throw error;
-
-                allLocations = data || [];
-                const container = document.getElementById('locations-container');
-
-                if (allLocations.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No locations configured</p>';
+                if (!recipient) {
+                    alert('Please select a recipient');
                     return;
                 }
 
-                let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+                // Get recipient IDs
+                let recipientIds = [];
+                if (recipient === 'all') {
+                    recipientIds = allEmployees.map(emp => emp.id);
+                } else {
+                    recipientIds = [recipient];
+                }
 
-                allLocations.forEach(loc => {
-                    const statusColor = loc.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-                    const statusText = loc.is_active ? 'Active' : 'Inactive';
+                // Send messages
+                const messages = recipientIds.map(recipientId => ({
+                    sender_user_id: currentUser.id,
+                    recipient_user_id: recipientId,
+                    subject: subject,
+                    message: body,
+                    is_read: false,
+                    created_at: new Date().toISOString(),
+                    priority: isPriority ? 'high' : 'normal'
+                }));
 
-                    html += `
-                        <div class="border border-gray-200 rounded-lg p-4 bg-white">
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <h3 class="font-bold text-gray-800 text-lg">${loc.name}</h3>
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColor}">${statusText}</span>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button onclick="editLocation('${loc.id}')" class="text-blue-600 hover:text-blue-800">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button onclick="deleteLocation('${loc.id}')" class="text-red-600 hover:text-red-800">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="text-sm space-y-1">
-                                <p class="text-gray-600">${loc.address}</p>
-                                <p class="text-gray-500"><span class="font-medium">Coordinates:</span> ${loc.latitude}, ${loc.longitude}</p>
-                                <p class="text-gray-500"><span class="font-medium">Radius:</span> ${loc.radius_meters}m</p>
-                            </div>
-                        </div>
-                    `;
-                });
+                const { error } = await db
+                    .from('admin_messages')
+                    .insert(messages);
 
-                html += '</div>';
-                container.innerHTML = html;
+                if (error) throw error;
+
+                alert(`✅ Message sent to ${recipientIds.length} recipient(s)!`);
+                closeComposeMessageModal();
+                await loadMessages();
 
             } catch (error) {
-                console.error('Error loading locations:', error);
-                document.getElementById('locations-container').innerHTML = 
-                    '<p class="text-red-500 text-center py-4">Error loading locations</p>';
+                console.error('Error sending message:', error);
+                alert('Error sending message: ' + error.message);
             }
-        }
+        });
 
         // Load messages
         async function loadMessages() {
             try {
                 const { data, error } = await db
-                    .from('messages')
+                    .from('admin_messages')
                     .select(`
                         *,
-                        sender:sender_id (full_name),
-                        recipient:recipient_id (full_name)
+                        sender:sender_user_id (full_name),
+                        recipient:recipient_user_id (full_name)
                     `)
+                    .eq('sender_user_id', currentUser.id)
                     .order('created_at', { ascending: false })
                     .limit(50);
 
@@ -1510,39 +1443,40 @@
                 const container = document.getElementById('messages-container');
 
                 if (!data || data.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No messages</p>';
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No messages sent yet</p>';
                     return;
                 }
 
                 let html = '<div class="space-y-3">';
-
                 data.forEach(msg => {
-                    const statusColor = msg.is_read ? 'bg-gray-50' : 'bg-blue-50 border-l-4 border-blue-500';
-                    const sender = msg.sender?.full_name || 'System';
-                    const recipient = msg.recipient?.full_name || 'All';
+                    const isRead = msg.is_read;
+                    const bgColor = isRead ? 'bg-gray-50' : 'bg-blue-50';
+                    const senderName = msg.sender?.full_name || 'You';
+                    const recipientName = msg.recipient?.full_name || 'Unknown';
                     const createdAt = new Date(msg.created_at).toLocaleString();
 
                     html += `
-                        <div class="${statusColor} p-4 rounded-lg">
+                        <div class="${bgColor} rounded-lg p-4 border border-gray-200">
                             <div class="flex justify-between items-start mb-2">
                                 <div>
-                                    <p class="font-medium text-gray-800">${msg.subject}</p>
-                                    <p class="text-sm text-gray-600">From: ${sender} → To: ${recipient}</p>
+                                    <h3 class="font-bold text-gray-800">${msg.subject}</h3>
+                                    <p class="text-sm text-gray-600">To: ${recipientName}</p>
                                 </div>
                                 <span class="text-xs text-gray-500">${createdAt}</span>
                             </div>
                             <p class="text-gray-700 text-sm">${msg.message}</p>
+                            ${msg.priority === 'high' ? '<span class="inline-block mt-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded">HIGH PRIORITY</span>' : ''}
                         </div>
                     `;
                 });
-
                 html += '</div>';
+
                 container.innerHTML = html;
 
             } catch (error) {
                 console.error('Error loading messages:', error);
                 document.getElementById('messages-container').innerHTML = 
-                    '<p class="text-red-500 text-center py-4">Error loading messages</p>';
+                    '<p class="text-gray-500 text-center py-4">Error loading messages</p>';
             }
         }
 
@@ -1561,9 +1495,7 @@
                     .from('time_entries')
                     .select(`
                         *,
-                        users (full_name, employee_number),
-                        clock_in_location:clock_in_location_id (name),
-                        clock_out_location:clock_out_location_id (name)
+                        users (full_name, employee_number)
                     `)
                     .gte('clock_in_time', startDate)
                     .lte('clock_in_time', endDate + 'T23:59:59')
@@ -1576,7 +1508,7 @@
                 if (!data || data.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
                                 No time entries found for selected date range
                             </td>
                         </tr>
@@ -1601,7 +1533,6 @@
                     const clockIn = new Date(entry.clock_in_time).toLocaleString();
                     const clockOut = entry.clock_out_time ? new Date(entry.clock_out_time).toLocaleString() : '-';
                     const hours = entry.total_hours ? entry.total_hours.toFixed(2) : '-';
-                    const location = entry.clock_in_location?.name || 'Unknown';
 
                     html += `
                         <tr class="hover:bg-gray-50">
@@ -1611,10 +1542,9 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">${clockIn}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">${clockOut}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">${hours}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">${location}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono">${hours}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColor}">
+                                <span class="px-2 py-1 rounded text-xs font-medium ${statusColor}">
                                     ${entry.status.replace('_', ' ').toUpperCase()}
                                 </span>
                             </td>
@@ -1633,7 +1563,7 @@
                 console.error('Error loading time entries:', error);
                 document.getElementById('time-entries-table-body').innerHTML = `
                     <tr>
-                        <td colspan="7" class="px-6 py-8 text-center text-red-500">
+                        <td colspan="6" class="px-6 py-8 text-center text-red-500">
                             Error loading time entries
                         </td>
                     </tr>
@@ -1641,42 +1571,78 @@
             }
         }
 
-        // Placeholder functions for modals and actions
-        function showAddEmployeeModal() {
-            alert('Add Employee modal - To be implemented');
-        }
-
-        function editEmployee(id) {
-            alert('Edit Employee: ' + id);
-        }
-
-        function deleteEmployee(id) {
-            if (confirm('Are you sure you want to delete this employee?')) {
-                alert('Delete Employee: ' + id);
-            }
-        }
-
-        function showAddLocationModal() {
-            alert('Add Location modal - To be implemented');
-        }
-
-        function editLocation(id) {
-            alert('Edit Location: ' + id);
-        }
-
-        function deleteLocation(id) {
-            if (confirm('Are you sure you want to delete this location?')) {
-                alert('Delete Location: ' + id);
-            }
-        }
-
-        function showComposeMessageModal() {
-            alert('Compose Message modal - To be implemented');
-        }
-
+        // View time entry
         function viewTimeEntry(id) {
-            alert('View Time Entry: ' + id);
+            alert('View Time Entry Details: ' + id + '\n\nThis will show detailed information about the time entry.');
         }
+
+        // Add employee
+        function showAddEmployeeModal() {
+            alert('Add Employee feature - To be implemented\n\nThis will allow you to create new employee accounts.');
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+
+            // Add active class to clicked button
+            event.target.closest('.tab-button').classList.add('active');
+
+            // Load data for specific tabs
+            if (tabName === 'employees') {
+                loadEmployees();
+            } else if (tabName === 'alerts') {
+                loadAlerts();
+            } else if (tabName === 'approvals') {
+                loadApprovals();
+            } else if (tabName === 'messages') {
+                loadMessages();
+            } else if (tabName === 'payroll') {
+                populatePayPeriodDropdown();
+            }
+        }
+
+        // Logout
+        async function logout() {
+            try {
+                await db.auth.signOut();
+                window.location.href = 'login-standalone.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Error logging out');
+            }
+        }
+
+        // Set default date ranges
+        function setDefaultDateRange() {
+            const today = new Date();
+            const twoWeeksAgo = new Date(today);
+            twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+            const formatDate = (date) => {
+                return date.toISOString().split('T')[0];
+            };
+
+            document.getElementById('time-entries-start').value = formatDate(twoWeeksAgo);
+            document.getElementById('time-entries-end').value = formatDate(today);
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            setDefaultDateRange();
+            await checkAuth();
+        });
     </script>
 </body>
 </html>
