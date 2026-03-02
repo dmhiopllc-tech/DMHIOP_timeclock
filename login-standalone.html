@@ -142,9 +142,9 @@
                                 <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
                                 <h3 class="text-xl font-bold mb-2">Already Logged In</h3>
                                 <p class="text-gray-600 mb-4">Welcome back, ${userProfile.full_name}!</p>
-                                <button onclick="goToDashboard('${userProfile.role}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
+                                <a href="${role === 'admin' ? 'UPLOAD-THIS-admin-dashboard-ALL-FIXED.html' : role === 'manager' ? 'manager-dashboard.html' : 'employee-dashboard-clean-fix.html'}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
                                     Go to Dashboard
-                                </button>
+                                </a>
                                 <br><br>
                                 <button onclick="logoutAndShowLogin()" class="text-gray-600 hover:text-gray-800 underline">
                                     Sign in as different user
@@ -160,12 +160,20 @@
 
      function goToDashboard(role) {
     console.log('📍 Manually navigating to dashboard for role:', role);
-    if (role === 'admin') {
-       window.location.href = 'UPLOAD-THIS-admin-dashboard-ALL-FIXED.html';
-    } else if (role === 'manager') {
-        window.location.href = 'manager-dashboard.html';
-    } else {
-        window.location.href = 'employee-dashboard.html';
+    try {
+        if (role === 'admin') {
+            console.log('🔄 Redirecting to admin dashboard...');
+            window.location.replace('UPLOAD-THIS-admin-dashboard-ALL-FIXED.html');
+        } else if (role === 'manager') {
+            console.log('🔄 Redirecting to manager dashboard...');
+            window.location.replace('manager-dashboard.html');
+        } else {
+            console.log('🔄 Redirecting to employee dashboard...');
+            window.location.replace('employee-dashboard-clean-fix.html');
+        }
+    } catch (error) {
+        console.error('❌ Redirect error:', error);
+        alert('Redirect failed. Please manually go to the dashboard.');
     }
 }
 
