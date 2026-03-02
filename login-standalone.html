@@ -142,7 +142,7 @@
                                 <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
                                 <h3 class="text-xl font-bold mb-2">Already Logged In</h3>
                                 <p class="text-gray-600 mb-4">Welcome back, ${userProfile.full_name}!</p>
-                                <a href="${role === 'admin' ? 'UPLOAD-THIS-admin-dashboard-ALL-FIXED.html' : role === 'manager' ? 'manager-dashboard.html' : 'employee-dashboard-clean-fix.html'}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
+                                <a href="${userProfile.role === 'admin' ? 'UPLOAD-THIS-admin-dashboard-ALL-FIXED.html' : userProfile.role === 'manager' ? 'manager-dashboard.html' : 'employee-dashboard-clean-fix.html'}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
                                     Go to Dashboard
                                 </a>
                                 <br><br>
