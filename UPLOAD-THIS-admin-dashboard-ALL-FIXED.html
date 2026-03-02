@@ -452,7 +452,7 @@
 
         // Initialize Supabase
         const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc2Njc1MzAsImV4cCI6MjA1MzI0MzUzMH0.KFa-vDWy5HI9Z1nQCxYsqNVrIczGNLMX3p7c2-Bx_qA';
         
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         console.log('✅ Using "db" variable for Supabase client');
@@ -1403,15 +1403,18 @@
                     recipientIds = [recipient];
                 }
 
-                // Send messages
+                // Send messages (no is_read field - that's in message_read_receipts table)
                 const messages = recipientIds.map(recipientId => ({
-                    sender_user_id: currentUser.id,
-                    recipient_user_id: recipientId,
+                    sender_id: currentUser.id,
+                    sender_name: currentUser.full_name,
+                    recipient_type: recipient === 'all' ? 'all' : 'individual',
+                    recipient_id: recipientId,
                     subject: subject,
                     message: body,
-                    is_read: false,
                     created_at: new Date().toISOString(),
-                    priority: isPriority ? 'high' : 'normal'
+                    priority: isPriority ? 'urgent' : 'normal',
+                    message_type: 'admin_announcement',
+                    is_active: true
                 }));
 
                 const { error } = await db
@@ -1435,19 +1438,16 @@
             try {
                 const { data, error } = await db
                     .from('admin_messages')
-                    .select(`
-                        *,
-                        sender:sender_user_id (full_name),
-                        recipient:recipient_user_id (full_name)
-                    `)
-                    .eq('sender_user_id', currentUser.id)
+                    .select('*')
+                    .eq('sender_id', currentUser.id)
+                    .eq('is_active', true)
                     .order('created_at', { ascending: false })
                     .limit(50);
 
                 if (error) throw error;
 
                 const container = document.getElementById('messages-container');
-
+                
                 if (!data || data.length === 0) {
                     container.innerHTML = '<p class="text-gray-500 text-center py-4">No messages sent yet</p>';
                     return;
@@ -1455,23 +1455,20 @@
 
                 let html = '<div class="space-y-3">';
                 data.forEach(msg => {
-                    const isRead = msg.is_read;
-                    const bgColor = isRead ? 'bg-gray-50' : 'bg-blue-50';
-                    const senderName = msg.sender?.full_name || 'You';
-                    const recipientName = msg.recipient?.full_name || 'Unknown';
                     const createdAt = new Date(msg.created_at).toLocaleString();
+                    const isPriority = msg.priority === 'urgent';
 
                     html += `
-                        <div class="${bgColor} rounded-lg p-4 border border-gray-200">
+                        <div class="${isPriority ? 'bg-red-50' : 'bg-gray-50'} rounded-lg p-4 border border-gray-200">
                             <div class="flex justify-between items-start mb-2">
                                 <div>
                                     <h3 class="font-bold text-gray-800">${msg.subject}</h3>
-                                    <p class="text-sm text-gray-600">To: ${recipientName}</p>
+                                    <p class="text-sm text-gray-600">To: ${msg.recipient_type === 'all' ? 'All Employees' : 'Individual'}</p>
                                 </div>
                                 <span class="text-xs text-gray-500">${createdAt}</span>
                             </div>
                             <p class="text-gray-700 text-sm">${msg.message}</p>
-                            ${msg.priority === 'high' ? '<span class="inline-block mt-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded">HIGH PRIORITY</span>' : ''}
+                            ${isPriority ? '<span class="inline-block mt-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded">HIGH PRIORITY</span>' : ''}
                         </div>
                     `;
                 });
