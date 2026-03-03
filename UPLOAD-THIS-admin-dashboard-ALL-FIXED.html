@@ -447,6 +447,26 @@
         </div>
     </div>
 
+    <!-- View Time Entry Modal -->
+    <div id="viewTimeEntryModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeViewTimeEntryModal()">&times;</span>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-clock mr-2 text-blue-600"></i>Time Entry Details
+            </h2>
+            
+            <div id="timeEntryDetails" class="space-y-4">
+                <!-- Details will be loaded here -->
+            </div>
+            
+            <div class="flex justify-end pt-4">
+                <button onclick="closeViewTimeEntryModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Add Employee Modal -->
     <div id="addEmployeeModal" class="modal">
         <div class="modal-content">
@@ -1865,8 +1885,101 @@
         }
 
         // View time entry
-        function viewTimeEntry(id) {
-            alert('View Time Entry Details: ' + id + '\n\nThis will show detailed information about the time entry.');
+        async function viewTimeEntry(id) {
+            try {
+                const { data, error } = await db
+                    .from('time_entries')
+                    .select(`
+                        *,
+                        users!time_entries_user_id_fkey (full_name, email, employee_number)
+                    `)
+                    .eq('id', id)
+                    .single();
+                
+                if (error) throw error;
+                
+                // Format the details
+                const userName = data.users?.full_name || 'Unknown';
+                const userEmail = data.users?.email || 'N/A';
+                const employeeNumber = data.users?.employee_number || 'N/A';
+                const clockIn = new Date(data.clock_in_time).toLocaleString();
+                const clockOut = data.clock_out_time ? new Date(data.clock_out_time).toLocaleString() : 'Still clocked in';
+                const totalHours = data.total_hours || 0;
+                const status = data.status || 'Unknown';
+                const notes = data.notes || 'No notes';
+                
+                // Status badge color
+                const statusColors = {
+                    'clocked_in': 'bg-green-100 text-green-800',
+                    'clocked_out': 'bg-gray-100 text-gray-800',
+                    'pending_approval': 'bg-yellow-100 text-yellow-800',
+                    'approved': 'bg-blue-100 text-blue-800',
+                    'rejected': 'bg-red-100 text-red-800'
+                };
+                const statusColor = statusColors[status] || 'bg-gray-100 text-gray-800';
+                
+                // Build the details HTML
+                const detailsHTML = `
+                    <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                        <div class="flex items-center justify-between border-b pb-3">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800">${userName}</h3>
+                                <p class="text-sm text-gray-600">${userEmail}</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-sm font-medium ${statusColor}">
+                                ${status.replace('_', ' ').toUpperCase()}
+                            </span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Employee Number</p>
+                                <p class="font-medium text-gray-800">${employeeNumber}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Total Hours</p>
+                                <p class="font-medium text-gray-800 text-lg">${totalHours.toFixed(2)} hrs</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Clock In</p>
+                            <p class="font-medium text-gray-800">
+                                <i class="fas fa-sign-in-alt text-green-600 mr-2"></i>${clockIn}
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Clock Out</p>
+                            <p class="font-medium text-gray-800">
+                                <i class="fas fa-sign-out-alt text-red-600 mr-2"></i>${clockOut}
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Notes</p>
+                            <p class="text-gray-700 italic">${notes}</p>
+                        </div>
+                        
+                        <div class="text-xs text-gray-500 border-t pt-2">
+                            <p>Entry ID: ${id}</p>
+                            <p>Created: ${new Date(data.created_at).toLocaleString()}</p>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('timeEntryDetails').innerHTML = detailsHTML;
+                document.getElementById('viewTimeEntryModal').classList.add('active');
+                
+            } catch (error) {
+                console.error('Error loading time entry:', error);
+                alert('Error loading time entry details: ' + error.message);
+            }
+        }
+        
+        // Close View Time Entry Modal
+        function closeViewTimeEntryModal() {
+            document.getElementById('viewTimeEntryModal').classList.remove('active');
         }
 
         // Show Add Employee Modal
