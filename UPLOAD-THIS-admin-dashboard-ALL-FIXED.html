@@ -459,7 +459,8 @@
                 <!-- Details will be loaded here -->
             </div>
             
-            <div class="flex justify-end pt-4">
+            <div id="timeEntryActions" class="flex justify-end gap-2 pt-4">
+                <!-- Action buttons will be added here dynamically -->
                 <button onclick="closeViewTimeEntryModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition">
                     Close
                 </button>
@@ -1353,7 +1354,7 @@
                 const clockInTime = `${date}T${clockIn}:00`;
                 const clockOutTime = `${date}T${clockOut}:00`;
                 
-                // Insert manual time entry
+                // Insert manual time entry (auto-approved since admin created it)
                 const { data: timeEntry, error: insertError } = await db
                     .from('time_entries')
                     .insert({
@@ -1361,8 +1362,8 @@
                         clock_in_time: clockInTime,
                         clock_out_time: clockOutTime,
                         total_hours: calculatedHours,
-                        status: 'pending_approval',
-                        notes: `Manual entry by admin: ${notes}`
+                        status: 'approved',
+                        notes: `Manual entry by admin (${currentUser.full_name}): ${notes}`
                     })
                     .select()
                     .single();
@@ -1969,6 +1970,29 @@
                 `;
                 
                 document.getElementById('timeEntryDetails').innerHTML = detailsHTML;
+                
+                // Add action buttons if status is pending_approval
+                const actionsDiv = document.getElementById('timeEntryActions');
+                if (status === 'pending_approval') {
+                    actionsDiv.innerHTML = `
+                        <button onclick="approveTimeEntry('${id}')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition">
+                            <i class="fas fa-check mr-2"></i>Approve
+                        </button>
+                        <button onclick="rejectTimeEntry('${id}')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition">
+                            <i class="fas fa-times mr-2"></i>Reject
+                        </button>
+                        <button onclick="closeViewTimeEntryModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition">
+                            Close
+                        </button>
+                    `;
+                } else {
+                    actionsDiv.innerHTML = `
+                        <button onclick="closeViewTimeEntryModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition">
+                            Close
+                        </button>
+                    `;
+                }
+                
                 document.getElementById('viewTimeEntryModal').classList.add('active');
                 
             } catch (error) {
@@ -1980,6 +2004,59 @@
         // Close View Time Entry Modal
         function closeViewTimeEntryModal() {
             document.getElementById('viewTimeEntryModal').classList.remove('active');
+        }
+
+        // Approve time entry
+        async function approveTimeEntry(entryId) {
+            if (!confirm('Approve this time entry?')) return;
+            
+            try {
+                const { error } = await db
+                    .from('time_entries')
+                    .update({ 
+                        status: 'approved',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', entryId);
+                
+                if (error) throw error;
+                
+                alert('✅ Time entry approved!');
+                closeViewTimeEntryModal();
+                await loadTimeEntries();
+                
+            } catch (error) {
+                console.error('Error approving time entry:', error);
+                alert('Error approving time entry: ' + error.message);
+            }
+        }
+
+        // Reject time entry
+        async function rejectTimeEntry(entryId) {
+            const reason = prompt('Please provide a reason for rejection:');
+            if (!reason) return;
+            
+            try {
+                const { error } = await db
+                    .from('time_entries')
+                    .update({ 
+                        status: 'rejected',
+                        notes: reason,
+                        total_hours: 0,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', entryId);
+                
+                if (error) throw error;
+                
+                alert('✅ Time entry rejected');
+                closeViewTimeEntryModal();
+                await loadTimeEntries();
+                
+            } catch (error) {
+                console.error('Error rejecting time entry:', error);
+                alert('Error rejecting time entry: ' + error.message);
+            }
         }
 
         // Show Add Employee Modal
