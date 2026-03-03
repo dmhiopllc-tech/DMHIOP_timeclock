@@ -566,6 +566,13 @@
                     </p>
                 </div>
                 
+                <div id="fix-event-info" class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 hidden">
+                    <p class="text-sm text-gray-700">
+                        <i class="fas fa-clock text-blue-600 mr-2"></i>
+                        <strong>Geofence Event:</strong> <span id="fix-event-details"></span>
+                    </p>
+                </div>
+                
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Date *</label>
                     <input type="date" id="fix-date" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
@@ -622,11 +629,18 @@
         // Check authentication
         async function checkAuth() {
             console.log('🔐 Checking authentication...');
+            console.log('🔍 DEBUG MODE: Enhanced logging enabled');
             try {
                 const { data: { user }, error } = await db.auth.getUser();
-                console.log('👤 Auth User:', user?.email, error);
+                console.log('👤 Auth User:', user?.email, user?.id, error);
 
-                if (error || !user) {
+                if (error) {
+                    console.error('❌ Auth error details:', error);
+                    window.location.href = 'login-standalone.html';
+                    return;
+                }
+                
+                if (!user) {
                     console.log('❌ No authenticated user, redirecting to login');
                     window.location.href = 'login-standalone.html';
                     return;
@@ -696,14 +710,19 @@
                 if (pendError) throw pendError;
                 document.getElementById('stat-pending').textContent = pending?.length || 0;
 
-                // Get active alerts
+                // Get active alerts (using is_resolved instead of status)
                 const { data: alerts, error: alertError } = await db
                     .from('admin_alerts')
                     .select('id')
-                    .eq('status', 'active');
+                    .eq('is_resolved', false);
 
-                if (alertError) throw alertError;
-                document.getElementById('stat-alerts').textContent = alerts?.length || 0;
+                console.log('📊 Active alerts count:', alerts?.length, alertError);
+                if (alertError) {
+                    console.error('Alert query error:', alertError);
+                    document.getElementById('stat-alerts').textContent = 0;
+                } else {
+                    document.getElementById('stat-alerts').textContent = alerts?.length || 0;
+                }
 
                 // Get total employees
                 const { data: employees, error: empError } = await db
@@ -718,8 +737,10 @@
                 await loadRecentActivity();
 
             } catch (error) {
-                console.error('Error loading dashboard data:', error);
-            }
+                console.error('🔥 DASHBOARD LOAD ERROR:', error);
+                console.error('Error details:', error.message, error.code);
+                // Don't let dashboard load errors cause login loop
+                alert('Dashboard loaded with some errors. Check console for details.');
         }
 
         // Load recent activity
@@ -1164,7 +1185,7 @@
                         *,
                         users!admin_alerts_user_id_fkey (full_name, employee_number)
                     `)
-                    .eq('status', 'active')
+                    .eq('is_resolved', false)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
@@ -1235,7 +1256,7 @@
                 const { error } = await db
                     .from('admin_alerts')
                     .update({ 
-                        status: 'resolved',
+                        is_resolved: true,
                         resolved_at: new Date().toISOString()
                     })
                     .eq('id', id);
@@ -1257,7 +1278,7 @@
                 const { error } = await db
                     .from('admin_alerts')
                     .update({ 
-                        status: 'dismissed',
+                        is_resolved: true,
                         resolved_at: new Date().toISOString()
                     })
                     .eq('id', id);
@@ -1274,19 +1295,64 @@
         }
 
         // Open Fix Geofence Modal
-        function openFixGeofenceModal(alertId, userId, userName, alertMessage, geofenceEventId) {
+        async function openFixGeofenceModal(alertId, userId, userName, alertMessage, geofenceEventId) {
             document.getElementById('fix-alert-id').value = alertId;
             document.getElementById('fix-user-id').value = userId;
             document.getElementById('fix-geofence-event-id').value = geofenceEventId || '';
             document.getElementById('fix-employee-name').textContent = userName;
             document.getElementById('fix-alert-message').textContent = alertMessage;
             
-            // Set default date to today
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('fix-date').value = today;
+            // Fetch geofence event details to get the actual time
+            let suggestedDate = new Date().toISOString().split('T')[0];
+            let suggestedTime = '';
             
-            // Clear other fields
-            document.getElementById('fix-clock-in').value = '';
+            // Hide event info box by default
+            const eventInfoBox = document.getElementById('fix-event-info');
+            eventInfoBox.classList.add('hidden');
+            
+            if (geofenceEventId) {
+                try {
+                    const { data: geoEvent } = await db
+                        .from('geofence_events')
+                        .select('event_time, event_type, nearest_location')
+                        .eq('id', geofenceEventId)
+                        .single();
+                    
+                    if (geoEvent) {
+                        const eventDate = new Date(geoEvent.event_time);
+                        suggestedDate = eventDate.toISOString().split('T')[0];
+                        suggestedTime = eventDate.toTimeString().substring(0, 5); // HH:MM format
+                        
+                        const eventTypeText = geoEvent.event_type === 'entry' ? 'Entered' : 'Exited';
+                        const locationText = geoEvent.nearest_location || 'work location';
+                        const formattedTime = eventDate.toLocaleString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            hour: 'numeric', 
+                            minute: '2-digit',
+                            hour12: true 
+                        });
+                        
+                        // Show event info box with details
+                        document.getElementById('fix-event-details').textContent = 
+                            `${eventTypeText} ${locationText} on ${formattedTime}`;
+                        eventInfoBox.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error('Error fetching geofence event:', error);
+                }
+            }
+            
+            // Set date and suggested time
+            document.getElementById('fix-date').value = suggestedDate;
+            
+            // Pre-fill clock in with the event time if it was an entry
+            if (suggestedTime) {
+                document.getElementById('fix-clock-in').value = suggestedTime;
+            } else {
+                document.getElementById('fix-clock-in').value = '';
+            }
+            
             document.getElementById('fix-clock-out').value = '';
             document.getElementById('fix-notes').value = '';
             document.getElementById('fix-calculated-hours').textContent = '0.00';
@@ -1354,6 +1420,27 @@
                 const clockInTime = `${date}T${clockIn}:00`;
                 const clockOutTime = `${date}T${clockOut}:00`;
                 
+                // Get geofence event location coordinates if available
+                let clockInLat = 35.24275127; // Default to DMHIOP
+                let clockInLon = -106.67036247;
+                let clockOutLat = 35.24275127;
+                let clockOutLon = -106.67036247;
+                
+                if (geofenceEventId) {
+                    const { data: geoEvent } = await db
+                        .from('geofence_events')
+                        .select('latitude, longitude')
+                        .eq('id', geofenceEventId)
+                        .single();
+                    
+                    if (geoEvent) {
+                        clockInLat = geoEvent.latitude;
+                        clockInLon = geoEvent.longitude;
+                        clockOutLat = geoEvent.latitude;
+                        clockOutLon = geoEvent.longitude;
+                    }
+                }
+                
                 // Insert manual time entry (auto-approved since admin created it)
                 const { data: timeEntry, error: insertError } = await db
                     .from('time_entries')
@@ -1361,6 +1448,10 @@
                         user_id: userId,
                         clock_in_time: clockInTime,
                         clock_out_time: clockOutTime,
+                        clock_in_latitude: clockInLat,
+                        clock_in_longitude: clockInLon,
+                        clock_out_latitude: clockOutLat,
+                        clock_out_longitude: clockOutLon,
                         total_hours: calculatedHours,
                         status: 'approved',
                         notes: `Manual entry by admin (${currentUser.full_name}): ${notes}`
@@ -2227,3 +2318,5 @@
     </script>
 </body>
 </html>
+
+ 
