@@ -1232,7 +1232,12 @@
                 
             } catch (error) {
                 console.error('❌ Error resetting password:', error);
-                alert(`Error resetting password: ${error.message}`);
+                alert(`Error resetting password: ${error.message}\n\n` +
+                      `This usually means:\n` +
+                      `• The employee doesn't have an auth account yet\n` +
+                      `• They were created before the automatic system was set up\n\n` +
+                      `Solution: This feature only works for employees created\n` +
+                      `after the Edge Functions were deployed.`);
             }
         }
 
@@ -1692,7 +1697,7 @@
                                 </div>
                                 <div class="flex flex-col space-y-2 ml-4">
                                     ${canApprove ? `
-                                        <button onclick="approveTimeOffRequest('${request.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
+                                        <button id="approve-btn-${request.id}" onclick="approveTimeOffRequest('${request.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
                                             <i class="fas fa-check mr-1"></i>Approve
                                         </button>
                                     ` : ''}
@@ -1717,7 +1722,33 @@
 
         // Approve time off request (multi-level approval)
         async function approveTimeOffRequest(requestId) {
+            // Disable button immediately to prevent double-clicks
+            const btn = document.getElementById(`approve-btn-${requestId}`);
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Processing...';
+            }
+            
             try {
+                // Check if current user already approved this request
+                const { data: existingApproval, error: checkError } = await db
+                    .from('time_off_approvals')
+                    .select('id')
+                    .eq('time_off_request_id', requestId)
+                    .eq('approver_id', currentUser.id)
+                    .eq('approval_action', 'approved')
+                    .maybeSingle();
+                
+                if (checkError) {
+                    console.error('Error checking existing approval:', checkError);
+                }
+                
+                if (existingApproval) {
+                    alert('⚠️ You have already approved this request.');
+                    await loadApprovals(); // Refresh to remove button
+                    return;
+                }
+                
                 // Insert approval record
                 const { error: insertError } = await db
                     .from('time_off_approvals')
@@ -1774,7 +1805,16 @@
 
             } catch (error) {
                 console.error('Error approving request:', error);
-                alert('Error approving request: ' + error.message);
+                
+                // Check if it's a duplicate key error
+                if (error.message && error.message.includes('duplicate key')) {
+                    alert('⚠️ You have already approved this request. Refreshing...');
+                } else {
+                    alert('Error approving request: ' + error.message);
+                }
+                
+                // Refresh the list to show current state
+                await loadApprovals();
             }
         }
 
