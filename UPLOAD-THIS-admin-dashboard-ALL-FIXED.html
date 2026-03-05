@@ -1647,18 +1647,29 @@
                     let canApprove = false;
                     let approvalMessage = '';
                     
+                    // ✅ NEW LOGIC: Any approver can approve first, order doesn't matter
                     if (isTatiana && !tatianaApproved) {
+                        // Tatiana hasn't approved yet - she can approve
                         canApprove = true;
-                        approvalMessage = '⚠️ <strong>Your approval is REQUIRED</strong>';
-                    } else if ((isSean && !seanApproved && !garyApproved) || (isGary && !seanApproved && !garyApproved)) {
+                        if (seanApproved || garyApproved) {
+                            approvalMessage = '✅ Sean/Gary approved - <strong>Your approval will complete this request</strong>';
+                        } else {
+                            approvalMessage = '⚠️ <strong>Your approval is REQUIRED</strong> (Tatiana must approve)';
+                        }
+                    } else if ((isSean || isGary) && !seanApproved && !garyApproved) {
+                        // Sean/Gary hasn't approved yet - they can approve
                         canApprove = true;
                         if (tatianaApproved) {
-                            approvalMessage = '✅ Tatiana approved - <strong>Your approval needed</strong>';
+                            approvalMessage = '✅ Tatiana approved - <strong>Your approval will complete this request</strong>';
                         } else {
-                            approvalMessage = 'Waiting for Tatiana\'s approval first';
+                            approvalMessage = '⚠️ <strong>Your approval is REQUIRED</strong> (waiting for Tatiana to also approve)';
                         }
                     } else if (tatianaApproved && (seanApproved || garyApproved)) {
-                        approvalMessage = '✅ Fully approved - will be marked complete';
+                        // Both required approvals received
+                        approvalMessage = '✅ <strong>FULLY APPROVED</strong> - Both required approvals received';
+                    } else {
+                        // User already approved
+                        approvalMessage = '✓ You have already approved this request';
                     }
 
                     // Build approval status badges
@@ -1693,7 +1704,7 @@
                                         <p><span class="font-medium">Approval Status:</span> ${currentApprovals}/${requiredApprovals} approvals</p>
                                     </div>
                                     ${approvalBadges}
-                                    ${approvalMessage ? `<p class="text-sm mt-2 ${canApprove ? 'text-blue-700' : 'text-gray-600'}">${approvalMessage}</p>` : ''}
+                                    ${approvalMessage ? `<p class="text-sm mt-2 font-medium ${canApprove ? 'text-blue-700' : 'text-green-700'}">${approvalMessage}</p>` : ''}
                                 </div>
                                 <div class="flex flex-col space-y-2 ml-4">
                                     ${canApprove ? `
