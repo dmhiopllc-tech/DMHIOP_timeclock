@@ -1079,11 +1079,14 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap ${statusColor} font-medium">${isActive}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <button onclick="editEmployee('${emp.id}')" class="text-blue-600 hover:text-blue-800 mr-3">
-                                    <i class="fas fa-edit"></i> Edit
+                                <button onclick="editEmployee('${emp.id}')" class="text-blue-600 hover:text-blue-800 mr-3" title="Edit employee">
+                                    <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="deleteEmployee('${emp.id}')" class="text-red-600 hover:text-red-800">
-                                    <i class="fas fa-trash"></i> Delete
+                                <button onclick="resetEmployeePassword('${emp.id}', '${emp.full_name}')" class="text-green-600 hover:text-green-800 mr-3" title="Reset password to #Test12345">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                                <button onclick="deleteEmployee('${emp.id}')" class="text-red-600 hover:text-red-800" title="Delete employee">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </td>
                         </tr>
@@ -1192,6 +1195,44 @@
             } catch (error) {
                 console.error('Error deleting employee:', error);
                 alert('Error deleting employee: ' + error.message);
+            }
+        }
+
+        // Reset Employee Password via Edge Function
+        async function resetEmployeePassword(userId, employeeName) {
+            if (!confirm(`Reset password for ${employeeName}?\n\nPassword will be reset to: #Test12345`)) {
+                return;
+            }
+            
+            try {
+                console.log('🔑 Resetting password for user:', userId);
+                
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/smart-responder`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                
+                const result = await response.json();
+                console.log('📥 Edge Function response:', result);
+                
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to reset password');
+                }
+                
+                alert(`✅ Password Reset Successfully!\n\n` +
+                      `Employee: ${employeeName}\n` +
+                      `Email: ${result.email}\n\n` +
+                      `🔑 New Password: #Test12345\n\n` +
+                      `Login URL: https://dmhioptimeclock.com/login-standalone.html\n\n` +
+                      `⚠️ Employee must change password on first login.`);
+                
+            } catch (error) {
+                console.error('❌ Error resetting password:', error);
+                alert(`Error resetting password: ${error.message}`);
             }
         }
 
@@ -2221,43 +2262,35 @@
                     return;
                 }
                 
-                // ✅ NEW: Show instructions for creating auth user
-                const confirmMessage = 
-                    `⚠️ IMPORTANT NEXT STEP:\n\n` +
-                    `After clicking OK, the employee record will be created in the database.\n\n` +
-                    `You must then create their login account:\n\n` +
-                    `1. Go to Supabase Dashboard → Authentication → Users\n` +
-                    `2. Click "Add User"\n` +
-                    `3. Email: ${email}\n` +
-                    `4. Password: ${DEFAULT_PASSWORD}\n` +
-                    `5. Enable "Auto Confirm User" ✅\n` +
-                    `6. Click "Create"\n\n` +
-                    `Continue to create employee record?`;
+                // ✅ Call Edge Function to create employee with auth user automatically
+                console.log('📤 Calling Edge Function to create employee...');
                 
-                if (!confirm(confirmMessage)) {
-                    return;
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/quick-task`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        full_name: fullName,
+                        employee_number: employeeNumber,
+                        pay_rate: payRate,
+                        role: role
+                    })
+                });
+                
+                const result = await response.json();
+                console.log('📥 Edge Function response:', result);
+                
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to create employee');
                 }
                 
-                // Create user account
-                const { data: newUser, error: userError } = await db
-                    .from('users')
-                    .insert({
-                        full_name: fullName,
-                        email: email,
-                        employee_number: employeeNumber,
-                        role: role,
-                        pay_rate: payRate,
-                        phone: phone,
-                        is_active: true,
-                        overtime_eligible: true,
-                        overtime_threshold: 40.00
-                    })
-                    .select()
-                    .single();
+                // Use the user ID from the Edge Function response
+                const newUser = { id: result.user_id, email: result.email };
                 
-                if (userError) throw userError;
-                
-                console.log('✅ User created:', newUser);
+                console.log('✅ Employee created via Edge Function:', newUser);
                 
                 // Create PTO balance record
                 const { error: ptoError } = await db
@@ -2281,23 +2314,18 @@
                     // Don't fail the whole operation if PTO balance fails
                 }
                 
-                // ✅ NEW: Show success with credentials and next steps
+                // ✅ Show success with automatic credentials
                 alert(
-                    `✅ Employee Record Created!\n\n` +
+                    `✅ Employee Created Successfully!\n\n` +
                     `📋 Employee Details:\n` +
                     `Name: ${fullName}\n` +
                     `Email: ${email}\n` +
                     `Employee #: ${employeeNumber}\n\n` +
                     `🔑 Default Password: ${DEFAULT_PASSWORD}\n\n` +
-                    `⚠️ NEXT STEP - CREATE LOGIN ACCOUNT:\n` +
-                    `1. Go to Supabase Dashboard\n` +
-                    `2. Authentication → Users → Add User\n` +
-                    `3. Email: ${email}\n` +
-                    `4. Password: ${DEFAULT_PASSWORD}\n` +
-                    `5. Enable "Auto Confirm User"\n` +
-                    `6. Click Create\n\n` +
-                    `The employee can then log in at:\n` +
-                    `https://dmhioptimeclock.com/login-standalone.html`
+                    `✅ Auth account created automatically!\n\n` +
+                    `The employee can now log in at:\n` +
+                    `https://dmhioptimeclock.com/login-standalone.html\n\n` +
+                    `⚠️ Employee must change password on first login.`
                 );
                 
                 closeAddEmployeeModal();
