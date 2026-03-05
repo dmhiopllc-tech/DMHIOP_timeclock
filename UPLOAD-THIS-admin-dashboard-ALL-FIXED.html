@@ -1833,7 +1833,7 @@
             document.getElementById('addEmployeeModal').classList.add('hidden');
         }
 
-        // Create new employee
+        // Create new employee using Edge Function
         async function createEmployee(event) {
             event.preventDefault();
             
@@ -1844,22 +1844,20 @@
             const role = document.getElementById('new-employee-role').value;
             const defaultPassword = '#Test12345';
             
-            // Show confirmation with instructions
+            // Show confirmation
             const confirmed = confirm(
                 `📋 CREATE NEW EMPLOYEE\n\n` +
                 `Name: ${name}\n` +
                 `Email: ${email}\n` +
                 `Employee #: ${employeeNumber}\n` +
                 `Pay Rate: $${payRate}/hr\n` +
-                `Role: ${role}\n\n` +
-                `⚠️ IMPORTANT - 2 STEP PROCESS:\n\n` +
-                `Step 1: I will create the employee record in the database\n\n` +
-                `Step 2: YOU MUST manually create the login in Supabase:\n` +
-                `   → Supabase Dashboard → Authentication → Users → Add User\n` +
-                `   → Email: ${email}\n` +
-                `   → Password: ${defaultPassword}\n` +
-                `   → Enable "Auto Confirm User"\n\n` +
-                `Click OK to continue with Step 1`
+                `Role: ${role}\n` +
+                `Default Password: ${defaultPassword}\n\n` +
+                `✅ This will:\n` +
+                `• Create login credentials\n` +
+                `• Set default password: ${defaultPassword}\n` +
+                `• Employee must change password on first login\n\n` +
+                `Click OK to create employee`
             );
             
             if (!confirmed) return false;
@@ -1868,34 +1866,36 @@
             const submitBtn = document.getElementById('createEmployeeBtn');
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creating Record...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creating Employee...';
             
             try {
-                // Generate a temporary UUID for the employee
-                // Note: This will need to be replaced when they create the auth user
-                const tempId = crypto.randomUUID();
-                
-                // Create users table entry with temp ID
-                const { error: userError } = await db.from('users').insert({
-                    id: tempId,
-                    email: email,
-                    full_name: name,
-                    employee_number: employeeNumber,
-                    role: role,
-                    is_active: false, // Keep inactive until auth user is created
-                    pay_rate: payRate
+                // Call the Edge Function to create employee with password
+                const response = await fetch('https://dgfzrkbgrzenukjelnjl.supabase.co/functions/v1/create-employee-with-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${db.supabaseKey}`,
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        full_name: name,
+                        employee_number: employeeNumber,
+                        pay_rate: payRate,
+                        role: role
+                    })
                 });
                 
-                if (userError) {
-                    console.error('Users table error:', userError);
-                    throw new Error(`Failed to create user record: ${userError.message}`);
+                const result = await response.json();
+                
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to create employee');
                 }
                 
-                console.log('✅ User record created with temp ID:', tempId);
+                console.log('✅ Employee created successfully:', result);
                 
-                // Success! Show detailed instructions
+                // Success! Show simple confirmation
                 alert(
-                    `✅ STEP 1 COMPLETE - Employee Record Created!\n\n` +
+                    `✅ EMPLOYEE CREATED SUCCESSFULLY!\n\n` +
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                     `📝 EMPLOYEE DETAILS:\n` +
                     `Name: ${name}\n` +
@@ -1904,23 +1904,14 @@
                     `Pay Rate: $${payRate}/hr\n` +
                     `Role: ${role}\n\n` +
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                    `🔐 STEP 2 - CREATE LOGIN (DO THIS NOW):\n\n` +
-                    `1. Open Supabase Dashboard:\n` +
-                    `   https://supabase.com/dashboard\n\n` +
-                    `2. Navigate to:\n` +
-                    `   Authentication → Users → Add User\n\n` +
-                    `3. Enter:\n` +
-                    `   Email: ${email}\n` +
-                    `   Password: ${defaultPassword}\n` +
-                    `   ✓ Enable "Auto Confirm User"\n\n` +
-                    `4. After creating, you MUST run this SQL:\n` +
-                    `   UPDATE users SET id = '[NEW_AUTH_USER_ID]', is_active = true WHERE email = '${email}';\n\n` +
-                    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                    `📧 SEND TO EMPLOYEE:\n` +
+                    `🔐 LOGIN CREDENTIALS:\n` +
                     `Email: ${email}\n` +
                     `Password: ${defaultPassword}\n` +
                     `Login: https://dmhioptimeclock.com/login-standalone.html\n\n` +
-                    `They will be prompted to change their password on first login.`
+                    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                    `📧 NEXT STEP:\n` +
+                    `Send these credentials to the employee.\n` +
+                    `They must change their password on first login.`
                 );
                 
                 // Close modal and reload employees
@@ -1930,13 +1921,7 @@
                 
             } catch (error) {
                 console.error('Error creating employee:', error);
-                
-                // Check for common errors
-                if (error.message && error.message.includes('already exists')) {
-                    alert('❌ Error: This email is already registered.\n\nPlease use a different email address.');
-                } else {
-                    alert(`❌ Error creating employee:\n\n${error.message}\n\nPlease check the console for details.`);
-                }
+                alert(`❌ Error creating employee:\n\n${error.message}\n\nPlease try again or contact support.`);
             } finally {
                 // Re-enable submit button
                 submitBtn.disabled = false;
@@ -1950,7 +1935,7 @@
             alert('Edit Employee: ' + id);
         }
 
-        // Reset Employee Password
+        // Reset Employee Password using Edge Function
         async function resetEmployeePassword(userId, email, fullName) {
             const defaultPassword = '#Test12345';
             
@@ -1958,46 +1943,59 @@
                 `🔐 RESET PASSWORD FOR ${fullName}\n\n` +
                 `Email: ${email}\n` +
                 `New Password: ${defaultPassword}\n\n` +
-                `⚠️ IMPORTANT - YOU MUST:\n\n` +
-                `1. Go to Supabase Dashboard\n` +
-                `2. Authentication → Users\n` +
-                `3. Find: ${email}\n` +
-                `4. Click "Reset Password" or "Update User"\n` +
-                `5. Set password to: ${defaultPassword}\n\n` +
-                `After Supabase update, notify the employee with their new password.\n\n` +
-                `Click OK to see detailed instructions.`
+                `✅ This will:\n` +
+                `• Reset their password to: ${defaultPassword}\n` +
+                `• Employee must change it on next login\n\n` +
+                `Click OK to reset password`
             );
             
             if (!confirmed) return;
             
-            // Show detailed step-by-step instructions
-            alert(
-                `✅ PASSWORD RESET INSTRUCTIONS\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                `STEP 1: SUPABASE DASHBOARD\n\n` +
-                `1. Open: https://supabase.com/dashboard\n` +
-                `2. Navigate to: Authentication → Users\n` +
-                `3. Search for: ${email}\n` +
-                `4. Click on the user\n` +
-                `5. Look for "Reset Password" or "Update User"\n` +
-                `6. Set new password: ${defaultPassword}\n` +
-                `7. Save changes\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                `STEP 2: NOTIFY EMPLOYEE\n\n` +
-                `Send email to: ${email}\n\n` +
-                `Subject: Password Reset - DMHIOP Time Clock\n\n` +
-                `Hi ${fullName},\n\n` +
-                `Your password has been reset.\n\n` +
-                `New Password: ${defaultPassword}\n` +
-                `Login: https://dmhioptimeclock.com/login-standalone.html\n\n` +
-                `Please change this password immediately after logging in.\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                `📋 QUICK REFERENCE:\n` +
-                `Employee: ${fullName}\n` +
-                `Email: ${email}\n` +
-                `New Password: ${defaultPassword}\n\n` +
-                `⚠️ Employee MUST change password on next login.`
-            );
+            // Show loading indicator
+            const loadingAlert = alert('⏳ Resetting password...');
+            
+            try {
+                // Call the Edge Function to reset password
+                const response = await fetch('https://dgfzrkbgrzenukjelnjl.supabase.co/functions/v1/reset-employee-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${db.supabaseKey}`,
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        email: email
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to reset password');
+                }
+                
+                console.log('✅ Password reset successfully:', result);
+                
+                // Success!
+                alert(
+                    `✅ PASSWORD RESET SUCCESSFUL!\n\n` +
+                    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                    `👤 EMPLOYEE: ${fullName}\n` +
+                    `📧 Email: ${email}\n\n` +
+                    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                    `🔑 NEW CREDENTIALS:\n` +
+                    `Password: ${defaultPassword}\n` +
+                    `Login: https://dmhioptimeclock.com/login-standalone.html\n\n` +
+                    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                    `📨 NOTIFY EMPLOYEE:\n` +
+                    `Send the new password to ${email}\n` +
+                    `They MUST change it on first login.`
+                );
+                
+            } catch (error) {
+                console.error('Error resetting password:', error);
+                alert(`❌ Error resetting password:\n\n${error.message}\n\nPlease try again or contact support.`);
+            }
         }
 
         function deleteEmployee(id) {
