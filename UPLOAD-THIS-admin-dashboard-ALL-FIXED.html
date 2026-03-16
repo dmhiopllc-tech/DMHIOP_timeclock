@@ -1202,13 +1202,18 @@
                     .from('users')
                     .select('*')
                     .neq('role', 'admin')
-                    .or('is_active.is.null,is_active.eq.true')  // Only show active employees (or null = legacy)
-                    .or('deleted.is.null,deleted.eq.false')      // Exclude deleted employees
                     .order('full_name');
 
                 if (error) throw error;
 
-                allEmployees = data || [];
+                // Filter out deleted/inactive employees in JavaScript
+                allEmployees = (data || []).filter(emp => {
+                    // Show if is_active is true or null (legacy)
+                    const isActive = emp.is_active === null || emp.is_active === true;
+                    // Hide if deleted is true
+                    const notDeleted = emp.deleted === null || emp.deleted === false;
+                    return isActive && notDeleted;
+                });
                 const tbody = document.getElementById('employees-table-body');
 
                 if (allEmployees.length === 0) {
