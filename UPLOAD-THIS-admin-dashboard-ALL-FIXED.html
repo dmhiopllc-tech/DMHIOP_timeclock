@@ -831,11 +831,14 @@
         // Load dashboard data
         async function loadDashboard() {
             try {
-                // Get clocked in users
+                // Get clocked in users (active only, excluding admins)
                 const { data: clockedIn, error: clockError } = await db
                     .from('users')
                     .select('id')
-                    .eq('is_clocked_in', true);
+                    .eq('is_clocked_in', true)
+                    .neq('role', 'admin')
+                    .or('is_active.is.null,is_active.eq.true')
+                    .or('deleted.is.null,deleted.eq.false');
 
                 if (clockError) throw clockError;
                 document.getElementById('stat-clocked-in').textContent = clockedIn?.length || 0;
@@ -863,11 +866,13 @@
                     document.getElementById('stat-alerts').textContent = alerts?.length || 0;
                 }
 
-                // Get total employees
+                // Get total employees (active only, excluding admins and deleted)
                 const { data: employees, error: empError } = await db
                     .from('users')
                     .select('id')
-                    .neq('role', 'admin');
+                    .neq('role', 'admin')
+                    .or('is_active.is.null,is_active.eq.true')
+                    .or('deleted.is.null,deleted.eq.false');
 
                 if (empError) throw empError;
                 document.getElementById('stat-employees').textContent = employees?.length || 0;
@@ -1615,7 +1620,7 @@
             };
         }
 
-        // FOOLPROOF AUTO-RESOLVE FUNCTION
+        // ENHANCED AUTO-RESOLVE FUNCTION - HANDLES PARTIAL ENTRIES
         async function resolveAlert(id) {
             try {
                 // Get alert details
