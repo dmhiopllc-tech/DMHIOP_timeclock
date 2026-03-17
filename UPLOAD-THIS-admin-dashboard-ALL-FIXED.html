@@ -1710,7 +1710,7 @@
         async function resolveAlert(id) {
             try {
                 // Get alert details
-                const { data: alert, error: alertError } = await db
+                const { data: alertData, error: alertError } = await db
                     .from('admin_alerts')
                     .select('*')
                     .eq('id', id)
@@ -1718,17 +1718,17 @@
 
                 if (alertError) throw alertError;
 
-                console.log('🔍 Resolving alert:', alert);
+                console.log('🔍 Resolving alert:', alertData);
 
                 // If it's a geofence alert, try to auto-create time entry
-                if (alert.alert_type === 'geofence_tracking' && alert.geofence_event_id) {
+                if (alertData.alert_type === 'geofence_tracking' && alertData.geofence_event_id) {
                     console.log('🎯 AUTO-RESOLVE: Processing geofence data...');
                     
                     // Get the geofence event
                     const { data: geoEvent, error: geoError } = await db
                         .from('geofence_events')
                         .select('*')
-                        .eq('id', alert.geofence_event_id)
+                        .eq('id', alertData.geofence_event_id)
                         .single();
 
                     if (geoError) throw geoError;
@@ -1737,7 +1737,7 @@
                     const { data: user } = await db
                         .from('users')
                         .select('full_name, email')
-                        .eq('id', alert.user_id)
+                        .eq('id', alertData.user_id)
                         .single();
                     
                     const userName = user?.full_name || 'Employee';
@@ -1746,7 +1746,7 @@
                     const eventDate = new Date(geoEvent.event_time);
                     
                     // CHECK FOR LOCATION EXCEPTIONS (e.g., Regina on Wednesday)
-                    const locationException = await checkLocationException(alert.user_id, eventDate);
+                    const locationException = await checkLocationException(alertData.user_id, eventDate);
                     
                     if (locationException) {
                         console.log('🏛️ LOCATION EXCEPTION DETECTED:', locationException);
@@ -1775,7 +1775,7 @@
                     const { data: allEvents, error: eventsError } = await db
                         .from('geofence_events')
                         .select('*')
-                        .eq('user_id', alert.user_id)
+                        .eq('user_id', alertData.user_id)
                         .gte('event_time', dayStart.toISOString())
                         .lte('event_time', dayEnd.toISOString())
                         .order('event_time', { ascending: true });
@@ -1823,7 +1823,7 @@
                     const { data: newEntry, error: entryError } = await db
                         .from('time_entries')
                         .insert({
-                            user_id: alert.user_id,
+                            user_id: alertData.user_id,
                             clock_in_time: clockIn.toISOString(),
                             clock_in_latitude: lat,
                             clock_in_longitude: lng,
