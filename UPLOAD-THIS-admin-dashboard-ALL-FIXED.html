@@ -719,13 +719,20 @@
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Clock In Time *</label>
-                        <input type="time" id="manual-clock-in" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Clock In Time <span class="text-gray-500 text-xs">(optional - for clock-out only fixes)</span></label>
+                        <input type="time" id="manual-clock-in" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Clock Out Time <span class="text-gray-500 text-xs">(optional for same-day clock-in)</span></label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Clock Out Time <span class="text-gray-500 text-xs">(optional - for clock-in only fixes)</span></label>
                         <input type="time" id="manual-clock-out" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
                     </div>
+                </div>
+                
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p class="text-sm text-gray-700">
+                        <i class="fas fa-info-circle text-yellow-600 mr-2"></i>
+                        <strong>Note:</strong> Provide at least one time (Clock In OR Clock Out). Leave one empty to fix missed clock-in/out.
+                    </p>
                 </div>
                 
                 <div>
@@ -2123,19 +2130,21 @@
             const clockOutTime = document.getElementById('manual-clock-out').value;
             const notes = document.getElementById('manual-notes').value;
 
-            if (!userId || !date || !clockInTime || !notes) {
-                alert('Employee, Date, Clock In Time, and Admin Notes are required');
+            // Validate: need at least ONE time (clock-in OR clock-out)
+            if (!userId || !date || !notes) {
+                alert('Employee, Date, and Admin Notes are required');
+                return;
+            }
+            
+            if (!clockInTime && !clockOutTime) {
+                alert('❌ Please provide at least ONE time:\n\n• Clock In Time (if they forgot to clock in)\n• Clock Out Time (if they forgot to clock out)\n• Both (for full manual entry)');
                 return;
             }
 
             try {
-                const clockIn = new Date(`${date}T${clockInTime}:00`);
-                
-                // ALLOW OPTIONAL CLOCK-OUT (for same-day clock-in only)
+                // Build entry data based on what times are provided
                 let entryData = {
                     user_id: userId,
-                    clock_in_time: clockIn.toISOString(),
-                    status: clockOutTime ? 'approved' : 'clocked_in',
                     notes: `MANUAL ENTRY by admin: ${notes} [Created on ${new Date().toLocaleString()}]`,
                     // Geofence coords are NULL for manual entries (admin override)
                     clock_in_latitude: null,
@@ -2144,8 +2153,9 @@
                     clock_out_longitude: null
                 };
                 
-                // If clock-out time provided, calculate hours
-                if (clockOutTime) {
+                // Scenario 1: Both times provided (full entry)
+                if (clockInTime && clockOutTime) {
+                    const clockIn = new Date(`${date}T${clockInTime}:00`);
                     let clockOut = new Date(`${date}T${clockOutTime}:00`);
                     
                     // Handle overnight shifts
@@ -2160,11 +2170,26 @@
                         return;
                     }
                     
+                    entryData.clock_in_time = clockIn.toISOString();
                     entryData.clock_out_time = clockOut.toISOString();
                     entryData.total_hours = totalHours;
-                } else {
-                    // Clock-in only - no total hours yet
+                    entryData.status = 'approved';
+                    
+                // Scenario 2: Clock-in only (forgot to clock in)
+                } else if (clockInTime && !clockOutTime) {
+                    const clockIn = new Date(`${date}T${clockInTime}:00`);
+                    entryData.clock_in_time = clockIn.toISOString();
+                    entryData.clock_out_time = null;
                     entryData.total_hours = null;
+                    entryData.status = 'clocked_in';
+                    
+                // Scenario 3: Clock-out only (forgot to clock out)
+                } else if (!clockInTime && clockOutTime) {
+                    const clockOut = new Date(`${date}T${clockOutTime}:00`);
+                    entryData.clock_in_time = null;
+                    entryData.clock_out_time = clockOut.toISOString();
+                    entryData.total_hours = null;
+                    entryData.status = 'clocked_out';
                 }
 
                 const { error } = await db
@@ -2173,10 +2198,13 @@
 
                 if (error) throw error;
 
-                if (clockOutTime) {
-                    alert(`✅ Manual time entry created successfully!\n\nTotal Hours: ${entryData.total_hours.toFixed(2)}`);
-                } else {
-                    alert(`✅ Clock-in entry created successfully!\n\nEmployee is now marked as clocked in. Create another manual entry to clock them out.`);
+                // Show appropriate success message
+                if (clockInTime && clockOutTime) {
+                    alert(`✅ Full time entry created successfully!\n\nTotal Hours: ${entryData.total_hours.toFixed(2)}`);
+                } else if (clockInTime && !clockOutTime) {
+                    alert(`✅ Clock-in entry created!\n\nEmployee is now marked as clocked in.`);
+                } else if (!clockInTime && clockOutTime) {
+                    alert(`✅ Clock-out entry created!\n\nEmployee is now marked as clocked out.\n\nNote: Hours will not calculate without a clock-in time. Create another manual entry to add the clock-in time if needed.`);
                 }
                 closeManualEntryModal();
                 await loadTimeEntries();
