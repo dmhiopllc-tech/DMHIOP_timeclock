@@ -723,8 +723,8 @@
                         <input type="time" id="manual-clock-in" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Clock Out Time *</label>
-                        <input type="time" id="manual-clock-out" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Clock Out Time <span class="text-gray-500 text-xs">(optional for same-day clock-in)</span></label>
+                        <input type="time" id="manual-clock-out" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
                     </div>
                 </div>
                 
@@ -2123,41 +2123,61 @@
             const clockOutTime = document.getElementById('manual-clock-out').value;
             const notes = document.getElementById('manual-notes').value;
 
-            if (!userId || !date || !clockInTime || !clockOutTime || !notes) {
-                alert('All fields are required');
+            if (!userId || !date || !clockInTime || !notes) {
+                alert('Employee, Date, Clock In Time, and Admin Notes are required');
                 return;
             }
 
             try {
                 const clockIn = new Date(`${date}T${clockInTime}:00`);
-                let clockOut = new Date(`${date}T${clockOutTime}:00`);
                 
-                // Handle overnight shifts
-                if (clockOut < clockIn) {
-                    clockOut.setDate(clockOut.getDate() + 1);
-                }
+                // ALLOW OPTIONAL CLOCK-OUT (for same-day clock-in only)
+                let entryData = {
+                    user_id: userId,
+                    clock_in_time: clockIn.toISOString(),
+                    status: clockOutTime ? 'approved' : 'clocked_in',
+                    notes: `MANUAL ENTRY by admin: ${notes} [Created on ${new Date().toLocaleString()}]`,
+                    // Geofence coords are NULL for manual entries (admin override)
+                    clock_in_latitude: null,
+                    clock_in_longitude: null,
+                    clock_out_latitude: null,
+                    clock_out_longitude: null
+                };
                 
-                const totalHours = (clockOut - clockIn) / (1000 * 60 * 60);
+                // If clock-out time provided, calculate hours
+                if (clockOutTime) {
+                    let clockOut = new Date(`${date}T${clockOutTime}:00`);
+                    
+                    // Handle overnight shifts
+                    if (clockOut < clockIn) {
+                        clockOut.setDate(clockOut.getDate() + 1);
+                    }
+                    
+                    const totalHours = (clockOut - clockIn) / (1000 * 60 * 60);
 
-                if (totalHours <= 0 || totalHours > 24) {
-                    alert('Invalid time range. Please check your times.');
-                    return;
+                    if (totalHours <= 0 || totalHours > 24) {
+                        alert('Invalid time range. Please check your times.');
+                        return;
+                    }
+                    
+                    entryData.clock_out_time = clockOut.toISOString();
+                    entryData.total_hours = totalHours;
+                } else {
+                    // Clock-in only - no total hours yet
+                    entryData.total_hours = null;
                 }
 
                 const { error } = await db
                     .from('time_entries')
-                    .insert({
-                        user_id: userId,
-                        clock_in_time: clockIn.toISOString(),
-                        clock_out_time: clockOut.toISOString(),
-                        total_hours: totalHours,
-                        status: 'clocked_out',
-                        notes: `MANUAL ENTRY by admin: ${notes} [Created on ${new Date().toLocaleString()}]`
-                    });
+                    .insert(entryData);
 
                 if (error) throw error;
 
-                alert(`✅ Manual time entry created successfully!\n\nTotal Hours: ${totalHours.toFixed(2)}`);
+                if (clockOutTime) {
+                    alert(`✅ Manual time entry created successfully!\n\nTotal Hours: ${entryData.total_hours.toFixed(2)}`);
+                } else {
+                    alert(`✅ Clock-in entry created successfully!\n\nEmployee is now marked as clocked in. Create another manual entry to clock them out.`);
+                }
                 closeManualEntryModal();
                 await loadTimeEntries();
             } catch (error) {
