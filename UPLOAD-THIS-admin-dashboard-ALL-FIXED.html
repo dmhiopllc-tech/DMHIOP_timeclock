@@ -2058,21 +2058,55 @@
         // ==================== MANUAL ENTRY FUNCTIONS ====================
         
         async function showManualEntryModal() {
-            // Populate employee dropdown
-            const select = document.getElementById('manual-employee');
-            select.innerHTML = '<option value="">Select employee...</option>';
-            
-            allEmployees.forEach(emp => {
-                const option = document.createElement('option');
-                option.value = emp.id;
-                option.textContent = `${emp.full_name} (${emp.employee_number || 'N/A'})`;
-                select.appendChild(option);
-            });
+            // BUGFIX: Reload employees fresh from database to ensure dropdown is populated
+            try {
+                const { data, error } = await db
+                    .from('users')
+                    .select('*')
+                    .neq('role', 'admin')
+                    .order('full_name');
 
-            // Set today as default
-            document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
-            
-            document.getElementById('manualEntryModal').classList.add('active');
+                if (error) {
+                    console.error('Error loading employees for manual entry:', error);
+                    alert('Error loading employees. Please try again.');
+                    return;
+                }
+
+                // Filter active, non-deleted employees
+                const activeEmployees = (data || []).filter(emp => {
+                    const isActive = emp.is_active === null || emp.is_active === true;
+                    const notDeleted = emp.deleted === null || emp.deleted === false;
+                    return isActive && notDeleted;
+                });
+                
+                console.log('📋 Employees for manual entry:', activeEmployees.length, activeEmployees);
+                
+                // Populate employee dropdown
+                const select = document.getElementById('manual-employee');
+                select.innerHTML = '<option value="">Select employee...</option>';
+                
+                if (activeEmployees.length === 0) {
+                    select.innerHTML += '<option value="" disabled>No employees found</option>';
+                    alert('⚠️ No employees found. Please add employees first.');
+                    return;
+                }
+                
+                activeEmployees.forEach(emp => {
+                    const option = document.createElement('option');
+                    option.value = emp.id;
+                    option.textContent = `${emp.full_name} (${emp.employee_number || 'N/A'})`;
+                    select.appendChild(option);
+                });
+
+                // Set today as default
+                document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
+                
+                document.getElementById('manualEntryModal').classList.add('active');
+                
+            } catch (error) {
+                console.error('Error in showManualEntryModal:', error);
+                alert('Error opening manual entry form. Check console for details.');
+            }
         }
 
         function closeManualEntryModal() {
