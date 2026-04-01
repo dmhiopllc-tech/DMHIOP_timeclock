@@ -220,18 +220,17 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hourly Rate</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regular Hrs</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">OT Hrs</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PTO Hrs</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sick Hrs</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Hrs</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Pay</th>
                         </tr>
                     </thead>
                     <tbody id="payroll-table-body" class="bg-white divide-y divide-gray-200">
                         <tr>
-                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
                                 Select a pay period to view payroll data
                             </td>
                         </tr>
@@ -260,7 +259,6 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Business</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -307,14 +305,9 @@
         <!-- Time Entries Tab -->
         <div id="time-entries-tab" class="tab-content hidden">
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">
-                        <i class="fas fa-clock mr-2 text-blue-600"></i>Time Entries
-                    </h2>
-                    <button onclick="showManualEntryModal()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">
-                        <i class="fas fa-plus mr-2"></i>Manual Entry
-                    </button>
-                </div>
+                <h2 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-clock mr-2 text-blue-600"></i>Time Entries
+                </h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
@@ -638,181 +631,8 @@
         </div>
     </div>
 
-    <!-- Edit Time Entry Modal -->
-    <div id="editTimeEntryModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeEditTimeEntryModal()">&times;</span>
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">
-                <i class="fas fa-edit mr-2 text-orange-600"></i>Edit Time Entry
-            </h2>
-            
-            <form id="editTimeEntryForm" class="space-y-4">
-                <input type="hidden" id="edit-entry-id">
-                
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <p class="text-sm text-gray-700">
-                        <i class="fas fa-user text-blue-600 mr-2"></i>
-                        <strong>Employee:</strong> <span id="edit-entry-employee-name"></span>
-                    </p>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Date *</label>
-                    <input type="date" id="edit-entry-date" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Clock In Time *</label>
-                        <input type="time" id="edit-entry-clock-in" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Clock Out Time</label>
-                        <input type="time" id="edit-entry-clock-out" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Admin Notes</label>
-                    <textarea id="edit-entry-notes" rows="3" placeholder="Reason for editing..." class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
-                </div>
-                
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p class="text-sm text-gray-700">
-                        <i class="fas fa-calculator text-blue-600 mr-2"></i>
-                        <strong>Total Hours:</strong> <span id="edit-entry-calculated-hours" class="font-bold text-blue-600">0.00</span>
-                    </p>
-                </div>
-                
-                <div class="flex space-x-3 pt-4">
-                    <button type="submit" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition">
-                        <i class="fas fa-save mr-2"></i>Update Entry
-                    </button>
-                    <button type="button" onclick="closeEditTimeEntryModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Manual Time Entry Modal -->
-    <div id="manualEntryModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeManualEntryModal()">&times;</span>
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">
-                <i class="fas fa-plus mr-2 text-green-600"></i>Create Manual Time Entry
-            </h2>
-            
-            <form id="manualEntryForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Employee *</label>
-                    <select id="manual-employee" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                        <option value="">Select employee...</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Date *</label>
-                    <input type="date" id="manual-date" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Clock In Time <span class="text-gray-500 text-xs">(optional - for clock-out only fixes)</span></label>
-                        <input type="time" id="manual-clock-in" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Clock Out Time <span class="text-gray-500 text-xs">(optional - for clock-in only fixes)</span></label>
-                        <input type="time" id="manual-clock-out" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                    </div>
-                </div>
-                
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <p class="text-sm text-gray-700">
-                        <i class="fas fa-info-circle text-yellow-600 mr-2"></i>
-                        <strong>Note:</strong> Provide at least one time (Clock In OR Clock Out). Leave one empty to fix missed clock-in/out.
-                    </p>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Admin Notes *</label>
-                    <textarea id="manual-notes" rows="3" required placeholder="Reason for manual entry (required)..." class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
-                </div>
-                
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p class="text-sm text-gray-700">
-                        <i class="fas fa-calculator text-blue-600 mr-2"></i>
-                        <strong>Total Hours:</strong> <span id="manual-calculated-hours" class="font-bold text-blue-600">0.00</span>
-                    </p>
-                </div>
-                
-                <div class="flex space-x-3 pt-4">
-                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">
-                        <i class="fas fa-check mr-2"></i>Create Entry
-                    </button>
-                    <button type="button" onclick="closeManualEntryModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Company Business Modal -->
-    <div id="companyBusinessModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeCompanyBusinessModal()">&times;</span>
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">
-                <i class="fas fa-briefcase mr-2 text-orange-600"></i>Set Company Business Status
-            </h2>
-            
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <p class="text-sm text-gray-700">
-                    <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                    <strong>Company Business Mode:</strong> When enabled, this employee can leave the geofence without triggering alerts. Use this when sending employees on company errands (bank deposits, supply runs, etc.).
-                </p>
-            </div>
-
-            <form id="companyBusinessForm" class="space-y-4">
-                <input type="hidden" id="cb-user-id">
-                
-                <div class="bg-gray-50 rounded-lg p-3">
-                    <p class="text-sm font-medium text-gray-700 mb-1">Employee:</p>
-                    <p id="cb-user-name" class="text-lg font-bold text-gray-900"></p>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
-                    <select id="cb-status" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                        <option value="true">✅ On Company Business (Alerts Disabled)</option>
-                        <option value="false">❌ Return to Normal Mode (Alerts Enabled)</option>
-                    </select>
-                </div>
-                
-                <div id="cb-reason-div">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Reason / Purpose *</label>
-                    <textarea id="cb-reason" rows="3" required placeholder="Example: Bank deposit, Supply pickup, Client visit..." class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
-                    <p class="text-xs text-gray-500 mt-1">
-                        <i class="fas fa-pen"></i> This reason will be recorded in the audit log.
-                    </p>
-                </div>
-                
-                <div class="flex space-x-3 pt-4">
-                    <button type="submit" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition">
-                        <i class="fas fa-check mr-2"></i>Update Status
-                    </button>
-                    <button type="button" onclick="closeCompanyBusinessModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
-        console.log('🔥 ADMIN DASHBOARD v5.0 - GEOFENCE ALERTS & COMPANY BUSINESS');
-
+        console.log('🔥 COMPLETE ADMIN DASHBOARD - ALL FEATURES WORKING');
 
         // Initialize Supabase - CORRECT API KEY (Jan 2026)
         const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
@@ -890,14 +710,11 @@
         // Load dashboard data
         async function loadDashboard() {
             try {
-                // Get clocked in users (active only, excluding admins)
+                // Get clocked in users
                 const { data: clockedIn, error: clockError } = await db
                     .from('users')
                     .select('id')
-                    .eq('is_clocked_in', true)
-                    .neq('role', 'admin')
-                    .or('is_active.is.null,is_active.eq.true')
-                    .or('deleted.is.null,deleted.eq.false');
+                    .eq('is_clocked_in', true);
 
                 if (clockError) throw clockError;
                 document.getElementById('stat-clocked-in').textContent = clockedIn?.length || 0;
@@ -925,13 +742,11 @@
                     document.getElementById('stat-alerts').textContent = alerts?.length || 0;
                 }
 
-                // Get total employees (active only, excluding admins and deleted)
+                // Get total employees
                 const { data: employees, error: empError } = await db
                     .from('users')
                     .select('id')
-                    .neq('role', 'admin')
-                    .or('is_active.is.null,is_active.eq.true')
-                    .or('deleted.is.null,deleted.eq.false');
+                    .neq('role', 'admin');
 
                 if (empError) throw empError;
                 document.getElementById('stat-employees').textContent = employees?.length || 0;
@@ -1011,6 +826,8 @@
         async function populatePayPeriodDropdown() {
             try {
                 const select = document.getElementById('payroll-period');
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Normalize to midnight for comparison
                 
                 // Query pay_periods table
                 const { data: periods, error } = await db
@@ -1034,22 +851,42 @@
                 // Clear existing options
                 select.innerHTML = '<option value="">Select Period...</option>';
                 
+                let currentPeriodIndex = -1;
+                
                 // Add each period from database
-                periods.forEach(period => {
+                periods.forEach((period, index) => {
                     const option = document.createElement('option');
                     option.value = JSON.stringify({
                         start: period.start_date,
-                        end: period.end_date
+                        end: period.end_date,
+                        pay_date: period.pay_date,
+                        period_number: period.period_number
                     });
                     
-                    const start = new Date(period.start_date);
-                    const end = new Date(period.end_date);
+                    // Parse dates with time component to avoid timezone issues
+                    const start = new Date(period.start_date + 'T00:00:00');
+                    const end = new Date(period.end_date + 'T23:59:59');
                     option.textContent = `${start.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})} - ${end.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}`;
+                    
+                    // Check if today falls within this period
+                    if (today >= start && today <= end) {
+                        currentPeriodIndex = index + 1; // +1 because we have a placeholder option
+                        option.setAttribute('data-current', 'true');
+                        console.log(`📍 Current period found: ${option.textContent}`);
+                    }
                     
                     select.appendChild(option);
                 });
                 
-                console.log(`✅ Loaded ${periods.length} pay periods from database`);
+                // Auto-select the current period
+                if (currentPeriodIndex > 0) {
+                    select.selectedIndex = currentPeriodIndex;
+                    console.log(`✅ Auto-selected current pay period (index ${currentPeriodIndex}): ${select.options[currentPeriodIndex].text}`);
+                } else {
+                    console.log(`ℹ️ No current pay period found for today (${today.toISOString().split('T')[0]})`);
+                }
+                
+                console.log(`✅ Loaded ${periods.length} pay periods from database (Sunday-Saturday format)`);
                 
             } catch (error) {
                 console.error('Error populating pay periods:', error);
@@ -1057,17 +894,25 @@
             }
         }
 
-        // Fallback period generation
+        // Fallback period generation (Sunday to Saturday, 14-day bi-weekly)
         function generateFallbackPeriods(select) {
-            console.log('⚠️ Using fallback pay period generation');
+            console.log('⚠️ Using fallback pay period generation (Sunday-Saturday)');
             const today = new Date();
             
             select.innerHTML = '<option value="">Select Period...</option>';
             
+            // Find the most recent Sunday to use as anchor
+            let recentSunday = new Date(today);
+            while (recentSunday.getDay() !== 0) { // 0 = Sunday
+                recentSunday.setDate(recentSunday.getDate() - 1);
+            }
+            
             for (let i = 0; i < 12; i++) {
-                const endDate = new Date(today);
-                endDate.setDate(endDate.getDate() - (i * 14));
+                // Calculate end date (Saturday) - going backwards in time
+                const endDate = new Date(recentSunday);
+                endDate.setDate(endDate.getDate() - (i * 14) - 1); // -1 to get Saturday
                 
+                // Calculate start date (Sunday) - 13 days before end
                 const startDate = new Date(endDate);
                 startDate.setDate(startDate.getDate() - 13);
                 
@@ -1110,7 +955,7 @@
                 if (!data || data.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
                                 No payroll data for selected period
                             </td>
                         </tr>
@@ -1124,45 +969,25 @@
                     overtime: 0,
                     pto: 0,
                     sick: 0,
-                    total: 0,
-                    totalPay: 0
+                    total: 0
                 };
 
                 data.forEach(row => {
-                    const regularHours = row.regular_hours || 0;
-                    const overtimeHours = row.overtime_hours || 0;
-                    const ptoHours = row.pto_hours || 0;
-                    const sickHours = row.sick_hours || 0;
-                    const totalHours = row.total_hours || 0;
-                    const hourlyRate = row.hourly_rate || 0;
-                    
-                    // Calculate pay
-                    // Regular hours at regular rate
-                    // OT hours at 1.5x rate
-                    // PTO and Sick at regular rate
-                    const regularPay = regularHours * hourlyRate;
-                    const overtimePay = overtimeHours * (hourlyRate * 1.5);
-                    const ptoPay = ptoHours * hourlyRate;
-                    const sickPay = sickHours * hourlyRate;
-                    const totalPay = regularPay + overtimePay + ptoPay + sickPay;
-                    
-                    totals.regular += regularHours;
-                    totals.overtime += overtimeHours;
-                    totals.pto += ptoHours;
-                    totals.sick += sickHours;
-                    totals.total += totalHours;
-                    totals.totalPay += totalPay;
+                    totals.regular += row.regular_hours || 0;
+                    totals.overtime += row.overtime_hours || 0;
+                    totals.pto += row.pto_hours || 0;
+                    totals.sick += row.sick_hours || 0;
+                    totals.total += row.total_hours || 0;
 
                     html += `
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap font-medium">${row.full_name || 'Unknown'}</td>
-                            <td class="px-6 py-4 whitespace-nowrap font-mono text-green-700">$${hourlyRate.toFixed(2)}/hr</td>
-                            <td class="px-6 py-4 whitespace-nowrap font-mono">${regularHours.toFixed(2)}</td>
-                            <td class="px-6 py-4 whitespace-nowrap font-mono">${overtimeHours.toFixed(2)}</td>
-                            <td class="px-6 py-4 whitespace-nowrap font-mono">${ptoHours.toFixed(2)}</td>
-                            <td class="px-6 py-4 whitespace-nowrap font-mono">${sickHours.toFixed(2)}</td>
-                            <td class="px-6 py-4 whitespace-nowrap font-mono font-bold">${totalHours.toFixed(2)}</td>
-                            <td class="px-6 py-4 whitespace-nowrap font-mono font-bold text-green-700">$${totalPay.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${row.email || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono">${(row.regular_hours || 0).toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono">${(row.overtime_hours || 0).toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono">${(row.pto_hours || 0).toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono">${(row.sick_hours || 0).toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono font-bold">${(row.total_hours || 0).toFixed(2)}</td>
                         </tr>
                     `;
                 });
@@ -1170,14 +995,12 @@
                 // Add totals row
                 html += `
                     <tr class="bg-blue-50 font-bold">
-                        <td class="px-6 py-4">TOTALS</td>
-                        <td class="px-6 py-4 text-gray-500 text-xs">—</td>
+                        <td class="px-6 py-4" colspan="2">TOTALS</td>
                         <td class="px-6 py-4 font-mono">${totals.regular.toFixed(2)}</td>
                         <td class="px-6 py-4 font-mono">${totals.overtime.toFixed(2)}</td>
                         <td class="px-6 py-4 font-mono">${totals.pto.toFixed(2)}</td>
                         <td class="px-6 py-4 font-mono">${totals.sick.toFixed(2)}</td>
                         <td class="px-6 py-4 font-mono">${totals.total.toFixed(2)}</td>
-                        <td class="px-6 py-4 font-mono text-green-700 text-lg">$${totals.totalPay.toFixed(2)}</td>
                     </tr>
                 `;
 
@@ -1214,33 +1037,12 @@
                     return;
                 }
 
-                // Build CSV with rates and pay calculations
-                let csv = 'Employee Name,Hourly Rate,Regular Hours,Regular Pay,Overtime Hours,Overtime Pay (1.5x),PTO Hours,PTO Pay,Sick Hours,Sick Pay,Total Hours,Total Pay\n';
-                
-                let grandTotal = 0;
+                // Build CSV
+                let csv = 'Employee Name,Email,Regular Hours,Overtime Hours,PTO Hours,Sick Hours,Total Hours\n';
                 
                 data.forEach(row => {
-                    const hourlyRate = row.hourly_rate || 0;
-                    const regularHours = row.regular_hours || 0;
-                    const overtimeHours = row.overtime_hours || 0;
-                    const ptoHours = row.pto_hours || 0;
-                    const sickHours = row.sick_hours || 0;
-                    const totalHours = row.total_hours || 0;
-                    
-                    // Calculate pay
-                    const regularPay = regularHours * hourlyRate;
-                    const overtimePay = overtimeHours * (hourlyRate * 1.5);
-                    const ptoPay = ptoHours * hourlyRate;
-                    const sickPay = sickHours * hourlyRate;
-                    const totalPay = regularPay + overtimePay + ptoPay + sickPay;
-                    
-                    grandTotal += totalPay;
-                    
-                    csv += `"${row.full_name}",${hourlyRate.toFixed(2)},${regularHours.toFixed(2)},${regularPay.toFixed(2)},${overtimeHours.toFixed(2)},${overtimePay.toFixed(2)},${ptoHours.toFixed(2)},${ptoPay.toFixed(2)},${sickHours.toFixed(2)},${sickPay.toFixed(2)},${totalHours.toFixed(2)},${totalPay.toFixed(2)}\n`;
+                    csv += `"${row.full_name}","${row.email}",${row.regular_hours || 0},${row.overtime_hours || 0},${row.pto_hours || 0},${row.sick_hours || 0},${row.total_hours || 0}\n`;
                 });
-                
-                // Add grand total row
-                csv += `\n"GRAND TOTAL",,,,,,,,,,,"$${grandTotal.toFixed(2)}"\n`;
 
                 // Download
                 const blob = new Blob([csv], { type: 'text/csv' });
@@ -1251,7 +1053,7 @@
                 a.click();
                 window.URL.revokeObjectURL(url);
 
-                alert(`✅ Payroll exported successfully!\n\nTotal Payroll: $${grandTotal.toFixed(2)}`);
+                alert('✅ Payroll exported successfully!');
 
             } catch (error) {
                 console.error('Error exporting CSV:', error);
@@ -1270,20 +1072,13 @@
 
                 if (error) throw error;
 
-                // Filter out deleted/inactive employees in JavaScript
-                allEmployees = (data || []).filter(emp => {
-                    // Show if is_active is true or null (legacy)
-                    const isActive = emp.is_active === null || emp.is_active === true;
-                    // Hide if deleted is true
-                    const notDeleted = emp.deleted === null || emp.deleted === false;
-                    return isActive && notDeleted;
-                });
+                allEmployees = data || [];
                 const tbody = document.getElementById('employees-table-body');
 
                 if (allEmployees.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
                                 No employees found
                             </td>
                         </tr>
@@ -1301,17 +1096,6 @@
                     const roleColor = roleColors[emp.role] || 'bg-gray-100 text-gray-800';
                     const isActive = emp.is_clocked_in ? 'Clocked In' : 'Clocked Out';
                     const statusColor = emp.is_clocked_in ? 'text-green-600' : 'text-gray-600';
-                    
-                    // Company Business status
-                    const onCompanyBusiness = emp.on_company_business === true;
-                    const cbBadge = onCompanyBusiness 
-                        ? `<div class="flex items-center">
-                             <span class="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                 <i class="fas fa-briefcase mr-1"></i>On Business
-                             </span>
-                             ${emp.company_business_reason ? `<span class="ml-2 text-xs text-gray-500" title="${emp.company_business_reason}"><i class="fas fa-info-circle"></i></span>` : ''}
-                           </div>`
-                        : `<span class="text-xs text-gray-500">Normal Mode</span>`;
 
                     html += `
                         <tr class="hover:bg-gray-50">
@@ -1325,24 +1109,11 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap ${statusColor} font-medium">${isActive}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                ${cbBadge}
-                                ${emp.is_clocked_in ? `
-                                <button onclick="openCompanyBusinessModal('${emp.id}', '${emp.full_name}', ${onCompanyBusiness})" 
-                                        class="mt-1 text-orange-600 hover:text-orange-800 text-xs" 
-                                        title="Manage Company Business Status">
-                                    <i class="fas fa-briefcase mr-1"></i>${onCompanyBusiness ? 'Manage' : 'Set'}
+                                <button onclick="editEmployee('${emp.id}')" class="text-blue-600 hover:text-blue-800 mr-3">
+                                    <i class="fas fa-edit"></i> Edit
                                 </button>
-                                ` : ''}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <button onclick="editEmployee('${emp.id}')" class="text-blue-600 hover:text-blue-800 mr-3" title="Edit employee">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="resetEmployeePassword('${emp.id}', '${emp.full_name}')" class="text-green-600 hover:text-green-800 mr-3" title="Reset password to #Test12345">
-                                    <i class="fas fa-key"></i>
-                                </button>
-                                <button onclick="deleteEmployee('${emp.id}')" class="text-red-600 hover:text-red-800" title="Deactivate employee (soft delete - preserves records)">
-                                    <i class="fas fa-user-slash"></i>
+                                <button onclick="deleteEmployee('${emp.id}')" class="text-red-600 hover:text-red-800">
+                                    <i class="fas fa-trash"></i> Delete
                                 </button>
                             </td>
                         </tr>
@@ -1380,7 +1151,7 @@
                 document.getElementById('edit-email').value = data.email || '';
                 document.getElementById('edit-employee-number').value = data.employee_number || '';
                 document.getElementById('edit-role').value = data.role || 'employee';
-                document.getElementById('edit-pay-rate').value = data.hourly_rate || '';
+                document.getElementById('edit-pay-rate').value = data.pay_rate || '';
                 document.getElementById('edit-phone').value = data.phone || '';
 
                 // Show modal
@@ -1409,7 +1180,7 @@
                     email: document.getElementById('edit-email').value,
                     employee_number: document.getElementById('edit-employee-number').value,
                     role: document.getElementById('edit-role').value,
-                    hourly_rate: document.getElementById('edit-pay-rate').value ? parseFloat(document.getElementById('edit-pay-rate').value) : null,
+                    pay_rate: document.getElementById('edit-pay-rate').value ? parseFloat(document.getElementById('edit-pay-rate').value) : null,
                     phone: document.getElementById('edit-phone').value,
                     updated_at: new Date().toISOString()
                 };
@@ -1433,89 +1204,24 @@
 
         // Delete employee
         async function deleteEmployee(id) {
-            // Get employee details first
-            const { data: employee } = await db
-                .from('users')
-                .select('full_name')
-                .eq('id', id)
-                .single();
-
-            const employeeName = employee?.full_name || 'this employee';
-
-            if (!confirm(`⚠️ Deactivate Employee?\n\n${employeeName} will be marked as inactive.\n\nTheir records will be preserved:\n• Time entries\n• Messages\n• Alerts\n• Payroll history\n\nThey will no longer appear in active employee lists.\n\nContinue?`)) {
+            if (!confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
                 return;
             }
 
             try {
-                // SOFT DELETE: Mark as inactive instead of hard delete
-                // This preserves foreign key relationships and historical data
                 const { error } = await db
                     .from('users')
-                    .update({ 
-                        is_active: false,
-                        deleted: true,
-                        updated_at: new Date().toISOString()
-                    })
+                    .delete()
                     .eq('id', id);
 
-                if (error) {
-                    // If soft delete fails, provide helpful error message
-                    if (error.message.includes('foreign key')) {
-                        throw new Error('Cannot delete employee - they have related records (time entries, messages, etc.). The system will mark them as inactive instead.');
-                    }
-                    throw error;
-                }
+                if (error) throw error;
 
-                alert(`✅ Employee Deactivated\n\n${employeeName} has been marked as inactive.\n\nAll their historical records have been preserved for payroll and audit purposes.\n\nThey will no longer appear in:\n• Active employee lists\n• Clock-in screens\n• New time entry creation\n\nYou can reactivate them later if needed.`);
-                
+                alert('✅ Employee deleted successfully');
                 await loadEmployees();
 
             } catch (error) {
-                console.error('Error deactivating employee:', error);
-                alert('❌ Error Deactivating Employee\n\n' + error.message + '\n\nPlease contact IT support if this problem persists.');
-            }
-        }
-
-        // Reset Employee Password via Edge Function
-        async function resetEmployeePassword(userId, employeeName) {
-            if (!confirm(`Reset password for ${employeeName}?\n\nPassword will be reset to: #Test12345`)) {
-                return;
-            }
-            
-            try {
-                console.log('🔑 Resetting password for user:', userId);
-                
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/smart-responder`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SUPABASE_KEY}`
-                    },
-                    body: JSON.stringify({ user_id: userId })
-                });
-                
-                const result = await response.json();
-                console.log('📥 Edge Function response:', result);
-                
-                if (!response.ok || !result.success) {
-                    throw new Error(result.error || 'Failed to reset password');
-                }
-                
-                alert(`✅ Password Reset Successfully!\n\n` +
-                      `Employee: ${employeeName}\n` +
-                      `Email: ${result.email}\n\n` +
-                      `🔑 New Password: #Test12345\n\n` +
-                      `Login URL: https://dmhioptimeclock.com/login-standalone.html\n\n` +
-                      `⚠️ Employee must change password on first login.`);
-                
-            } catch (error) {
-                console.error('❌ Error resetting password:', error);
-                alert(`Error resetting password: ${error.message}\n\n` +
-                      `This usually means:\n` +
-                      `• The employee doesn't have an auth account yet\n` +
-                      `• They were created before the automatic system was set up\n\n` +
-                      `Solution: This feature only works for employees created\n` +
-                      `after the Edge Functions were deployed.`);
+                console.error('Error deleting employee:', error);
+                alert('Error deleting employee: ' + error.message);
             }
         }
 
@@ -1560,36 +1266,23 @@
                                     <div class="flex items-center mb-2">
                                         <i class="fas fa-exclamation-circle text-orange-600 mr-2"></i>
                                         <h3 class="font-bold text-gray-800">${userName}</h3>
-                                        ${alert.alert_type === 'geofence_tracking' ? `
-                                        <span class="ml-2 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                            <i class="fas fa-map-marker-alt mr-1"></i>Geofence Exit
-                                        </span>
-                                        ` : ''}
                                     </div>
                                     <p class="text-gray-700 mb-2">${alert.alert_message}</p>
                                     <p class="text-xs text-gray-500">${createdAt}</p>
                                 </div>
-                                <div class="flex flex-col space-y-2 ml-4">
-                                    <div class="flex space-x-2">
-                                        ${alert.alert_type === 'geofence_tracking' ? `
-                                        <button onclick="openFixGeofenceModal('${alert.id}', '${alert.user_id}', '${userName}', '${alert.alert_message}', '${alert.geofence_event_id || ''}')" 
-                                                class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm transition">
-                                            <i class="fas fa-tools mr-1"></i>Fix
-                                        </button>
-                                        ` : ''}
-                                        <button onclick="resolveAlert('${alert.id}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition">
-                                            Resolve
-                                        </button>
-                                        <button onclick="dismissAlert('${alert.id}')" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm transition">
-                                            Dismiss
-                                        </button>
-                                    </div>
+                                <div class="flex space-x-2 ml-4">
                                     ${alert.alert_type === 'geofence_tracking' ? `
-                                    <button onclick="markAsCompanyBusinessFromAlert('${alert.user_id}', '${userName}', '${alert.id}')" 
-                                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition w-full">
-                                        <i class="fas fa-briefcase mr-1"></i>Mark as Company Business
+                                    <button onclick="openFixGeofenceModal('${alert.id}', '${alert.user_id}', '${userName}', '${alert.alert_message}', '${alert.geofence_event_id || ''}')" 
+                                            class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm transition">
+                                        <i class="fas fa-tools mr-1"></i>Fix
                                     </button>
                                     ` : ''}
+                                    <button onclick="resolveAlert('${alert.id}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition">
+                                        Resolve
+                                    </button>
+                                    <button onclick="dismissAlert('${alert.id}')" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm transition">
+                                        Dismiss
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1606,253 +1299,9 @@
             }
         }
 
-        // Resolve alert - AUTO-CREATE TIME ENTRY FROM GEOFENCE DATA
-        // BUSINESS HOURS CONFIGURATION
-        const BUSINESS_HOURS = {
-            daysOpen: [1, 2, 3, 4, 5], // Monday-Friday (0=Sunday, 1=Monday)
-            openHour: 8,    // 8 AM
-            closeHour: 20,  // 8 PM
-            graceMinutes: 15, // 15-minute grace period
-            maxShiftHours: 12 // Maximum shift length
-        };
-
-        // SPECIAL LOCATION EXCEPTIONS
-        const LOCATION_EXCEPTIONS = {
-            // Regina works at District Court on Wednesdays
-            'regina_largent@dmhiop.com': {
-                wednesday: {
-                    location: 'District Court',
-                    allowRemote: true,
-                    skipGeofenceValidation: true,
-                    notes: 'Regina works at District Court on Wednesdays - no geofence validation required'
-                }
-            }
-        };
-
-        // Check if user has location exception for this day
-        async function checkLocationException(userId, date) {
-            try {
-                const { data: user } = await db
-                    .from('users')
-                    .select('email, full_name')
-                    .eq('id', userId)
-                    .single();
-                
-                if (!user || !user.email) return null;
-                
-                const dayOfWeek = date.getDay();
-                const userExceptions = LOCATION_EXCEPTIONS[user.email.toLowerCase()];
-                
-                if (!userExceptions) return null;
-                
-                // Check for Wednesday exception (dayOfWeek === 3)
-                if (dayOfWeek === 3 && userExceptions.wednesday) {
-                    return {
-                        ...userExceptions.wednesday,
-                        userName: user.full_name
-                    };
-                }
-                
-                return null;
-            } catch (error) {
-                console.error('Error checking location exception:', error);
-                return null;
-            }
-        }
-
-        // Validate business hours
-        function validateBusinessHours(clockIn, clockOut) {
-            const errors = [];
-            
-            // Check day of week
-            const dayOfWeek = clockIn.getDay();
-            if (!BUSINESS_HOURS.daysOpen.includes(dayOfWeek)) {
-                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                errors.push(`❌ WEEKEND ENTRY: ${dayNames[dayOfWeek]} is not a business day. DMHIOP is only open Monday-Friday.`);
-            }
-            
-            // Check clock-in time (with 15-min grace period)
-            const clockInHour = clockIn.getHours();
-            const clockInMinutes = clockIn.getMinutes();
-            const clockInTotalMinutes = clockInHour * 60 + clockInMinutes;
-            const earliestAllowed = (BUSINESS_HOURS.openHour * 60) - BUSINESS_HOURS.graceMinutes; // 7:45 AM
-            const latestAllowed = (BUSINESS_HOURS.closeHour * 60) + BUSINESS_HOURS.graceMinutes; // 8:15 PM
-            
-            if (clockInTotalMinutes < earliestAllowed) {
-                errors.push(`❌ CLOCK-IN TOO EARLY: ${clockIn.toLocaleTimeString()} is before 7:45 AM. Business hours are 8:00 AM - 8:00 PM (15-min grace period).`);
-            }
-            
-            // Check clock-out time (with 15-min grace period)
-            const clockOutHour = clockOut.getHours();
-            const clockOutMinutes = clockOut.getMinutes();
-            const clockOutTotalMinutes = clockOutHour * 60 + clockOutMinutes;
-            
-            if (clockOutTotalMinutes > latestAllowed) {
-                errors.push(`❌ CLOCK-OUT TOO LATE: ${clockOut.toLocaleTimeString()} is after 8:15 PM. Business hours are 8:00 AM - 8:00 PM (15-min grace period).`);
-            }
-            
-            // Check for overnight shift
-            if (clockOut.getDate() !== clockIn.getDate()) {
-                errors.push(`❌ OVERNIGHT SHIFT DETECTED: Clock-in (${clockIn.toLocaleDateString()}) and clock-out (${clockOut.toLocaleDateString()}) are on different days. Overnight shifts are not allowed.`);
-            }
-            
-            // Check shift length
-            const hours = (clockOut - clockIn) / (1000 * 60 * 60);
-            if (hours > BUSINESS_HOURS.maxShiftHours) {
-                errors.push(`❌ SHIFT TOO LONG: ${hours.toFixed(2)} hours exceeds maximum of ${BUSINESS_HOURS.maxShiftHours} hours. This may indicate a missed clock-out.`);
-            }
-            
-            if (hours <= 0) {
-                errors.push(`❌ INVALID TIME RANGE: Clock-out is before or same as clock-in.`);
-            }
-            
-            return {
-                valid: errors.length === 0,
-                errors: errors,
-                hours: hours
-            };
-        }
-
-        // ENHANCED AUTO-RESOLVE FUNCTION - HANDLES PARTIAL ENTRIES
+        // Resolve alert
         async function resolveAlert(id) {
             try {
-                // Get alert details
-                const { data: alertData, error: alertError } = await db
-                    .from('admin_alerts')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (alertError) throw alertError;
-
-                console.log('🔍 Resolving alert:', alertData);
-
-                // If it's a geofence alert, try to auto-create time entry
-                if (alertData.alert_type === 'geofence_tracking' && alertData.geofence_event_id) {
-                    console.log('🎯 AUTO-RESOLVE: Processing geofence data...');
-                    
-                    // Get the geofence event
-                    const { data: geoEvent, error: geoError } = await db
-                        .from('geofence_events')
-                        .select('*')
-                        .eq('id', alertData.geofence_event_id)
-                        .single();
-
-                    if (geoError) throw geoError;
-
-                    // Get user info for alert messages
-                    const { data: user } = await db
-                        .from('users')
-                        .select('full_name, email')
-                        .eq('id', alertData.user_id)
-                        .single();
-                    
-                    const userName = user?.full_name || 'Employee';
-
-                    // Find all geofence events for the same day
-                    const eventDate = new Date(geoEvent.event_time);
-                    
-                    // CHECK FOR LOCATION EXCEPTIONS (e.g., Regina on Wednesday)
-                    const locationException = await checkLocationException(alertData.user_id, eventDate);
-                    
-                    if (locationException) {
-                        console.log('🏛️ LOCATION EXCEPTION DETECTED:', locationException);
-                        alert(`ℹ️ LOCATION EXCEPTION\n\n${locationException.userName} works at ${locationException.location} on Wednesdays.\n\n${locationException.notes}\n\nThis alert will be dismissed without creating a time entry.\n\nUse "Manual Entry" if you need to create a time entry for this day.`);
-                        
-                        // Just mark as resolved, don't create entry
-                        const { error } = await db
-                            .from('admin_alerts')
-                            .update({ 
-                                is_resolved: true,
-                                resolved_at: new Date().toISOString()
-                            })
-                            .eq('id', id);
-
-                        if (error) throw error;
-                        await loadAlerts();
-                        await loadDashboard();
-                        return;
-                    }
-
-                    const dayStart = new Date(eventDate);
-                    dayStart.setHours(0, 0, 0, 0);
-                    const dayEnd = new Date(eventDate);
-                    dayEnd.setHours(23, 59, 59, 999);
-
-                    const { data: allEvents, error: eventsError } = await db
-                        .from('geofence_events')
-                        .select('*')
-                        .eq('user_id', alertData.user_id)
-                        .gte('event_time', dayStart.toISOString())
-                        .lte('event_time', dayEnd.toISOString())
-                        .order('event_time', { ascending: true });
-
-                    if (eventsError) throw eventsError;
-
-                    console.log('📊 Found geofence events:', allEvents);
-
-                    // Find first entry and last exit
-                    const entryEvents = allEvents.filter(e => e.event_type === 'entry');
-                    const exitEvents = allEvents.filter(e => e.event_type === 'exit');
-
-                    if (entryEvents.length === 0) {
-                        alert(`⚠️ NO ENTRY EVENT FOUND\n\n${userName} has exit events but no entry event for ${eventDate.toLocaleDateString()}.\n\nThis usually means they forgot to clock in.\n\nPlease use "Manual Entry" to create the time entry.`);
-                        return;
-                    }
-
-                    if (exitEvents.length === 0) {
-                        alert(`⚠️ NO EXIT EVENT FOUND\n\n${userName} has entry events but no exit event for ${eventDate.toLocaleDateString()}.\n\nThis usually means they forgot to clock out.\n\nPlease use "Manual Entry" to create the time entry.`);
-                        return;
-                    }
-
-                    const clockIn = new Date(entryEvents[0].event_time);
-                    const clockOut = new Date(exitEvents[exitEvents.length - 1].event_time);
-                    
-                    console.log('⏰ Times:', {
-                        clockIn: clockIn.toLocaleString(),
-                        clockOut: clockOut.toLocaleString()
-                    });
-
-                    // VALIDATE BUSINESS HOURS
-                    const validation = validateBusinessHours(clockIn, clockOut);
-                    
-                    if (!validation.valid) {
-                        const errorMessage = `⚠️ AUTO-RESOLVE BLOCKED\n\n${userName}\nDate: ${eventDate.toLocaleDateString()}\n\nDetected Times:\n• Clock In: ${clockIn.toLocaleString()}\n• Clock Out: ${clockOut.toLocaleString()}\n• Duration: ${validation.hours.toFixed(2)} hours\n\n${validation.errors.join('\n\n')}\n\n📋 SOLUTION:\nUse "Manual Entry" to create this time entry if the times are correct.`;
-                        alert(errorMessage);
-                        return;
-                    }
-
-                    // Get coordinates from geofence event
-                    const lat = geoEvent.latitude || 35.2461;
-                    const lng = geoEvent.longitude || -106.6531;
-
-                    // CREATE TIME ENTRY
-                    const { data: newEntry, error: entryError } = await db
-                        .from('time_entries')
-                        .insert({
-                            user_id: alertData.user_id,
-                            clock_in_time: clockIn.toISOString(),
-                            clock_in_latitude: lat,
-                            clock_in_longitude: lng,
-                            clock_out_time: clockOut.toISOString(),
-                            clock_out_latitude: lat,
-                            clock_out_longitude: lng,
-                            total_hours: validation.hours,
-                            status: 'approved',
-                            notes: `Auto-created by admin from geofence data (Alert ID: ${id.substring(0, 8)}). Validated: Business hours, ${validation.hours.toFixed(2)} hour shift.`
-                        })
-                        .select()
-                        .single();
-
-                    if (entryError) throw entryError;
-
-                    console.log('✅ Auto-created time entry:', newEntry);
-                    
-                    // SUCCESS NOTIFICATION
-                    alert(`✅ TIME ENTRY CREATED!\n\n${userName}\n${eventDate.toLocaleDateString()}\n\nClock In: ${clockIn.toLocaleTimeString()}\nClock Out: ${clockOut.toLocaleTimeString()}\nTotal Hours: ${validation.hours.toFixed(2)}\n\n✅ Validated: Within business hours (8 AM - 8 PM)\n✅ Monday-Friday\n✅ Under ${BUSINESS_HOURS.maxShiftHours}-hour limit`);
-                }
-
-                // Mark alert as resolved
                 const { error } = await db
                     .from('admin_alerts')
                     .update({ 
@@ -1867,8 +1316,8 @@
                 await loadDashboard();
 
             } catch (error) {
-                console.error('❌ Error resolving alert:', error);
-                alert(`❌ ERROR: ${error.message}\n\nPlease contact support if this continues.`);
+                console.error('Error resolving alert:', error);
+                alert('Error resolving alert');
             }
         }
 
@@ -1965,372 +1414,6 @@
             document.getElementById('fixGeofenceModal').classList.remove('active');
         }
 
-        // ==================== EDIT TIME ENTRY FUNCTIONS ====================
-        
-        async function editTimeEntry(entryId) {
-            try {
-                const { data: entry, error } = await db
-                    .from('time_entries')
-                    .select(`
-                        *,
-                        users!time_entries_user_id_fkey (full_name)
-                    `)
-                    .eq('id', entryId)
-                    .single();
-
-                if (error) throw error;
-
-                // Populate modal
-                document.getElementById('edit-entry-id').value = entry.id;
-                document.getElementById('edit-entry-employee-name').textContent = entry.users?.full_name || 'Unknown';
-                
-                const clockInDate = new Date(entry.clock_in_time);
-                document.getElementById('edit-entry-date').value = clockInDate.toISOString().split('T')[0];
-                document.getElementById('edit-entry-clock-in').value = clockInDate.toTimeString().substring(0, 5);
-                
-                if (entry.clock_out_time) {
-                    const clockOutDate = new Date(entry.clock_out_time);
-                    document.getElementById('edit-entry-clock-out').value = clockOutDate.toTimeString().substring(0, 5);
-                }
-                
-                document.getElementById('edit-entry-notes').value = entry.notes || '';
-                document.getElementById('edit-entry-calculated-hours').textContent = entry.total_hours ? entry.total_hours.toFixed(2) : '0.00';
-
-                document.getElementById('editTimeEntryModal').classList.add('active');
-            } catch (error) {
-                console.error('Error loading time entry:', error);
-                alert(`Error loading time entry: ${error.message}`);
-            }
-        }
-
-        function closeEditTimeEntryModal() {
-            document.getElementById('editTimeEntryModal').classList.remove('active');
-            document.getElementById('editTimeEntryForm').reset();
-        }
-
-        document.getElementById('editTimeEntryForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const entryId = document.getElementById('edit-entry-id').value;
-            const date = document.getElementById('edit-entry-date').value;
-            const clockInTime = document.getElementById('edit-entry-clock-in').value;
-            const clockOutTime = document.getElementById('edit-entry-clock-out').value;
-            const notes = document.getElementById('edit-entry-notes').value;
-
-            if (!clockInTime) {
-                alert('Clock in time is required');
-                return;
-            }
-
-            try {
-                const clockIn = new Date(`${date}T${clockInTime}:00`);
-                let clockOut = clockOutTime ? new Date(`${date}T${clockOutTime}:00`) : null;
-                
-                let totalHours = null;
-                let status = 'clocked_in';
-
-                if (clockOut) {
-                    // Handle overnight shifts
-                    if (clockOut < clockIn) {
-                        clockOut.setDate(clockOut.getDate() + 1);
-                    }
-                    totalHours = (clockOut - clockIn) / (1000 * 60 * 60);
-                    status = 'clocked_out';
-                }
-
-                const updateData = {
-                    clock_in_time: clockIn.toISOString(),
-                    clock_out_time: clockOut ? clockOut.toISOString() : null,
-                    total_hours: totalHours,
-                    status: status,
-                    notes: notes + ` [Edited by admin on ${new Date().toLocaleString()}]`
-                };
-
-                const { error } = await db
-                    .from('time_entries')
-                    .update(updateData)
-                    .eq('id', entryId);
-
-                if (error) throw error;
-
-                alert('✅ Time entry updated successfully!');
-                closeEditTimeEntryModal();
-                await loadTimeEntries();
-            } catch (error) {
-                console.error('Error updating time entry:', error);
-                alert(`Error: ${error.message}`);
-            }
-        });
-
-        // ==================== MANUAL ENTRY FUNCTIONS ====================
-        
-        async function showManualEntryModal() {
-            // BUGFIX: Reload employees fresh from database to ensure dropdown is populated
-            try {
-                const { data, error } = await db
-                    .from('users')
-                    .select('*')
-                    .neq('role', 'admin')
-                    .order('full_name');
-
-                if (error) {
-                    console.error('Error loading employees for manual entry:', error);
-                    alert('Error loading employees. Please try again.');
-                    return;
-                }
-
-                // Filter active, non-deleted employees
-                const activeEmployees = (data || []).filter(emp => {
-                    const isActive = emp.is_active === null || emp.is_active === true;
-                    const notDeleted = emp.deleted === null || emp.deleted === false;
-                    return isActive && notDeleted;
-                });
-                
-                console.log('📋 Employees for manual entry:', activeEmployees.length, activeEmployees);
-                
-                // Populate employee dropdown
-                const select = document.getElementById('manual-employee');
-                select.innerHTML = '<option value="">Select employee...</option>';
-                
-                if (activeEmployees.length === 0) {
-                    select.innerHTML += '<option value="" disabled>No employees found</option>';
-                    alert('⚠️ No employees found. Please add employees first.');
-                    return;
-                }
-                
-                activeEmployees.forEach(emp => {
-                    const option = document.createElement('option');
-                    option.value = emp.id;
-                    option.textContent = `${emp.full_name} (${emp.employee_number || 'N/A'})`;
-                    select.appendChild(option);
-                });
-
-                // Set today as default
-                document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
-                
-                document.getElementById('manualEntryModal').classList.add('active');
-                
-            } catch (error) {
-                console.error('Error in showManualEntryModal:', error);
-                alert('Error opening manual entry form. Check console for details.');
-            }
-        }
-
-        function closeManualEntryModal() {
-            document.getElementById('manualEntryModal').classList.remove('active');
-            document.getElementById('manualEntryForm').reset();
-        }
-
-        document.getElementById('manualEntryForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const userId = document.getElementById('manual-employee').value;
-            const date = document.getElementById('manual-date').value;
-            const clockInTime = document.getElementById('manual-clock-in').value;
-            const clockOutTime = document.getElementById('manual-clock-out').value;
-            const notes = document.getElementById('manual-notes').value;
-
-            // Validate: need at least ONE time (clock-in OR clock-out)
-            if (!userId || !date || !notes) {
-                alert('Employee, Date, and Admin Notes are required');
-                return;
-            }
-            
-            if (!clockInTime && !clockOutTime) {
-                alert('❌ Please provide at least ONE time:\n\n• Clock In Time (if they forgot to clock in)\n• Clock Out Time (if they forgot to clock out)\n• Both (for full manual entry)');
-                return;
-            }
-
-            try {
-                // Build entry data based on what times are provided
-                let entryData = {
-                    user_id: userId,
-                    notes: `MANUAL ENTRY by admin: ${notes} [Created on ${new Date().toLocaleString()}]`,
-                    // Geofence coords are NULL for manual entries (admin override)
-                    clock_in_latitude: null,
-                    clock_in_longitude: null,
-                    clock_out_latitude: null,
-                    clock_out_longitude: null
-                };
-                
-                // Scenario 1: Both times provided (full entry)
-                if (clockInTime && clockOutTime) {
-                    const clockIn = new Date(`${date}T${clockInTime}:00`);
-                    let clockOut = new Date(`${date}T${clockOutTime}:00`);
-                    
-                    // Handle overnight shifts
-                    if (clockOut < clockIn) {
-                        clockOut.setDate(clockOut.getDate() + 1);
-                    }
-                    
-                    const totalHours = (clockOut - clockIn) / (1000 * 60 * 60);
-
-                    if (totalHours <= 0 || totalHours > 24) {
-                        alert('Invalid time range. Please check your times.');
-                        return;
-                    }
-                    
-                    entryData.clock_in_time = clockIn.toISOString();
-                    entryData.clock_out_time = clockOut.toISOString();
-                    entryData.total_hours = totalHours;
-                    entryData.status = 'approved';
-                    
-                // Scenario 2: Clock-in only (forgot to clock in)
-                } else if (clockInTime && !clockOutTime) {
-                    const clockIn = new Date(`${date}T${clockInTime}:00`);
-                    entryData.clock_in_time = clockIn.toISOString();
-                    entryData.clock_out_time = null;
-                    entryData.total_hours = null;
-                    entryData.status = 'clocked_in';
-                    
-                // Scenario 3: Clock-out only (forgot to clock out)
-                } else if (!clockInTime && clockOutTime) {
-                    const clockOut = new Date(`${date}T${clockOutTime}:00`);
-                    entryData.clock_in_time = null;
-                    entryData.clock_out_time = clockOut.toISOString();
-                    entryData.total_hours = null;
-                    entryData.status = 'clocked_out';
-                }
-
-                const { error } = await db
-                    .from('time_entries')
-                    .insert(entryData);
-
-                if (error) throw error;
-
-                // Show appropriate success message
-                if (clockInTime && clockOutTime) {
-                    alert(`✅ Full time entry created successfully!\n\nTotal Hours: ${entryData.total_hours.toFixed(2)}`);
-                } else if (clockInTime && !clockOutTime) {
-                    alert(`✅ Clock-in entry created!\n\nEmployee is now marked as clocked in.`);
-                } else if (!clockInTime && clockOutTime) {
-                    alert(`✅ Clock-out entry created!\n\nEmployee is now marked as clocked out.\n\nNote: Hours will not calculate without a clock-in time. Create another manual entry to add the clock-in time if needed.`);
-                }
-                closeManualEntryModal();
-                await loadTimeEntries();
-            } catch (error) {
-                console.error('Error creating manual entry:', error);
-                alert(`Error: ${error.message}`);
-            }
-        });
-
-        // ==================== DELETE TIME ENTRY ====================
-        
-        async function deleteTimeEntry(entryId, userName) {
-            if (!confirm(`Are you sure you want to DELETE this time entry for ${userName}?\n\nThis action cannot be undone!`)) {
-                return;
-            }
-
-            try {
-                const { error } = await db
-                    .from('time_entries')
-                    .delete()
-                    .eq('id', entryId);
-
-                if (error) throw error;
-
-                alert('✅ Time entry deleted successfully!');
-                await loadTimeEntries();
-            } catch (error) {
-                console.error('Error deleting time entry:', error);
-                alert(`Error: ${error.message}`);
-            }
-        }
-
-        // ==================== COMPANY BUSINESS MODAL ====================
-        
-        function openCompanyBusinessModal(userId, userName, currentStatus) {
-            document.getElementById('companyBusinessModal').classList.add('active');
-            document.getElementById('cb-user-id').value = userId;
-            document.getElementById('cb-user-name').textContent = userName;
-            document.getElementById('cb-status').value = currentStatus ? 'false' : 'true'; // If currently on business, default to turning OFF
-            
-            // Show/hide reason field based on status
-            document.getElementById('cb-status').addEventListener('change', function() {
-                const reasonDiv = document.getElementById('cb-reason-div');
-                if (this.value === 'true') {
-                    reasonDiv.style.display = 'block';
-                    document.getElementById('cb-reason').required = true;
-                } else {
-                    reasonDiv.style.display = 'none';
-                    document.getElementById('cb-reason').required = false;
-                }
-            });
-            
-            // Trigger initial state
-            document.getElementById('cb-status').dispatchEvent(new Event('change'));
-        }
-
-        function closeCompanyBusinessModal() {
-            document.getElementById('companyBusinessModal').classList.remove('active');
-            document.getElementById('companyBusinessForm').reset();
-        }
-
-        document.getElementById('companyBusinessForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const userId = document.getElementById('cb-user-id').value;
-            const status = document.getElementById('cb-status').value === 'true';
-            const reason = status ? document.getElementById('cb-reason').value : null;
-
-            try {
-                // Call the RPC function to set company business status
-                const { data, error } = await db.rpc('set_company_business', {
-                    p_user_id: userId,
-                    p_on_business: status,
-                    p_reason: reason,
-                    p_set_by_admin_id: currentUser.id
-                });
-
-                if (error) throw error;
-
-                const userName = data.full_name;
-                if (status) {
-                    alert(`✅ ${userName} is now marked as ON COMPANY BUSINESS.\n\nGeofence alerts will be suppressed.\n\nReason: ${reason}`);
-                } else {
-                    alert(`✅ ${userName} has been returned to NORMAL MODE.\n\nGeofence alerts will resume.`);
-                }
-                
-                closeCompanyBusinessModal();
-                await loadEmployees();
-            } catch (error) {
-                console.error('Error setting company business status:', error);
-                alert(`Error: ${error.message}`);
-            }
-        });
-
-        // Quick mark as company business from alert
-        async function markAsCompanyBusinessFromAlert(userId, userName, alertId) {
-            const reason = prompt(`Why is ${userName} leaving the geofence?\n\nExamples:\n- Bank deposit\n- Supply pickup\n- Client visit\n- Emergency errand\n\nEnter reason:`)  ;
-            
-            if (!reason || reason.trim() === '') {
-                return; // User cancelled
-            }
-
-            try {
-                // Set company business status
-                const { data, error } = await db.rpc('set_company_business', {
-                    p_user_id: userId,
-                    p_on_business: true,
-                    p_reason: reason.trim(),
-                    p_set_by_admin_id: currentUser.id
-                });
-
-                if (error) throw error;
-
-                alert(`✅ ${userName} is now marked as ON COMPANY BUSINESS.\n\nReason: ${reason}\n\nGeofence alerts will be suppressed for this employee.\nRemember to turn this OFF when they return!`);
-                
-                // Auto-dismiss this alert since it's now authorized
-                await dismissAlert(alertId);
-                
-                await loadAlerts();
-                await loadEmployees();
-            } catch (error) {
-                console.error('Error marking as company business:', error);
-                alert(`Error: ${error.message}`);
-            }
-        }
-
         // Calculate hours when times change
         document.addEventListener('DOMContentLoaded', function() {
             const clockInInput = document.getElementById('fix-clock-in');
@@ -2360,62 +1443,6 @@
             
             clockInInput?.addEventListener('change', calculateHours);
             clockOutInput?.addEventListener('change', calculateHours);
-
-            // Edit Entry Hour Calculation
-            const editClockIn = document.getElementById('edit-entry-clock-in');
-            const editClockOut = document.getElementById('edit-entry-clock-out');
-            
-            function calculateEditHours() {
-                const clockIn = editClockIn?.value;
-                const clockOut = editClockOut?.value;
-                
-                if (clockIn && clockOut) {
-                    const [inHours, inMinutes] = clockIn.split(':').map(Number);
-                    const [outHours, outMinutes] = clockOut.split(':').map(Number);
-                    
-                    let totalMinutes = (outHours * 60 + outMinutes) - (inHours * 60 + inMinutes);
-                    
-                    if (totalMinutes < 0) {
-                        totalMinutes += 24 * 60;
-                    }
-                    
-                    const hours = (totalMinutes / 60).toFixed(2);
-                    document.getElementById('edit-entry-calculated-hours').textContent = hours;
-                } else {
-                    document.getElementById('edit-entry-calculated-hours').textContent = '0.00';
-                }
-            }
-            
-            editClockIn?.addEventListener('change', calculateEditHours);
-            editClockOut?.addEventListener('change', calculateEditHours);
-
-            // Manual Entry Hour Calculation
-            const manualClockIn = document.getElementById('manual-clock-in');
-            const manualClockOut = document.getElementById('manual-clock-out');
-            
-            function calculateManualHours() {
-                const clockIn = manualClockIn?.value;
-                const clockOut = manualClockOut?.value;
-                
-                if (clockIn && clockOut) {
-                    const [inHours, inMinutes] = clockIn.split(':').map(Number);
-                    const [outHours, outMinutes] = clockOut.split(':').map(Number);
-                    
-                    let totalMinutes = (outHours * 60 + outMinutes) - (inHours * 60 + inMinutes);
-                    
-                    if (totalMinutes < 0) {
-                        totalMinutes += 24 * 60;
-                    }
-                    
-                    const hours = (totalMinutes / 60).toFixed(2);
-                    document.getElementById('manual-calculated-hours').textContent = hours;
-                } else {
-                    document.getElementById('manual-calculated-hours').textContent = '0.00';
-                }
-            }
-            
-            manualClockIn?.addEventListener('change', calculateManualHours);
-            manualClockOut?.addEventListener('change', calculateManualHours);
         });
 
         // Handle Fix Geofence Form Submit
@@ -2604,29 +1631,18 @@
                     let canApprove = false;
                     let approvalMessage = '';
                     
-                    // ✅ NEW LOGIC: Any approver can approve first, order doesn't matter
                     if (isTatiana && !tatianaApproved) {
-                        // Tatiana hasn't approved yet - she can approve
                         canApprove = true;
-                        if (seanApproved || garyApproved) {
-                            approvalMessage = '✅ Sean/Gary approved - <strong>Your approval will complete this request</strong>';
-                        } else {
-                            approvalMessage = '⚠️ <strong>Your approval is REQUIRED</strong> (Tatiana must approve)';
-                        }
-                    } else if ((isSean || isGary) && !seanApproved && !garyApproved) {
-                        // Sean/Gary hasn't approved yet - they can approve
+                        approvalMessage = '⚠️ <strong>Your approval is REQUIRED</strong>';
+                    } else if ((isSean && !seanApproved && !garyApproved) || (isGary && !seanApproved && !garyApproved)) {
                         canApprove = true;
                         if (tatianaApproved) {
-                            approvalMessage = '✅ Tatiana approved - <strong>Your approval will complete this request</strong>';
+                            approvalMessage = '✅ Tatiana approved - <strong>Your approval needed</strong>';
                         } else {
-                            approvalMessage = '⚠️ <strong>Your approval is REQUIRED</strong> (waiting for Tatiana to also approve)';
+                            approvalMessage = 'Waiting for Tatiana\'s approval first';
                         }
                     } else if (tatianaApproved && (seanApproved || garyApproved)) {
-                        // Both required approvals received
-                        approvalMessage = '✅ <strong>FULLY APPROVED</strong> - Both required approvals received';
-                    } else {
-                        // User already approved
-                        approvalMessage = '✓ You have already approved this request';
+                        approvalMessage = '✅ Fully approved - will be marked complete';
                     }
 
                     // Build approval status badges
@@ -2661,11 +1677,11 @@
                                         <p><span class="font-medium">Approval Status:</span> ${currentApprovals}/${requiredApprovals} approvals</p>
                                     </div>
                                     ${approvalBadges}
-                                    ${approvalMessage ? `<p class="text-sm mt-2 font-medium ${canApprove ? 'text-blue-700' : 'text-green-700'}">${approvalMessage}</p>` : ''}
+                                    ${approvalMessage ? `<p class="text-sm mt-2 ${canApprove ? 'text-blue-700' : 'text-gray-600'}">${approvalMessage}</p>` : ''}
                                 </div>
                                 <div class="flex flex-col space-y-2 ml-4">
                                     ${canApprove ? `
-                                        <button id="approve-btn-${request.id}" onclick="approveTimeOffRequest('${request.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
+                                        <button onclick="approveTimeOffRequest('${request.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
                                             <i class="fas fa-check mr-1"></i>Approve
                                         </button>
                                     ` : ''}
@@ -2690,33 +1706,7 @@
 
         // Approve time off request (multi-level approval)
         async function approveTimeOffRequest(requestId) {
-            // Disable button immediately to prevent double-clicks
-            const btn = document.getElementById(`approve-btn-${requestId}`);
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Processing...';
-            }
-            
             try {
-                // Check if current user already approved this request
-                const { data: existingApproval, error: checkError } = await db
-                    .from('time_off_approvals')
-                    .select('id')
-                    .eq('time_off_request_id', requestId)
-                    .eq('approver_id', currentUser.id)
-                    .eq('approval_action', 'approved')
-                    .maybeSingle();
-                
-                if (checkError) {
-                    console.error('Error checking existing approval:', checkError);
-                }
-                
-                if (existingApproval) {
-                    alert('⚠️ You have already approved this request.');
-                    await loadApprovals(); // Refresh to remove button
-                    return;
-                }
-                
                 // Insert approval record
                 const { error: insertError } = await db
                     .from('time_off_approvals')
@@ -2773,16 +1763,7 @@
 
             } catch (error) {
                 console.error('Error approving request:', error);
-                
-                // Check if it's a duplicate key error
-                if (error.message && error.message.includes('duplicate key')) {
-                    alert('⚠️ You have already approved this request. Refreshing...');
-                } else {
-                    alert('Error approving request: ' + error.message);
-                }
-                
-                // Refresh the list to show current state
-                await loadApprovals();
+                alert('Error approving request: ' + error.message);
             }
         }
 
@@ -3021,15 +2002,9 @@
                                     ${entry.status.replace('_', ' ').toUpperCase()}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <button onclick="viewTimeEntry('${entry.id}')" class="text-blue-600 hover:text-blue-800">
                                     <i class="fas fa-eye"></i> View
-                                </button>
-                                <button onclick="editTimeEntry('${entry.id}')" class="text-orange-600 hover:text-orange-800">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button onclick="deleteTimeEntry('${entry.id}', '${userName}')" class="text-red-600 hover:text-red-800">
-                                    <i class="fas fa-trash"></i> Delete
                                 </button>
                             </td>
                         </tr>
@@ -3276,35 +2251,43 @@
                     return;
                 }
                 
-                // ✅ Call Edge Function to create employee with auth user automatically
-                console.log('📤 Calling Edge Function to create employee...');
+                // ✅ NEW: Show instructions for creating auth user
+                const confirmMessage = 
+                    `⚠️ IMPORTANT NEXT STEP:\n\n` +
+                    `After clicking OK, the employee record will be created in the database.\n\n` +
+                    `You must then create their login account:\n\n` +
+                    `1. Go to Supabase Dashboard → Authentication → Users\n` +
+                    `2. Click "Add User"\n` +
+                    `3. Email: ${email}\n` +
+                    `4. Password: ${DEFAULT_PASSWORD}\n` +
+                    `5. Enable "Auto Confirm User" ✅\n` +
+                    `6. Click "Create"\n\n` +
+                    `Continue to create employee record?`;
                 
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/quick-task`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SUPABASE_KEY}`
-                    },
-                    body: JSON.stringify({
-                        email: email,
-                        full_name: fullName,
-                        employee_number: employeeNumber,
-                        pay_rate: payRate,
-                        role: role
-                    })
-                });
-                
-                const result = await response.json();
-                console.log('📥 Edge Function response:', result);
-                
-                if (!response.ok || !result.success) {
-                    throw new Error(result.error || 'Failed to create employee');
+                if (!confirm(confirmMessage)) {
+                    return;
                 }
                 
-                // Use the user ID from the Edge Function response
-                const newUser = { id: result.user_id, email: result.email };
+                // Create user account
+                const { data: newUser, error: userError } = await db
+                    .from('users')
+                    .insert({
+                        full_name: fullName,
+                        email: email,
+                        employee_number: employeeNumber,
+                        role: role,
+                        pay_rate: payRate,
+                        phone: phone,
+                        is_active: true,
+                        overtime_eligible: true,
+                        overtime_threshold: 40.00
+                    })
+                    .select()
+                    .single();
                 
-                console.log('✅ Employee created via Edge Function:', newUser);
+                if (userError) throw userError;
+                
+                console.log('✅ User created:', newUser);
                 
                 // Create PTO balance record
                 const { error: ptoError } = await db
@@ -3328,18 +2311,23 @@
                     // Don't fail the whole operation if PTO balance fails
                 }
                 
-                // ✅ Show success with automatic credentials
+                // ✅ NEW: Show success with credentials and next steps
                 alert(
-                    `✅ Employee Created Successfully!\n\n` +
+                    `✅ Employee Record Created!\n\n` +
                     `📋 Employee Details:\n` +
                     `Name: ${fullName}\n` +
                     `Email: ${email}\n` +
                     `Employee #: ${employeeNumber}\n\n` +
                     `🔑 Default Password: ${DEFAULT_PASSWORD}\n\n` +
-                    `✅ Auth account created automatically!\n\n` +
-                    `The employee can now log in at:\n` +
-                    `https://dmhioptimeclock.com/login-standalone.html\n\n` +
-                    `⚠️ Employee must change password on first login.`
+                    `⚠️ NEXT STEP - CREATE LOGIN ACCOUNT:\n` +
+                    `1. Go to Supabase Dashboard\n` +
+                    `2. Authentication → Users → Add User\n` +
+                    `3. Email: ${email}\n` +
+                    `4. Password: ${DEFAULT_PASSWORD}\n` +
+                    `5. Enable "Auto Confirm User"\n` +
+                    `6. Click Create\n\n` +
+                    `The employee can then log in at:\n` +
+                    `https://dmhioptimeclock.com/login-standalone.html`
                 );
                 
                 closeAddEmployeeModal();
