@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- 🚀 FRESH BUILD: 2026-01-30-21:15:00 UTC - SCHEMA FIX -->
-    <!-- NO DUPLICATE SUPABASE - SCHEMA COMPATIBLE VERSION -->
+    <!-- 🚀 FIXED BUILD: 2026-04-01 - BUSINESS HOURS + WEEKEND BLOCK + GEOFENCE AUTO-RESOLVE -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Dashboard - Enhanced with PTO</title>
@@ -478,10 +477,77 @@
             }
         }
 
+        // ===== BUSINESS HOURS VALIDATION =====
+        function validateBusinessHours() {
+            const now = new Date();
+            const day = now.getDay(); // 0=Sunday, 6=Saturday
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const totalMinutes = hours * 60 + minutes;
+            
+            // Block weekends entirely
+            if (day === 0 || day === 6) {
+                return {
+                    valid: false,
+                    error: `🚫 Weekend clock-ins are not allowed. Business hours are Monday-Friday only. Today is ${getDayName(day)}.`,
+                    severity: 'error'
+                };
+            }
+            
+            // Business hours: 7:45 AM - 8:15 PM (with 15-minute grace period)
+            const startTime = 7 * 60 + 45;  // 7:45 AM = 465 minutes
+            const endTime = 20 * 60 + 15;   // 8:15 PM = 1215 minutes
+            
+            if (totalMinutes < startTime) {
+                const openTime = '7:45 AM';
+                return {
+                    valid: false,
+                    error: `⏰ Too early! Business hours start at ${openTime}. Current time: ${formatTime(now)}`,
+                    severity: 'error'
+                };
+            }
+            
+            if (totalMinutes > endTime) {
+                const closeTime = '8:15 PM';
+                return {
+                    valid: false,
+                    error: `⏰ Too late! Business hours end at ${closeTime}. Current time: ${formatTime(now)}`,
+                    severity: 'error'
+                };
+            }
+            
+            return { valid: true };
+        }
+
+        function formatTime(date) {
+            let hours = date.getHours();
+            const minutes = date.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+            return `${hours}:${minutesStr} ${ampm}`;
+        }
+
+        function getDayName(dayIndex) {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            return days[dayIndex];
+        }
+
         // ===== CLOCK IN/OUT =====
         async function toggleClock(action) {
             try {
+                // STEP 1: Validate business hours FIRST (before location check)
+                const timeValidation = validateBusinessHours();
+                if (!timeValidation.valid) {
+                    showMessage(timeValidation.error, 'error');
+                    return;
+                }
+                
+                // STEP 2: Get location
                 const location = await getCurrentLocation();
+                
+                // STEP 3: Validate geofence
                 const validation = await validateGeofence(location.latitude, location.longitude);
 
                 // REQUIRE geofence for clock in/out
@@ -490,6 +556,7 @@
                     return;
                 }
 
+                // STEP 4: Perform clock action
                 if (action === 'in') {
                     await clockIn(location, validation.location);
                 } else {
@@ -523,24 +590,41 @@
 
             currentEntry = data;
             
-            // Link to most recent geofence entry event (within last 10 minutes)
+            // Link to most recent geofence entry event (within last 10 minutes) and AUTO-RESOLVE
             try {
                 const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-                await dashboardSupabase
+                const { data: linkedEvents } = await dashboardSupabase
                     .from('geofence_events')
                     .update({ 
                         related_time_entry_id: data.id,
                         time_entry_id: data.id,
-                        has_clock_entry: true
+                        has_clock_entry: true,
+                        is_resolved: true,  // AUTO-RESOLVE
+                        alert_resolved: true
                     })
                     .eq('user_id', currentUser.id)
                     .eq('event_type', 'entry')
                     .gte('event_time', tenMinutesAgo)
                     .is('related_time_entry_id', null)
                     .order('event_time', { ascending: false })
-                    .limit(1);
+                    .limit(1)
+                    .select();
+                
+                // Also auto-resolve related admin alerts
+                if (linkedEvents && linkedEvents.length > 0) {
+                    await dashboardSupabase
+                        .from('admin_alerts')
+                        .update({
+                            is_resolved: true,
+                            resolution_notes: 'Employee clocked in successfully',
+                            resolved_at: new Date().toISOString()
+                        })
+                        .eq('geofence_event_id', linkedEvents[0].id)
+                        .eq('alert_type', 'geofence_tracking')
+                        .eq('is_resolved', false);
+                }
             } catch (linkError) {
-                console.log('Could not link to geofence event:', linkError);
+                console.log('Could not link/resolve geofence event:', linkError);
             }
             
             showMessage(`✓ Clocked in at ${workLocation.name}!`, 'success');
@@ -564,24 +648,41 @@
 
             if (error) throw error;
             
-            // Link to most recent geofence exit event (within last 10 minutes)
+            // Link to most recent geofence exit event (within last 10 minutes) and AUTO-RESOLVE
             try {
                 const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-                await dashboardSupabase
+                const { data: linkedEvents } = await dashboardSupabase
                     .from('geofence_events')
                     .update({ 
                         related_time_entry_id: currentEntry.id,
                         time_entry_id: currentEntry.id,
-                        has_clock_entry: true
+                        has_clock_entry: true,
+                        is_resolved: true,  // AUTO-RESOLVE
+                        alert_resolved: true
                     })
                     .eq('user_id', currentUser.id)
                     .eq('event_type', 'exit')
                     .gte('event_time', tenMinutesAgo)
                     .is('related_time_entry_id', null)
                     .order('event_time', { ascending: false })
-                    .limit(1);
+                    .limit(1)
+                    .select();
+                
+                // Also auto-resolve related admin alerts
+                if (linkedEvents && linkedEvents.length > 0) {
+                    await dashboardSupabase
+                        .from('admin_alerts')
+                        .update({
+                            is_resolved: true,
+                            resolution_notes: 'Employee clocked out successfully',
+                            resolved_at: new Date().toISOString()
+                        })
+                        .eq('geofence_event_id', linkedEvents[0].id)
+                        .eq('alert_type', 'geofence_tracking')
+                        .eq('is_resolved', false);
+                }
             } catch (linkError) {
-                console.log('Could not link to geofence event:', linkError);
+                console.log('Could not link/resolve geofence event:', linkError);
             }
             
             showMessage(`✓ Clocked out from ${workLocation.name}!`, 'success');
