@@ -812,9 +812,13 @@
         // Populate Pay Period Dropdown
         async function populatePayPeriodDropdown() {
             try {
+                // Get current date to filter past periods
+                const today = new Date().toISOString().split('T')[0];
+                
                 const { data, error } = await db
                     .from('pay_periods')
                     .select('*')
+                    .lte('start_date', today)
                     .order('start_date', { ascending: false })
                     .limit(12);
                 
@@ -900,12 +904,12 @@
                                 ${data.map(emp => `
                                     <tr>
                                         <td class="border px-4 py-2">${emp.employee_number || 'N/A'}</td>
-                                        <td class="border px-4 py-2">${emp.employee_name}</td>
+                                        <td class="border px-4 py-2">${emp.full_name || emp.employee_name || 'Unknown'}</td>
                                         <td class="border px-4 py-2 text-right">${parseFloat(emp.regular_hours || 0).toFixed(2)}</td>
                                         <td class="border px-4 py-2 text-right">${parseFloat(emp.overtime_hours || 0).toFixed(2)}</td>
                                         <td class="border px-4 py-2 text-right">${parseFloat(emp.pto_hours || 0).toFixed(2)}</td>
                                         <td class="border px-4 py-2 text-right">${parseFloat(emp.sick_hours || 0).toFixed(2)}</td>
-                                        <td class="border px-4 py-2 text-right font-bold">${parseFloat(emp.total_payable_hours || 0).toFixed(2)}</td>
+                                        <td class="border px-4 py-2 text-right font-bold">${parseFloat(emp.total_hours || emp.total_payable_hours || 0).toFixed(2)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
