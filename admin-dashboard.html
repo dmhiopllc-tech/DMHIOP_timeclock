@@ -893,25 +893,34 @@
                                 <tr class="bg-gray-100">
                                     <th class="border px-4 py-2">Employee #</th>
                                     <th class="border px-4 py-2">Name</th>
+                                    <th class="border px-4 py-2">Hourly Rate</th>
                                     <th class="border px-4 py-2">Regular Hours</th>
                                     <th class="border px-4 py-2">OT Hours</th>
                                     <th class="border px-4 py-2">PTO Hours</th>
                                     <th class="border px-4 py-2">Sick Hours</th>
                                     <th class="border px-4 py-2">Total Hours</th>
+                                    <th class="border px-4 py-2">Total Pay</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${data.map(emp => `
+                                ${data.map(emp => {
+                                    const totalHours = parseFloat(emp.total_hours || emp.total_payable_hours || 0);
+                                    const hourlyRate = parseFloat(emp.hourly_rate || emp.pay_rate || 0);
+                                    const totalPay = (totalHours * hourlyRate).toFixed(2);
+                                    
+                                    return `
                                     <tr>
                                         <td class="border px-4 py-2">${emp.employee_number || 'N/A'}</td>
                                         <td class="border px-4 py-2">${emp.full_name || emp.employee_name || 'Unknown'}</td>
+                                        <td class="border px-4 py-2 text-right">$${hourlyRate.toFixed(2)}</td>
                                         <td class="border px-4 py-2 text-right">${parseFloat(emp.regular_hours || 0).toFixed(2)}</td>
                                         <td class="border px-4 py-2 text-right">${parseFloat(emp.overtime_hours || 0).toFixed(2)}</td>
                                         <td class="border px-4 py-2 text-right">${parseFloat(emp.pto_hours || 0).toFixed(2)}</td>
                                         <td class="border px-4 py-2 text-right">${parseFloat(emp.sick_hours || 0).toFixed(2)}</td>
-                                        <td class="border px-4 py-2 text-right font-bold">${parseFloat(emp.total_hours || emp.total_payable_hours || 0).toFixed(2)}</td>
+                                        <td class="border px-4 py-2 text-right font-bold">${totalHours.toFixed(2)}</td>
+                                        <td class="border px-4 py-2 text-right font-bold text-green-600">$${totalPay}</td>
                                     </tr>
-                                `).join('')}
+                                `}).join('')}
                             </tbody>
                         </table>
                     </div>
