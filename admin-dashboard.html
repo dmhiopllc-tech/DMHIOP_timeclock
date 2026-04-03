@@ -87,6 +87,22 @@
         .hidden {
             display: none;
         }
+        .approval-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .approval-needed {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+        .approval-done {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -305,6 +321,12 @@
         <div id="content-approvals" class="tab-content hidden">
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-2xl font-bold mb-6">Pending Time Off Requests</h2>
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                    <p class="text-sm text-blue-800">
+                        <strong>Approval Rules:</strong> Each request requires 2 approvals:
+                        <span class="font-semibold">(Sean OR Gary) + Tatiana (mandatory)</span>
+                    </p>
+                </div>
                 <div id="approvals-container">
                     <div class="text-center py-8">
                         <div class="loading mx-auto"></div>
@@ -382,50 +404,6 @@
 
     </main>
 
-    <!-- Add Employee Modal -->
-    <div id="addEmployeeModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeAddEmployeeModal()">&times;</span>
-            <h2 class="text-2xl font-bold mb-4">Add New Employee</h2>
-            <form id="addEmployeeForm" onsubmit="addEmployee(event)">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                        <input type="text" name="full_name" required class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                        <input type="email" name="email" required class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
-                        <input type="text" name="employee_id" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Hourly Rate</label>
-                        <input type="number" step="0.01" name="hourly_rate" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Role *</label>
-                        <select name="role" required class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                            <option value="employee">Employee</option>
-                            <option value="manager">Manager</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-6 flex space-x-4">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
-                        <i class="fas fa-save mr-2"></i>Save
-                    </button>
-                    <button type="button" onclick="closeAddEmployeeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg transition">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Edit Employee Modal -->
     <div id="editEmployeeModal" class="modal">
         <div class="modal-content">
@@ -477,7 +455,15 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Approval rule constants
+        const SEAN_ID = '6a057c45-3a1c-4f5c-80b4-f4ba04af90ac';
+        const GARY_ID = 'bb0acc23-113c-429f-b066-fdeed3429e45';
+        const TATIANA_ID_1 = 'b6b44163-3bd5-4aff-ac83-1fb9e49cde8a';
+        const TATIANA_ID_2 = '612918e4-101a-4340-8b9e-ccb28eb14b1d';
+        const TATIANA_IDS = [TATIANA_ID_1, TATIANA_ID_2];
+
         let currentUser = null;
+        let allUsers = {}; // Cache for user lookups
 
         // Check authentication
         async function checkAuth() {
@@ -504,6 +490,12 @@
                 }
 
                 currentUser = profile;
+                
+                // Load all users for lookup
+                const { data: users } = await db.from('users').select('id, full_name, email, role');
+                if (users) {
+                    users.forEach(u => allUsers[u.id] = u);
+                }
             } catch (error) {
                 console.error('Auth check error:', error);
                 window.location.href = 'login-standalone.html';
@@ -568,7 +560,8 @@
                 const { data: pending, error: pendError } = await db
                     .from('time_off_requests')
                     .select('*', { count: 'exact' })
-                    .eq('status', 'pending');
+                    .neq('approval_status', 'approved')
+                    .neq('approval_status', 'rejected');
                 
                 if (!pendError) {
                     document.getElementById('stat-pending').textContent = pending?.length || 0;
@@ -768,9 +761,6 @@
                                 </p>
                             </div>
                             <div class="ml-4 flex space-x-2">
-                                <button onclick="resolveAlert('${alert.id}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
-                                    Resolve
-                                </button>
                                 <button onclick="dismissAlert('${alert.id}')" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
                                     Dismiss
                                 </button>
@@ -797,29 +787,6 @@
             return colors[type] || 'gray';
         }
 
-        // Resolve Alert
-        async function resolveAlert(alertId) {
-            try {
-                const { error } = await db
-                    .from('admin_alerts')
-                    .update({ 
-                        status: 'resolved', 
-                        resolved_at: new Date().toISOString() 
-                    })
-                    .eq('id', alertId);
-
-                if (error) throw error;
-
-                alert('Alert resolved');
-                loadAlerts();
-                loadDashboardData();
-
-            } catch (error) {
-                console.error('Error resolving alert:', error);
-                alert('Error resolving alert');
-            }
-        }
-
         // Dismiss Alert
         async function dismissAlert(alertId) {
             try {
@@ -833,7 +800,6 @@
 
                 if (error) throw error;
 
-                alert('Alert dismissed');
                 loadAlerts();
                 loadDashboardData();
 
@@ -960,7 +926,7 @@
             alert('CSV export functionality coming soon');
         }
 
-        // Load Approvals (Time Off Requests)
+        // Load Approvals with existing approval tracking
         async function loadApprovals() {
             try {
                 const { data, error } = await db
@@ -969,10 +935,18 @@
                         *,
                         users:user_id (full_name, employee_id, email)
                     `)
-                    .eq('status', 'pending')
+                    .neq('approval_status', 'approved')
+                    .neq('approval_status', 'rejected')
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
+
+                // Load existing approvals for all requests
+                const requestIds = data.map(r => r.id);
+                const { data: existingApprovals } = await db
+                    .from('time_off_approvals')
+                    .select('*')
+                    .in('time_off_request_id', requestIds);
 
                 const container = document.getElementById('approvals-container');
                 
@@ -981,33 +955,68 @@
                     return;
                 }
 
-                container.innerHTML = data.map(request => `
-                    <div class="border border-gray-200 rounded-lg p-4 mb-4">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-lg mb-2">
-                                    ${request.users?.full_name || 'Unknown'} - ${request.request_type.toUpperCase()}
-                                </h3>
-                                <div class="text-sm text-gray-600 space-y-1">
-                                    <p><strong>Employee ID:</strong> ${request.users?.employee_id || 'N/A'}</p>
-                                    <p><strong>Email:</strong> ${request.users?.email || 'N/A'}</p>
-                                    <p><strong>Dates:</strong> ${new Date(request.start_date).toLocaleDateString()} - ${new Date(request.end_date).toLocaleDateString()}</p>
-                                    <p><strong>Hours Requested:</strong> ${request.hours_requested}</p>
-                                    ${request.employee_note ? `<p><strong>Note:</strong> ${request.employee_note}</p>` : ''}
-                                    <p><strong>Submitted:</strong> ${new Date(request.created_at).toLocaleString()}</p>
+                container.innerHTML = data.map(request => {
+                    const approvals = existingApprovals?.filter(a => a.time_off_request_id === request.id) || [];
+                    const approverIds = approvals.map(a => a.approver_id);
+                    
+                    const hasSeanOrGary = approverIds.includes(SEAN_ID) || approverIds.includes(GARY_ID);
+                    const hasTatiana = approverIds.some(id => TATIANA_IDS.includes(id));
+                    const currentUserApproved = approverIds.includes(currentUser.id);
+                    
+                    // Check if fully approved
+                    const fullyApproved = hasSeanOrGary && hasTatiana;
+                    
+                    return `
+                        <div class="border border-gray-200 rounded-lg p-4 mb-4 ${fullyApproved ? 'bg-green-50' : ''}">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg mb-2">
+                                        ${request.users?.full_name || 'Unknown'} - ${request.request_type.toUpperCase()}
+                                    </h3>
+                                    <div class="text-sm text-gray-600 space-y-1 mb-3">
+                                        <p><strong>Employee ID:</strong> ${request.users?.employee_id || 'N/A'}</p>
+                                        <p><strong>Email:</strong> ${request.users?.email || 'N/A'}</p>
+                                        <p><strong>Dates:</strong> ${new Date(request.start_date).toLocaleDateString()} - ${new Date(request.end_date).toLocaleDateString()}</p>
+                                        <p><strong>Hours Requested:</strong> ${request.hours_requested}</p>
+                                        ${request.employee_note ? `<p><strong>Note:</strong> ${request.employee_note}</p>` : ''}
+                                        <p><strong>Submitted:</strong> ${new Date(request.created_at).toLocaleString()}</p>
+                                    </div>
+                                    
+                                    <div class="mt-3 pt-3 border-t">
+                                        <p class="text-sm font-semibold mb-2">Approval Status (${request.current_approvals || 0} of ${request.requires_approvals || 2}):</p>
+                                        <div class="space-y-1">
+                                            <div>
+                                                <span class="approval-badge ${hasSeanOrGary ? 'approval-done' : 'approval-needed'}">
+                                                    ${hasSeanOrGary ? '✓' : '○'} Sean OR Gary
+                                                </span>
+                                                ${hasSeanOrGary ? `<span class="text-xs text-gray-600">(Approved by ${allUsers[approverIds.find(id => id === SEAN_ID || id === GARY_ID)]?.full_name})</span>` : ''}
+                                            </div>
+                                            <div>
+                                                <span class="approval-badge ${hasTatiana ? 'approval-done' : 'approval-needed'}">
+                                                    ${hasTatiana ? '✓' : '○'} Tatiana (Mandatory)
+                                                </span>
+                                                ${hasTatiana ? `<span class="text-xs text-gray-600">(Approved)</span>` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex flex-col space-y-2">
+                                    ${fullyApproved ? 
+                                        '<span class="bg-green-600 text-white px-4 py-2 rounded text-center"><i class="fas fa-check mr-1"></i> Fully Approved</span>' :
+                                        currentUserApproved ?
+                                            '<span class="bg-gray-400 text-white px-4 py-2 rounded text-center">You Approved</span>' :
+                                            `<button onclick="approveRequest('${request.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                                                <i class="fas fa-check mr-1"></i> Approve
+                                            </button>
+                                            <button onclick="rejectRequest('${request.id}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+                                                <i class="fas fa-times mr-1"></i> Reject
+                                            </button>`
+                                    }
                                 </div>
                             </div>
-                            <div class="ml-4 flex flex-col space-y-2">
-                                <button onclick="approveRequest('${request.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-                                    <i class="fas fa-check mr-1"></i> Approve
-                                </button>
-                                <button onclick="rejectRequest('${request.id}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
-                                    <i class="fas fa-times mr-1"></i> Reject
-                                </button>
-                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
 
             } catch (error) {
                 console.error('Error loading approvals:', error);
@@ -1017,21 +1026,59 @@
             }
         }
 
-        // Approve Time Off Request
+        // Approve Time Off Request (NEW APPROVAL LOGIC)
         async function approveRequest(requestId) {
             try {
-                const { error } = await db
+                // Check if user already approved
+                const { data: existing } = await db
+                    .from('time_off_approvals')
+                    .select('*')
+                    .eq('time_off_request_id', requestId)
+                    .eq('approver_id', currentUser.id);
+
+                if (existing && existing.length > 0) {
+                    alert('You have already approved this request');
+                    return;
+                }
+
+                // Insert approval record
+                const { error: insertError } = await db
+                    .from('time_off_approvals')
+                    .insert({
+                        time_off_request_id: requestId,
+                        approver_id: currentUser.id,
+                        approver_role: currentUser.role,
+                        approval_action: 'approved'
+                    });
+
+                if (insertError) throw insertError;
+
+                // Get all approvals for this request
+                const { data: allApprovals, error: appError } = await db
+                    .from('time_off_approvals')
+                    .select('*')
+                    .eq('time_off_request_id', requestId);
+
+                if (appError) throw appError;
+
+                const approverIds = allApprovals.map(a => a.approver_id);
+                const hasSeanOrGary = approverIds.includes(SEAN_ID) || approverIds.includes(GARY_ID);
+                const hasTatiana = approverIds.some(id => TATIANA_IDS.includes(id));
+                
+                const fullyApproved = hasSeanOrGary && hasTatiana;
+
+                // Update time_off_requests
+                const { error: updateError } = await db
                     .from('time_off_requests')
                     .update({
-                        status: 'approved',
-                        approved_by: currentUser.id,
-                        approved_at: new Date().toISOString()
+                        current_approvals: allApprovals.length,
+                        approval_status: fullyApproved ? 'approved' : 'pending'
                     })
                     .eq('id', requestId);
 
-                if (error) throw error;
+                if (updateError) throw updateError;
 
-                alert('Request approved');
+                alert(fullyApproved ? 'Request fully approved!' : 'Your approval has been recorded. Waiting for additional approvals.');
                 loadApprovals();
                 loadDashboardData();
 
@@ -1047,17 +1094,29 @@
             if (!reason) return;
 
             try {
-                const { error } = await db
+                // Insert rejection record
+                const { error: insertError } = await db
+                    .from('time_off_approvals')
+                    .insert({
+                        time_off_request_id: requestId,
+                        approver_id: currentUser.id,
+                        approver_role: currentUser.role,
+                        approval_action: 'rejected',
+                        notes: reason
+                    });
+
+                if (insertError) throw insertError;
+
+                // Update request status
+                const { error: updateError } = await db
                     .from('time_off_requests')
                     .update({
-                        status: 'rejected',
-                        approved_by: currentUser.id,
-                        approved_at: new Date().toISOString(),
+                        approval_status: 'rejected',
                         rejection_reason: reason
                     })
                     .eq('id', requestId);
 
-                if (error) throw error;
+                if (updateError) throw updateError;
 
                 alert('Request rejected');
                 loadApprovals();
@@ -1218,28 +1277,17 @@
         }
 
         // Modal Functions
-        function openAddEmployeeModal() {
-            document.getElementById('addEmployeeModal').style.display = 'block';
-        }
-
-        function closeAddEmployeeModal() {
-            document.getElementById('addEmployeeModal').style.display = 'none';
-            document.getElementById('addEmployeeForm').reset();
-        }
-
         function closeEditEmployeeModal() {
             document.getElementById('editEmployeeModal').style.display = 'none';
             document.getElementById('editEmployeeForm').reset();
         }
 
-        function openComposeMessageModal() {
-            alert('Compose message modal coming soon');
+        function openAddEmployeeModal() {
+            alert('Add employee functionality coming soon');
         }
 
-        // Add Employee
-        async function addEmployee(event) {
-            event.preventDefault();
-            alert('Add employee functionality coming soon');
+        function openComposeMessageModal() {
+            alert('Compose message modal coming soon');
         }
 
         // Set default date range
