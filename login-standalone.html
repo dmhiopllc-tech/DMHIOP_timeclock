@@ -138,7 +138,7 @@
                         // Show manual redirect button (no auto-redirect to avoid loops)
                         const form = document.getElementById('loginForm');
                         const dashboardUrl = userProfile.role === 'admin' 
-                            ? 'UPLOAD-THIS-admin-dashboard-ALL-FIXED.html' 
+                            ? 'admin-dashboard.html'  // ✅ FIXED - correct filename that exists on GitHub
                             : userProfile.role === 'manager' 
                             ? 'manager-dashboard.html' 
                             : 'employee-dashboard-clean-fix.html';
@@ -164,24 +164,24 @@
             }
         });
 
-     function goToDashboard(role) {
-    console.log('📍 Manually navigating to dashboard for role:', role);
-    try {
-        if (role === 'admin') {
-            console.log('🔄 Redirecting to admin dashboard...');
-            window.location.replace('UPLOAD-THIS-admin-dashboard-ALL-FIXED.html');
-        } else if (role === 'manager') {
-            console.log('🔄 Redirecting to manager dashboard...');
-            window.location.replace('manager-dashboard.html');
-        } else {
-            console.log('🔄 Redirecting to employee dashboard...');
-            window.location.replace('employee-dashboard-clean-fix.html');
+        function goToDashboard(role) {
+            console.log('📍 Manually navigating to dashboard for role:', role);
+            try {
+                if (role === 'admin') {
+                    console.log('🔄 Redirecting to admin dashboard...');
+                    window.location.replace('admin-dashboard.html'); // ✅ FIXED - correct filename that exists on GitHub
+                } else if (role === 'manager') {
+                    console.log('🔄 Redirecting to manager dashboard...');
+                    window.location.replace('manager-dashboard.html');
+                } else {
+                    console.log('🔄 Redirecting to employee dashboard...');
+                    window.location.replace('employee-dashboard-clean-fix.html');
+                }
+            } catch (error) {
+                console.error('❌ Redirect error:', error);
+                alert('Redirect failed. Please manually go to the dashboard.');
+            }
         }
-    } catch (error) {
-        console.error('❌ Redirect error:', error);
-        alert('Redirect failed. Please manually go to the dashboard.');
-    }
-}
 
         // Logout and show login form
         async function logoutAndShowLogin() {
