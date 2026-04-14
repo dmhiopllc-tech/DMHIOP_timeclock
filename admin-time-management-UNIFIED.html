@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - DMHIOP Time Clock</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .stat-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .tab-button {
+            transition: all 0.2s;
+        }
+        .tab-button.active {
+            background-color: #3B82F6;
+            color: white;
+        }
+        .alert-row {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(59, 130, 246, 0.3);
+            border-radius: 50%;
+            border-top-color: #3B82F6;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .details-row {
+            display: none;
+            background-color: #f9fafb;
+        }
+        .details-row.expanded {
+            display: table-row;
+        }
+        .expandable-row {
+            cursor: pointer;
+        }
+        .expandable-row:hover {
+            background-color: #f3f4f6;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+        }
+        .hidden {
+            display: none;
+        }
+        .approval-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .approval-needed {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+        .approval-done {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-clock text-3xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">DMHIOP Time Clock</h1>
+                        <p class="text-blue-100 text-sm">Admin Dashboard</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white shadow-md border-b">
+        <div class="container mx-auto px-4">
+            <div class="flex space-x-1 overflow-x-auto">
+                <button onclick="switchTab('overview')" class="tab-button active px-6 py-4 font-medium whitespace-nowrap" id="tab-overview">
+                    <i class="fas fa-home mr-2"></i>Overview
+                </button>
+                <button onclick="switchTab('employees')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-employees">
+                    <i class="fas fa-users mr-2"></i>Employees
+                </button>
+                <button onclick="switchTab('alerts')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-alerts">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Alerts
+                </button>
+                <button onclick="switchTab('payroll')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-payroll">
+                    <i class="fas fa-dollar-sign mr-2"></i>Payroll
+                </button>
+                <button onclick="switchTab('approvals')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-approvals">
+                    <i class="fas fa-check-circle mr-2"></i>Approvals
+                </button>
+                <button onclick="switchTab('messages')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-messages">
+                    <i class="fas fa-envelope mr-2"></i>Messages
+                </button>
+                <button onclick="switchTab('time-entries')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-time-entries">
+                    <i class="fas fa-calendar mr-2"></i>Time Entries
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        
+        <!-- Overview Tab -->
+        <div id="content-overview" class="tab-content">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Employees -->
+                <div class="stat-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm mb-1">Total Employees</p>
+                            <p id="stat-employees" class="text-3xl font-bold text-gray-800">-</p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <i class="fas fa-users text-blue-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clocked In -->
+                <div class="stat-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm mb-1">Clocked In Now</p>
+                            <p id="stat-clocked-in" class="text-3xl font-bold text-green-600">-</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full">
+                            <i class="fas fa-clock text-green-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Approvals -->
+                <div class="stat-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm mb-1">Pending Approvals</p>
+                            <p id="stat-pending" class="text-3xl font-bold text-yellow-600">-</p>
+                        </div>
+                        <div class="bg-yellow-100 p-3 rounded-full">
+                            <i class="fas fa-hourglass-half text-yellow-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Alerts -->
+                <div class="stat-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm mb-1">Active Alerts</p>
+                            <p id="stat-alerts" class="text-3xl font-bold text-red-600">-</p>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-full">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button onclick="switchTab('employees')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition">
+                        <i class="fas fa-user-plus mr-2"></i>Manage Employees
+                    </button>
+                    <button onclick="switchTab('payroll')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition">
+                        <i class="fas fa-file-excel mr-2"></i>Export Payroll
+                    </button>
+                    <button onclick="switchTab('alerts')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg transition">
+                        <i class="fas fa-bell mr-2"></i>View Alerts
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employees Tab -->
+        <div id="content-employees" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">All Employees</h2>
+                    <button onclick="openAddEmployeeModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+                        <i class="fas fa-plus mr-2"></i>Add Employee
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-50 border-b">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hourly Rate</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employees-tbody" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                    <div class="loading mx-auto"></div>
+                                    <p class="mt-2">Loading employees...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="content-alerts" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold mb-6">System Alerts</h2>
+                <div id="alerts-container">
+                    <div class="text-center py-8">
+                        <div class="loading mx-auto"></div>
+                        <p class="mt-2 text-gray-500">Loading alerts...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payroll Tab -->
+        <div id="content-payroll" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold mb-6">PayChex Payroll Export</h2>
+                
+                <div class="mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Pay Period</label>
+                            <select id="payroll-period" class="w-full border border-gray-300 rounded-lg px-4 py-2" onchange="loadPayrollPreview()">
+                                <option value="">Select Period...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                            <input type="date" id="payroll-start" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                            <input type="date" id="payroll-end" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex space-x-4">
+                        <button onclick="loadPayrollPreview()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+                            <i class="fas fa-search mr-2"></i>Preview
+                        </button>
+                        <button onclick="exportPayrollCSV()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition">
+                            <i class="fas fa-file-excel mr-2"></i>Export CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div id="payroll-preview"></div>
+            </div>
+        </div>
+
+        <!-- Approvals Tab -->
+        <div id="content-approvals" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold mb-6">Pending Time Off Requests</h2>
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                    <p class="text-sm text-blue-800">
+                        <strong>Approval Rules:</strong> Each request requires 2 approvals:
+                        <span class="font-semibold">(Sean OR Gary) + Tatiana (mandatory)</span>
+                    </p>
+                </div>
+                <div id="approvals-container">
+                    <div class="text-center py-8">
+                        <div class="loading mx-auto"></div>
+                        <p class="mt-2 text-gray-500">Loading approvals...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages Tab -->
+        <div id="content-messages" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Messages</h2>
+                    <button onclick="openComposeMessageModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+                        <i class="fas fa-plus mr-2"></i>New Message
+                    </button>
+                </div>
+                <div id="messages-container">
+                    <div class="text-center py-8">
+                        <div class="loading mx-auto"></div>
+                        <p class="mt-2 text-gray-500">Loading messages...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Entries Tab -->
+        <div id="content-time-entries" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold mb-6">Time Entries</h2>
+                
+                <div class="mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                            <input type="date" id="time-entries-start" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                            <input type="date" id="time-entries-end" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="loadTimeEntries()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition w-full">
+                                <i class="fas fa-search mr-2"></i>Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-50 border-b">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock In</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock Out</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="time-entries-tbody" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                    Please select a date range and click Search
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Edit Employee Modal -->
+    <div id="editEmployeeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditEmployeeModal()">&times;</span>
+            <h2 class="text-2xl font-bold mb-4">Edit Employee</h2>
+            <form id="editEmployeeForm" onsubmit="saveEmployeeEdit(event)">
+                <input type="hidden" name="employee_id" id="edit_employee_id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                        <input type="text" name="full_name" id="edit_full_name" required class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                        <input type="email" name="email" id="edit_email" required class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
+                        <input type="text" name="employee_id" id="edit_employee_number" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Hourly Rate</label>
+                        <input type="number" step="0.01" name="hourly_rate" id="edit_hourly_rate" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+                        <select name="role" id="edit_role" required class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                            <option value="employee">Employee</option>
+                            <option value="manager">Manager</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-6 flex space-x-4">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+                        <i class="fas fa-save mr-2"></i>Save Changes
+                    </button>
+                    <button type="button" onclick="closeEditEmployeeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Approval rule constants
+        const SEAN_ID = '6a057c45-3a1c-4f5c-80b4-f4ba04af90ac';
+        const GARY_ID = 'bb0acc23-113c-429f-b066-fdeed3429e45';
+        const TATIANA_ID_1 = 'b6b44163-3bd5-4aff-ac83-1fb9e49cde8a';
+        const TATIANA_ID_2 = '612918e4-101a-4340-8b9e-ccb28eb14b1d';
+        const TATIANA_IDS = [TATIANA_ID_1, TATIANA_ID_2];
+
+        let currentUser = null;
+        let allUsers = {}; // Cache for user lookups
+
+        // Check authentication
+        async function checkAuth() {
+            try {
+                const { data: { user }, error } = await db.auth.getUser();
+                
+                if (error || !user) {
+                    window.location.href = 'login-standalone.html';
+                    return;
+                }
+
+                // Get user profile
+                const { data: profile, error: profileError } = await db
+                    .from('users')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profileError || !profile || profile.role !== 'admin') {
+                    alert('Access denied. Admin role required.');
+                    await db.auth.signOut();
+                    window.location.href = 'login-standalone.html';
+                    return;
+                }
+
+                currentUser = profile;
+                
+                // Load all users for lookup
+                const { data: users } = await db.from('users').select('id, full_name, email, role');
+                if (users) {
+                    users.forEach(u => allUsers[u.id] = u);
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                window.location.href = 'login-standalone.html';
+            }
+        }
+
+        // Logout
+        async function logout() {
+            await db.auth.signOut();
+            window.location.href = 'login-standalone.html';
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            
+            // Load data for specific tabs
+            if (tabName === 'employees') loadEmployees();
+            if (tabName === 'alerts') loadAlerts();
+            if (tabName === 'payroll') populatePayPeriodDropdown();
+            if (tabName === 'approvals') loadApprovals();
+            if (tabName === 'messages') loadMessages();
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Total Employees (active only)
+                const { data: employees, error: empError } = await db
+                    .from('users')
+                    .select('*', { count: 'exact' })
+                    .eq('is_active', true)
+                    .in('role', ['employee', 'manager']);
+                
+                if (!empError) {
+                    document.getElementById('stat-employees').textContent = employees?.length || 0;
+                }
+
+                // Clocked In Now
+                const { data: clockedIn, error: clockError } = await db
+                    .from('time_entries')
+                    .select('*', { count: 'exact' })
+                    .eq('status', 'clocked_in');
+                
+                if (!clockError) {
+                    document.getElementById('stat-clocked-in').textContent = clockedIn?.length || 0;
+                }
+
+                // Pending Approvals
+                const { data: pending, error: pendError } = await db
+                    .from('time_off_requests')
+                    .select('*', { count: 'exact' })
+                    .neq('approval_status', 'approved')
+                    .neq('approval_status', 'rejected');
+                
+                if (!pendError) {
+                    document.getElementById('stat-pending').textContent = pending?.length || 0;
+                }
+
+                // Active Alerts
+                const { data: alerts, error: alertError } = await db
+                    .from('admin_alerts')
+                    .select('*', { count: 'exact' })
+                    .eq('status', 'active');
+                
+                if (!alertError) {
+                    document.getElementById('stat-alerts').textContent = alerts?.length || 0;
+                }
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Load Employees (active only)
+        async function loadEmployees() {
+            try {
+                const { data, error } = await db
+                    .from('users')
+                    .select('*')
+                    .eq('is_active', true)
+                    .in('role', ['employee', 'manager', 'admin'])
+                    .order('full_name');
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('employees-tbody');
+                
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No active employees found</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(emp => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="font-medium text-gray-900">${emp.full_name || 'N/A'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${emp.email || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${emp.employee_id || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${emp.hourly_rate || '0.00'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                ${emp.role}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                Active
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <button onclick="editEmployee('${emp.id}')" class="text-blue-600 hover:text-blue-900">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button onclick="deleteEmployee('${emp.id}')" class="text-red-600 hover:text-red-900">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading employees:', error);
+                document.getElementById('employees-tbody').innerHTML = `
+                    <tr><td colspan="7" class="px-6 py-4 text-center text-red-600">Error loading employees: ${error.message}</td></tr>
+                `;
+            }
+        }
+
+        // Delete Employee (deactivate)
+        async function deleteEmployee(employeeId) {
+            if (!confirm('Are you sure you want to deactivate this employee? This will mark them as inactive.')) {
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('users')
+                    .update({ is_active: false })
+                    .eq('id', employeeId);
+
+                if (error) throw error;
+
+                alert('Employee deactivated successfully');
+                loadEmployees();
+                loadDashboardData();
+
+            } catch (error) {
+                console.error('Error deactivating employee:', error);
+                alert('Error deactivating employee: ' + error.message);
+            }
+        }
+
+        // Edit Employee
+        async function editEmployee(employeeId) {
+            try {
+                const { data, error } = await db
+                    .from('users')
+                    .select('*')
+                    .eq('id', employeeId)
+                    .single();
+
+                if (error) throw error;
+
+                document.getElementById('edit_employee_id').value = data.id;
+                document.getElementById('edit_full_name').value = data.full_name || '';
+                document.getElementById('edit_email').value = data.email || '';
+                document.getElementById('edit_employee_number').value = data.employee_id || '';
+                document.getElementById('edit_hourly_rate').value = data.hourly_rate || '';
+                document.getElementById('edit_role').value = data.role || 'employee';
+
+                document.getElementById('editEmployeeModal').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading employee:', error);
+                alert('Error loading employee data');
+            }
+        }
+
+        // Save Employee Edit
+        async function saveEmployeeEdit(event) {
+            event.preventDefault();
+            
+            try {
+                const formData = new FormData(event.target);
+                const employeeId = formData.get('employee_id');
+
+                const updates = {
+                    full_name: formData.get('full_name'),
+                    email: formData.get('email'),
+                    employee_id: formData.get('employee_id'),
+                    hourly_rate: formData.get('hourly_rate') || null,
+                    role: formData.get('role')
+                };
+
+                const { error } = await db
+                    .from('users')
+                    .update(updates)
+                    .eq('id', employeeId);
+
+                if (error) throw error;
+
+                alert('Employee updated successfully');
+                closeEditEmployeeModal();
+                loadEmployees();
+
+            } catch (error) {
+                console.error('Error updating employee:', error);
+                alert('Error updating employee: ' + error.message);
+            }
+        }
+
+        // Load Alerts
+        async function loadAlerts() {
+            try {
+                const { data, error } = await db
+                    .from('admin_alerts')
+                    .select(`
+                        *,
+                        users:user_id (full_name, employee_id)
+                    `)
+                    .eq('status', 'active')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                const container = document.getElementById('alerts-container');
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p class="text-center text-gray-500 py-4">No active alerts</p>';
+                    return;
+                }
+
+                container.innerHTML = data.map(alert => `
+                    <div class="alert-row border-l-4 border-${getAlertColor(alert.alert_type)} bg-gray-50 p-4 mb-3 rounded">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center mb-2">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded bg-${getAlertColor(alert.alert_type)}-100 text-${getAlertColor(alert.alert_type)}-800">
+                                        ${alert.alert_type.replace(/_/g, ' ').toUpperCase()}
+                                    </span>
+                                    <span class="ml-2 text-sm text-gray-600">
+                                        ${alert.users?.full_name || 'Unknown'} (${alert.users?.employee_id || 'N/A'})
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-700 mb-1">${alert.message}</p>
+                                <p class="text-xs text-gray-500">
+                                    ${new Date(alert.created_at).toLocaleString()}
+                                </p>
+                            </div>
+                            <div class="ml-4 flex space-x-2">
+                                <button onclick="dismissAlert('${alert.id}')" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
+                                    Dismiss
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+                document.getElementById('alerts-container').innerHTML = `
+                    <div class="text-center text-red-600 py-4">Error loading alerts: ${error.message}</div>
+                `;
+            }
+        }
+
+        function getAlertColor(type) {
+            const colors = {
+                'geofence_violation': 'red',
+                'missed_clock_out': 'yellow',
+                'overtime_alert': 'orange',
+                'system': 'blue'
+            };
+            return colors[type] || 'gray';
+        }
+
+        // Dismiss Alert
+        async function dismissAlert(alertId) {
+            try {
+                const { error } = await db
+                    .from('admin_alerts')
+                    .update({ 
+                        status: 'dismissed', 
+                        resolved_at: new Date().toISOString() 
+                    })
+                    .eq('id', alertId);
+
+                if (error) throw error;
+
+                loadAlerts();
+                loadDashboardData();
+
+            } catch (error) {
+                console.error('Error dismissing alert:', error);
+                alert('Error dismissing alert');
+            }
+        }
+
+        // Populate Pay Period Dropdown
+        async function populatePayPeriodDropdown() {
+            try {
+                // Get current date to filter past periods
+                const today = new Date().toISOString().split('T')[0];
+                
+                const { data, error } = await db
+                    .from('pay_periods')
+                    .select('*')
+                    .lte('start_date', today)
+                    .order('start_date', { ascending: false })
+                    .limit(12);
+                
+                if (error) throw error;
+                
+                const select = document.getElementById('payroll-period');
+                select.innerHTML = '<option value="">Select Period...</option>';
+                
+                if (data && data.length > 0) {
+                    data.forEach(period => {
+                        const option = document.createElement('option');
+                        option.value = JSON.stringify({
+                            start: period.start_date,
+                            end: period.end_date
+                        });
+                        const startDate = new Date(period.start_date).toLocaleDateString();
+                        const endDate = new Date(period.end_date).toLocaleDateString();
+                        const payDate = new Date(period.pay_date).toLocaleDateString();
+                        option.textContent = `${startDate} - ${endDate} (Pay: ${payDate})`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML += '<option value="">No pay periods found</option>';
+                }
+            } catch (error) {
+                console.error('Error loading pay periods:', error);
+            }
+        }
+
+        // Load Payroll Preview
+        async function loadPayrollPreview() {
+            try {
+                const periodSelect = document.getElementById('payroll-period');
+                let startDate, endDate;
+
+                if (periodSelect.value) {
+                    const period = JSON.parse(periodSelect.value);
+                    startDate = period.start;
+                    endDate = period.end;
+                    
+                    document.getElementById('payroll-start').value = startDate;
+                    document.getElementById('payroll-end').value = endDate;
+                } else {
+                    startDate = document.getElementById('payroll-start').value;
+                    endDate = document.getElementById('payroll-end').value;
+                }
+
+                if (!startDate || !endDate) {
+                    alert('Please select a date range');
+                    return;
+                }
+
+                // Call RPC function
+                const { data, error } = await db.rpc('get_paychex_payroll', {
+                    p_start_date: startDate,
+                    p_end_date: endDate
+                });
+
+                if (error) throw error;
+
+                const preview = document.getElementById('payroll-preview');
+                
+                if (!data || data.length === 0) {
+                    preview.innerHTML = '<p class="text-center text-gray-500 py-4">No payroll data for selected period</p>';
+                    return;
+                }
+
+                preview.innerHTML = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="border px-4 py-2">Employee #</th>
+                                    <th class="border px-4 py-2">Name</th>
+                                    <th class="border px-4 py-2">Hourly Rate</th>
+                                    <th class="border px-4 py-2">Regular Hours</th>
+                                    <th class="border px-4 py-2">OT Hours</th>
+                                    <th class="border px-4 py-2">PTO Hours</th>
+                                    <th class="border px-4 py-2">Sick Hours</th>
+                                    <th class="border px-4 py-2">Total Hours</th>
+                                    <th class="border px-4 py-2">Total Pay</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.map(emp => {
+                                    const totalHours = parseFloat(emp.total_hours || emp.total_payable_hours || 0);
+                                    const hourlyRate = parseFloat(emp.hourly_rate || emp.pay_rate || 0);
+                                    const totalPay = (totalHours * hourlyRate).toFixed(2);
+                                    
+                                    return `
+                                    <tr>
+                                        <td class="border px-4 py-2">${emp.employee_number || 'N/A'}</td>
+                                        <td class="border px-4 py-2">${emp.full_name || emp.employee_name || 'Unknown'}</td>
+                                        <td class="border px-4 py-2 text-right">$${hourlyRate.toFixed(2)}</td>
+                                        <td class="border px-4 py-2 text-right">${parseFloat(emp.regular_hours || 0).toFixed(2)}</td>
+                                        <td class="border px-4 py-2 text-right">${parseFloat(emp.overtime_hours || 0).toFixed(2)}</td>
+                                        <td class="border px-4 py-2 text-right">${parseFloat(emp.pto_hours || 0).toFixed(2)}</td>
+                                        <td class="border px-4 py-2 text-right">${parseFloat(emp.sick_hours || 0).toFixed(2)}</td>
+                                        <td class="border px-4 py-2 text-right font-bold">${totalHours.toFixed(2)}</td>
+                                        <td class="border px-4 py-2 text-right font-bold text-green-600">$${totalPay}</td>
+                                    </tr>
+                                `}).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error loading payroll:', error);
+                document.getElementById('payroll-preview').innerHTML = `
+                    <div class="text-center text-red-600 py-4">Error loading payroll: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Export Payroll CSV
+        function exportPayrollCSV() {
+            alert('CSV export functionality coming soon');
+        }
+
+        // Load Approvals with existing approval tracking
+        async function loadApprovals() {
+            try {
+                const { data, error } = await db
+                    .from('time_off_requests')
+                    .select(`
+                        *,
+                        users:user_id (full_name, employee_id, email)
+                    `)
+                    .neq('approval_status', 'approved')
+                    .neq('approval_status', 'rejected')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                // Load existing approvals for all requests
+                const requestIds = data.map(r => r.id);
+                const { data: existingApprovals } = await db
+                    .from('time_off_approvals')
+                    .select('*')
+                    .in('time_off_request_id', requestIds);
+
+                const container = document.getElementById('approvals-container');
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p class="text-center text-gray-500 py-4">No pending approvals</p>';
+                    return;
+                }
+
+                container.innerHTML = data.map(request => {
+                    const approvals = existingApprovals?.filter(a => a.time_off_request_id === request.id) || [];
+                    const approverIds = approvals.map(a => a.approver_id);
+                    
+                    const hasSeanOrGary = approverIds.includes(SEAN_ID) || approverIds.includes(GARY_ID);
+                    const hasTatiana = approverIds.some(id => TATIANA_IDS.includes(id));
+                    const currentUserApproved = approverIds.includes(currentUser.id);
+                    
+                    // Check if fully approved
+                    const fullyApproved = hasSeanOrGary && hasTatiana;
+                    
+                    return `
+                        <div class="border border-gray-200 rounded-lg p-4 mb-4 ${fullyApproved ? 'bg-green-50' : ''}">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg mb-2">
+                                        ${request.users?.full_name || 'Unknown'} - ${request.request_type.toUpperCase()}
+                                    </h3>
+                                    <div class="text-sm text-gray-600 space-y-1 mb-3">
+                                        <p><strong>Employee ID:</strong> ${request.users?.employee_id || 'N/A'}</p>
+                                        <p><strong>Email:</strong> ${request.users?.email || 'N/A'}</p>
+                                        <p><strong>Dates:</strong> ${new Date(request.start_date).toLocaleDateString()} - ${new Date(request.end_date).toLocaleDateString()}</p>
+                                        <p><strong>Hours Requested:</strong> ${request.hours_requested}</p>
+                                        ${request.employee_note ? `<p><strong>Note:</strong> ${request.employee_note}</p>` : ''}
+                                        <p><strong>Submitted:</strong> ${new Date(request.created_at).toLocaleString()}</p>
+                                    </div>
+                                    
+                                    <div class="mt-3 pt-3 border-t">
+                                        <p class="text-sm font-semibold mb-2">Approval Status (${request.current_approvals || 0} of ${request.requires_approvals || 2}):</p>
+                                        <div class="space-y-1">
+                                            <div>
+                                                <span class="approval-badge ${hasSeanOrGary ? 'approval-done' : 'approval-needed'}">
+                                                    ${hasSeanOrGary ? '✓' : '○'} Sean OR Gary
+                                                </span>
+                                                ${hasSeanOrGary ? `<span class="text-xs text-gray-600">(Approved by ${allUsers[approverIds.find(id => id === SEAN_ID || id === GARY_ID)]?.full_name})</span>` : ''}
+                                            </div>
+                                            <div>
+                                                <span class="approval-badge ${hasTatiana ? 'approval-done' : 'approval-needed'}">
+                                                    ${hasTatiana ? '✓' : '○'} Tatiana (Mandatory)
+                                                </span>
+                                                ${hasTatiana ? `<span class="text-xs text-gray-600">(Approved)</span>` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex flex-col space-y-2">
+                                    ${fullyApproved ? 
+                                        '<span class="bg-green-600 text-white px-4 py-2 rounded text-center"><i class="fas fa-check mr-1"></i> Fully Approved</span>' :
+                                        currentUserApproved ?
+                                            '<span class="bg-gray-400 text-white px-4 py-2 rounded text-center">You Approved</span>' :
+                                            `<button onclick="approveRequest('${request.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                                                <i class="fas fa-check mr-1"></i> Approve
+                                            </button>
+                                            <button onclick="rejectRequest('${request.id}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+                                                <i class="fas fa-times mr-1"></i> Reject
+                                            </button>`
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error loading approvals:', error);
+                document.getElementById('approvals-container').innerHTML = `
+                    <div class="text-center text-red-600 py-4">Error loading approvals: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Approve Time Off Request (NEW APPROVAL LOGIC)
+        async function approveRequest(requestId) {
+            try {
+                // Check if user already approved
+                const { data: existing } = await db
+                    .from('time_off_approvals')
+                    .select('*')
+                    .eq('time_off_request_id', requestId)
+                    .eq('approver_id', currentUser.id);
+
+                if (existing && existing.length > 0) {
+                    alert('You have already approved this request');
+                    return;
+                }
+
+                // Insert approval record
+                const { error: insertError } = await db
+                    .from('time_off_approvals')
+                    .insert({
+                        time_off_request_id: requestId,
+                        approver_id: currentUser.id,
+                        approver_role: currentUser.role,
+                        approval_action: 'approved'
+                    });
+
+                if (insertError) throw insertError;
+
+                // Get all approvals for this request
+                const { data: allApprovals, error: appError } = await db
+                    .from('time_off_approvals')
+                    .select('*')
+                    .eq('time_off_request_id', requestId);
+
+                if (appError) throw appError;
+
+                const approverIds = allApprovals.map(a => a.approver_id);
+                const hasSeanOrGary = approverIds.includes(SEAN_ID) || approverIds.includes(GARY_ID);
+                const hasTatiana = approverIds.some(id => TATIANA_IDS.includes(id));
+                
+                const fullyApproved = hasSeanOrGary && hasTatiana;
+
+                // Update time_off_requests
+                const { error: updateError } = await db
+                    .from('time_off_requests')
+                    .update({
+                        current_approvals: allApprovals.length,
+                        approval_status: fullyApproved ? 'approved' : 'pending'
+                    })
+                    .eq('id', requestId);
+
+                if (updateError) throw updateError;
+
+                alert(fullyApproved ? 'Request fully approved!' : 'Your approval has been recorded. Waiting for additional approvals.');
+                loadApprovals();
+                loadDashboardData();
+
+            } catch (error) {
+                console.error('Error approving request:', error);
+                alert('Error approving request: ' + error.message);
+            }
+        }
+
+        // Reject Time Off Request
+        async function rejectRequest(requestId) {
+            const reason = prompt('Please enter rejection reason:');
+            if (!reason) return;
+
+            try {
+                // Insert rejection record
+                const { error: insertError } = await db
+                    .from('time_off_approvals')
+                    .insert({
+                        time_off_request_id: requestId,
+                        approver_id: currentUser.id,
+                        approver_role: currentUser.role,
+                        approval_action: 'rejected',
+                        notes: reason
+                    });
+
+                if (insertError) throw insertError;
+
+                // Update request status
+                const { error: updateError } = await db
+                    .from('time_off_requests')
+                    .update({
+                        approval_status: 'rejected',
+                        rejection_reason: reason
+                    })
+                    .eq('id', requestId);
+
+                if (updateError) throw updateError;
+
+                alert('Request rejected');
+                loadApprovals();
+                loadDashboardData();
+
+            } catch (error) {
+                console.error('Error rejecting request:', error);
+                alert('Error rejecting request: ' + error.message);
+            }
+        }
+
+        // Load Messages
+        async function loadMessages() {
+            try {
+                const { data, error } = await db
+                    .from('admin_messages')
+                    .select(`
+                        *,
+                        recipient:recipient_id (full_name, email)
+                    `)
+                    .eq('is_active', true)
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                const container = document.getElementById('messages-container');
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p class="text-center text-gray-500 py-4">No messages</p>';
+                    return;
+                }
+
+                container.innerHTML = data.map(msg => `
+                    <div class="border-b border-gray-200 py-4">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center mb-2">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded ${getPriorityClass(msg.priority)}">
+                                        ${msg.priority.toUpperCase()}
+                                    </span>
+                                    <span class="ml-2 text-xs text-gray-500">
+                                        ${msg.recipient_type === 'all' ? 'To: All Employees' : `To: ${msg.recipient?.full_name || 'Individual'}`}
+                                    </span>
+                                </div>
+                                <h3 class="font-semibold text-lg mb-1">${msg.subject}</h3>
+                                <p class="text-sm text-gray-700 mb-2">${msg.message}</p>
+                                <p class="text-xs text-gray-500">
+                                    Sent by ${msg.sender_name} on ${new Date(msg.created_at).toLocaleString()}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                document.getElementById('messages-container').innerHTML = `
+                    <div class="text-center text-red-600 py-4">Error loading messages: ${error.message}</div>
+                `;
+            }
+        }
+
+        function getPriorityClass(priority) {
+            const classes = {
+                'urgent': 'bg-red-100 text-red-800',
+                'normal': 'bg-blue-100 text-blue-800',
+                'info': 'bg-gray-100 text-gray-800'
+            };
+            return classes[priority] || classes.normal;
+        }
+
+        // Load Time Entries
+        async function loadTimeEntries() {
+            const startDate = document.getElementById('time-entries-start').value;
+            const endDate = document.getElementById('time-entries-end').value;
+
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+
+            try {
+                const { data, error } = await db
+                    .from('time_entries')
+                    .select(`
+                        *,
+                        users:user_id (full_name, employee_id),
+                        clock_in_location:clock_in_location_id (name),
+                        clock_out_location:clock_out_location_id (name)
+                    `)
+                    .gte('clock_in_time', startDate)
+                    .lte('clock_in_time', endDate + 'T23:59:59')
+                    .order('clock_in_time', { ascending: false });
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('time-entries-tbody');
+                
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No time entries for selected date range</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(entry => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="font-medium text-gray-900">${entry.users?.full_name || 'Unknown'}</div>
+                            <div class="text-sm text-gray-500">${entry.users?.employee_id || 'N/A'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${new Date(entry.clock_in_time).toLocaleString()}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${entry.clock_out_time ? new Date(entry.clock_out_time).toLocaleString() : '-'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${entry.total_hours ? parseFloat(entry.total_hours).toFixed(2) : '-'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div>${entry.clock_in_location?.name || 'Unknown'}</div>
+                            ${entry.clock_out_location ? `<div class="text-xs text-gray-400">Out: ${entry.clock_out_location.name}</div>` : ''}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(entry.status)}">
+                                ${entry.status.replace(/_/g, ' ')}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="viewTimeEntry('${entry.id}')" class="text-blue-600 hover:text-blue-900">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading time entries:', error);
+                document.getElementById('time-entries-tbody').innerHTML = `
+                    <tr><td colspan="7" class="px-6 py-4 text-center text-red-600">Error loading time entries: ${error.message}</td></tr>
+                `;
+            }
+        }
+
+        function getStatusClass(status) {
+            const classes = {
+                'clocked_in': 'bg-green-100 text-green-800',
+                'clocked_out': 'bg-gray-100 text-gray-800',
+                'pending_approval': 'bg-yellow-100 text-yellow-800',
+                'approved': 'bg-blue-100 text-blue-800',
+                'rejected': 'bg-red-100 text-red-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function viewTimeEntry(entryId) {
+            alert('View time entry details: ' + entryId);
+        }
+
+        // Modal Functions
+        function closeEditEmployeeModal() {
+            document.getElementById('editEmployeeModal').style.display = 'none';
+            document.getElementById('editEmployeeForm').reset();
+        }
+
+        function openAddEmployeeModal() {
+            alert('Add employee functionality coming soon');
+        }
+
+        function openComposeMessageModal() {
+            alert('Compose message modal coming soon');
+        }
+
+        // Set default date range
+        function setDefaultDateRange() {
+            const today = new Date();
+            const twoWeeksAgo = new Date(today);
+            twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+            
+            document.getElementById('payroll-start').value = twoWeeksAgo.toISOString().split('T')[0];
+            document.getElementById('payroll-end').value = today.toISOString().split('T')[0];
+            
+            document.getElementById('time-entries-start').value = twoWeeksAgo.toISOString().split('T')[0];
+            document.getElementById('time-entries-end').value = today.toISOString().split('T')[0];
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            loadDashboardData();
+            setDefaultDateRange();
+            populatePayPeriodDropdown();
+        });
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
