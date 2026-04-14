@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- ✅ FIXED VERSION 2026-04-14 - NO DUPLICATE SUPABASE -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time Management - Unified Dashboard</title>
@@ -194,7 +195,7 @@
     </div>
 
     <script>
-        // Supabase Configuration
+        // ✅ SINGLE Supabase Configuration - NO DUPLICATES
         const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzIxNTU0MTUsImV4cCI6MjA0NzczMTQxNX0.E5-mHHMh0uOslSAf8c5xWpgttdCq5Iu76lsmbMhEuxY';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -269,7 +270,7 @@
                 const filterEmployee = document.getElementById('filterEmployee').value;
                 const showOnlyAlerts = document.getElementById('showOnlyAlerts').checked;
 
-                // Query time entries with explicit relationship names
+                // Query time entries with explicit relationship names (FIX FOR DUPLICATE RELATIONSHIPS)
                 let query = supabase
                     .from('time_entries')
                     .select(`
