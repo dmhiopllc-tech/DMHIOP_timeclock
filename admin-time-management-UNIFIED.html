@@ -1,39 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ✅ FINAL VERSION 2026-04-14 23:00 - VERIFIED WORKING -->
+    <!-- ✅ COMPLETE ONE-STOP TIME MANAGEMENT - 2026-04-16 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Management - Unified Dashboard</title>
+    <title>Complete Time Management Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        .entry-row {
-            transition: all 0.3s ease;
-        }
-        .entry-row:hover {
-            background-color: #f9fafb;
-            transform: translateX(4px);
-        }
-        .alert-badge {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        .fix-btn {
-            transition: all 0.2s;
-        }
-        .fix-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
-        }
-        .hours-badge {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-        }
+        .entry-row { transition: all 0.3s ease; }
+        .entry-row:hover { background-color: #f9fafb; transform: translateX(4px); }
+        .alert-badge { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .fix-btn { transition: all 0.2s; }
+        .fix-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4); }
+        .hours-badge { font-family: 'Courier New', monospace; font-weight: bold; }
+        .geo-badge { font-family: monospace; font-size: 11px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background-color: white; padding: 0; border-radius: 12px; max-width: 900px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -44,9 +30,9 @@
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">
                     <i class="fas fa-business-time text-indigo-600 mr-2"></i>
-                    Time Management Dashboard
+                    Complete Time Management
                 </h1>
-                <p class="text-gray-600 text-sm mt-1">Fix missed punches, view entries, manage hours - all in one place</p>
+                <p class="text-gray-600 text-sm mt-1">View geofence logs, fix entries, manage everything in one place</p>
             </div>
             <div class="flex items-center space-x-4">
                 <span id="currentUser" class="text-gray-700 font-medium"></span>
@@ -66,7 +52,7 @@
                     <div>
                         <p class="text-red-100 text-xs font-medium uppercase tracking-wide">Needs Fix</p>
                         <p id="stat-needs-fix" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-red-100 text-xs mt-1">Missed punches</p>
+                        <p class="text-red-100 text-xs mt-1">Unresolved alerts</p>
                     </div>
                     <i class="fas fa-exclamation-triangle text-6xl text-red-200 opacity-40"></i>
                 </div>
@@ -75,20 +61,20 @@
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-blue-100 text-xs font-medium uppercase tracking-wide">Today's Entries</p>
-                        <p id="stat-today-entries" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-blue-100 text-xs mt-1">Clock in/out records</p>
+                        <p class="text-blue-100 text-xs font-medium uppercase tracking-wide">Geo Events Today</p>
+                        <p id="stat-geo-events" class="text-5xl font-bold mt-2">0</p>
+                        <p class="text-blue-100 text-xs mt-1">Entry/Exit logs</p>
                     </div>
-                    <i class="fas fa-clock text-6xl text-blue-200 opacity-40"></i>
+                    <i class="fas fa-map-marker-alt text-6xl text-blue-200 opacity-40"></i>
                 </div>
             </div>
             
             <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-green-100 text-xs font-medium uppercase tracking-wide">Fixed Today</p>
-                        <p id="stat-fixed" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-green-100 text-xs mt-1">Corrections made</p>
+                        <p class="text-green-100 text-xs font-medium uppercase tracking-wide">Complete Entries</p>
+                        <p id="stat-complete" class="text-5xl font-bold mt-2">0</p>
+                        <p class="text-green-100 text-xs mt-1">Clock in + out</p>
                     </div>
                     <i class="fas fa-check-circle text-6xl text-green-200 opacity-40"></i>
                 </div>
@@ -97,11 +83,11 @@
             <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-purple-100 text-xs font-medium uppercase tracking-wide">Total Hours Today</p>
+                        <p class="text-purple-100 text-xs font-medium uppercase tracking-wide">Total Hours</p>
                         <p id="stat-total-hours" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-purple-100 text-xs mt-1">All employees</p>
+                        <p class="text-purple-100 text-xs mt-1">Today's total</p>
                     </div>
-                    <i class="fas fa-business-time text-6xl text-purple-200 opacity-40"></i>
+                    <i class="fas fa-hourglass-half text-6xl text-purple-200 opacity-40"></i>
                 </div>
             </div>
         </div>
@@ -118,81 +104,100 @@
                     type="date" 
                     id="filterDate" 
                     class="border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-indigo-500 focus:outline-none"
-                    onchange="loadTimeData()"
+                    onchange="loadAllData()"
                 >
                 
                 <select 
                     id="filterEmployee" 
                     class="border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-indigo-500 focus:outline-none"
-                    onchange="loadTimeData()"
+                    onchange="loadAllData()"
                 >
                     <option value="">All Employees</option>
                 </select>
 
-                <div class="flex items-center space-x-2 ml-auto">
-                    <label class="flex items-center space-x-2 cursor-pointer">
-                        <input 
-                            type="checkbox" 
-                            id="showOnlyAlerts" 
-                            class="w-4 h-4 text-indigo-600"
-                            onchange="loadTimeData()"
-                        >
-                        <span class="text-sm font-medium text-gray-700">Show only entries with alerts</span>
-                    </label>
-                </div>
+                <select 
+                    id="filterStatus" 
+                    class="border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-indigo-500 focus:outline-none"
+                    onchange="loadAllData()"
+                >
+                    <option value="">All Status</option>
+                    <option value="alerts">Only Alerts</option>
+                    <option value="complete">Complete Entries</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="missing-out">Missing Clock Out</option>
+                </select>
 
                 <button 
-                    onclick="loadTimeData()" 
+                    onclick="loadAllData()" 
                     class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold"
                 >
                     <i class="fas fa-sync-alt mr-2"></i>Refresh
                 </button>
+
+                <button 
+                    onclick="openGeofenceLog()" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition font-semibold"
+                >
+                    <i class="fas fa-map-marked-alt mr-2"></i>View Geofence Log
+                </button>
             </div>
         </div>
 
-        <!-- Main Time Entries List -->
+        <!-- Main Entries List -->
         <div class="bg-white rounded-xl shadow-md overflow-hidden">
             <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
                 <h2 class="text-2xl font-bold text-white">
                     <i class="fas fa-list-ul mr-2"></i>
-                    Time Entries & Alerts
+                    Time Entries & Geofence Data
                 </h2>
-                <p class="text-indigo-100 text-sm mt-1">Unified view of all time entries with geo-based alerts</p>
+                <p class="text-indigo-100 text-sm mt-1">Complete view with inline editing and one-click fixes</p>
             </div>
 
-            <div id="timeEntriesList" class="divide-y divide-gray-200">
-                <!-- Entries will be loaded here -->
+            <div id="entriesList" class="divide-y divide-gray-200">
                 <div class="text-center py-16 text-gray-400">
                     <i class="fas fa-spinner fa-spin text-5xl mb-4"></i>
-                    <p class="text-lg">Loading time data...</p>
+                    <p class="text-lg">Loading data...</p>
                 </div>
             </div>
         </div>
 
-        <!-- Legend -->
-        <div class="mt-6 bg-gray-100 rounded-lg p-4">
-            <div class="flex flex-wrap items-center gap-4 text-sm">
-                <span class="font-semibold text-gray-700"><i class="fas fa-info-circle mr-1"></i>Legend:</span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-red-500 rounded"></span>
-                    <span class="text-gray-700">Missed Clock In</span>
-                </span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-orange-500 rounded"></span>
-                    <span class="text-gray-700">Missed Clock Out</span>
-                </span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-green-500 rounded"></span>
-                    <span class="text-gray-700">Complete & Valid</span>
-                </span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-blue-500 rounded"></span>
-                    <span class="text-gray-700">Currently Clocked In</span>
-                </span>
+    </main>
+
+    <!-- MODAL: Geofence Event Log -->
+    <div id="geofenceModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-white">
+                    <i class="fas fa-map-marked-alt mr-2"></i>
+                    Geofence Event Log
+                </h2>
+                <button onclick="closeGeofenceLog()" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div id="geofenceLogContent" class="p-6">
+                <!-- Content loaded dynamically -->
             </div>
         </div>
+    </div>
 
-    </main>
+    <!-- MODAL: Edit Entry -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-white">
+                    <i class="fas fa-edit mr-2"></i>
+                    Edit Time Entry
+                </h2>
+                <button onclick="closeEditModal()" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div id="editModalContent" class="p-6">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
 
     <script>
         // Supabase Configuration
@@ -202,21 +207,20 @@
 
         let currentUser = null;
         let employees = [];
+        let allGeofenceEvents = [];
+        let allTimeEntries = [];
+        let allAlerts = [];
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuth();
             await loadEmployees();
-            await loadTimeData();
+            await loadAllData();
             
-            // Set default date to today
             document.getElementById('filterDate').valueAsDate = new Date();
-            
-            // Auto-refresh every 30 seconds
-            setInterval(loadTimeData, 30000);
+            setInterval(loadAllData, 60000); // Refresh every minute
         });
 
-        // Authentication
         async function checkAuth() {
             try {
                 const { data: { session } } = await db.auth.getSession();
@@ -250,7 +254,6 @@
             window.location.href = 'login-standalone.html';
         }
 
-        // Load employee list for filter
         async function loadEmployees() {
             try {
                 const { data, error } = await db
@@ -273,202 +276,221 @@
         }
 
         // ========================================
-        // MAIN FUNCTION: Load Time Data (Unified View)
+        // LOAD ALL DATA
         // ========================================
-        async function loadTimeData() {
+        async function loadAllData() {
             try {
                 const filterDate = document.getElementById('filterDate').value;
                 const filterEmployee = document.getElementById('filterEmployee').value;
-                const showOnlyAlerts = document.getElementById('showOnlyAlerts').checked;
+                const filterStatus = document.getElementById('filterStatus').value;
 
-                // Build query
-                let query = db
+                // Date range
+                let startDate, endDate;
+                if (filterDate) {
+                    startDate = `${filterDate}T00:00:00`;
+                    endDate = `${filterDate}T23:59:59`;
+                } else {
+                    const sevenDaysAgo = new Date();
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    startDate = sevenDaysAgo.toISOString();
+                    endDate = new Date().toISOString();
+                }
+
+                // Load Time Entries
+                let entriesQuery = db
                     .from('time_entries')
                     .select(`
                         *,
-                        users!time_entries_user_id_fkey (
-                            id,
-                            full_name,
-                            email
-                        ),
-                        work_locations!time_entries_work_location_id_fkey (
-                            id,
-                            name,
-                            address
-                        )
+                        users!time_entries_user_id_fkey (id, full_name, email),
+                        work_locations!time_entries_work_location_id_fkey (id, name, address)
                     `)
+                    .gte('clock_in_time', startDate)
+                    .lte('clock_in_time', endDate)
                     .order('clock_in_time', { ascending: false });
 
-                // Apply filters
-                if (filterDate) {
-                    const startOfDay = `${filterDate}T00:00:00`;
-                    const endOfDay = `${filterDate}T23:59:59`;
-                    query = query
-                        .gte('clock_in_time', startOfDay)
-                        .lte('clock_in_time', endOfDay);
-                } else {
-                    // Default: last 7 days
-                    const sevenDaysAgo = new Date();
-                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                    query = query.gte('clock_in_time', sevenDaysAgo.toISOString());
+                if (filterEmployee) {
+                    entriesQuery = entriesQuery.eq('user_id', filterEmployee);
                 }
+
+                const { data: entries, error: entriesError } = await entriesQuery;
+                if (entriesError) throw entriesError;
+                allTimeEntries = entries || [];
+
+                // Load Geofence Events
+                let geoQuery = db
+                    .from('geofence_events')
+                    .select(`
+                        *,
+                        users!geofence_events_user_id_fkey (id, full_name, email),
+                        work_locations!geofence_events_location_id_fkey (id, name, address)
+                    `)
+                    .gte('event_time', startDate)
+                    .lte('event_time', endDate)
+                    .order('event_time', { ascending: false });
 
                 if (filterEmployee) {
-                    query = query.eq('user_id', filterEmployee);
+                    geoQuery = geoQuery.eq('user_id', filterEmployee);
                 }
 
-                const { data: entries, error: entriesError } = await query;
-                if (entriesError) throw entriesError;
+                const { data: geoEvents, error: geoError } = await geoQuery;
+                if (geoError) throw geoError;
+                allGeofenceEvents = geoEvents || [];
 
-                // Fetch ALL unresolved alerts
+                // Load Alerts
                 const { data: alerts, error: alertsError } = await db
                     .from('admin_alerts')
                     .select(`
                         *,
                         geofence_events!inner (
-                            id,
-                            event_type,
-                            event_time,
-                            user_id,
-                            latitude,
-                            longitude,
-                            location_id,
-                            work_locations (
-                                id,
-                                name,
-                                address
-                            )
+                            id, event_type, event_time, user_id, latitude, longitude, location_id,
+                            work_locations (id, name, address)
                         )
                     `)
                     .eq('is_resolved', false)
                     .in('alert_type', ['missed_clock_in', 'missed_clock_out']);
 
                 if (alertsError) throw alertsError;
-
-                // Map alerts by user_id and date for easy lookup
-                const alertsByUserAndDate = {};
-                (alerts || []).forEach(alert => {
-                    const userId = alert.geofence_events.user_id;
-                    const date = alert.geofence_events.event_time.split('T')[0];
-                    const key = `${userId}_${date}`;
-                    
-                    if (!alertsByUserAndDate[key]) {
-                        alertsByUserAndDate[key] = [];
-                    }
-                    alertsByUserAndDate[key].push(alert);
-                });
-
-                // Combine entries with their alerts
-                let combinedData = (entries || []).map(entry => {
-                    const date = entry.clock_in_time.split('T')[0];
-                    const key = `${entry.user_id}_${date}`;
-                    return {
-                        ...entry,
-                        alerts: alertsByUserAndDate[key] || []
-                    };
-                });
-
-                // Also add ORPHAN alerts (alerts without entries)
-                Object.values(alertsByUserAndDate).forEach(alertGroup => {
-                    alertGroup.forEach(alert => {
-                        const hasEntry = combinedData.some(item => 
-                            item.user_id === alert.geofence_events.user_id &&
-                            item.clock_in_time.split('T')[0] === alert.geofence_events.event_time.split('T')[0]
-                        );
-                        
-                        if (!hasEntry && alert.alert_type === 'missed_clock_in') {
-                            // Create a "phantom" entry for missed clock in
-                            combinedData.push({
-                                id: null,
-                                user_id: alert.geofence_events.user_id,
-                                clock_in_time: alert.geofence_events.event_time,
-                                clock_out_time: null,
-                                work_locations: alert.geofence_events.work_locations,
-                                alerts: [alert],
-                                isPhantom: true,
-                                users: employees.find(e => e.id === alert.geofence_events.user_id) || { full_name: 'Unknown', email: '' }
-                            });
-                        }
-                    });
-                });
-
-                // Filter if "show only alerts" is checked
-                if (showOnlyAlerts) {
-                    combinedData = combinedData.filter(item => item.alerts.length > 0);
-                }
-
-                // Sort: alerts first, then by time
-                combinedData.sort((a, b) => {
-                    if (a.alerts.length > 0 && b.alerts.length === 0) return -1;
-                    if (a.alerts.length === 0 && b.alerts.length > 0) return 1;
-                    return new Date(b.clock_in_time) - new Date(a.clock_in_time);
-                });
+                allAlerts = alerts || [];
 
                 // Update stats
-                updateStats(combinedData, alerts);
+                updateStats();
 
-                // Render
-                renderTimeEntries(combinedData);
+                // Combine and render
+                combineAndRender(filterStatus);
 
             } catch (error) {
-                console.error('Error loading time data:', error);
-                document.getElementById('timeEntriesList').innerHTML = `
+                console.error('Error loading data:', error);
+                document.getElementById('entriesList').innerHTML = `
                     <div class="p-8 bg-red-50 border-l-4 border-red-500">
                         <p class="text-red-800 font-semibold">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Error loading data: ${error.message}
+                            Error: ${error.message}
                         </p>
                     </div>
                 `;
             }
         }
 
-        // ========================================
-        // UPDATE STATS
-        // ========================================
-        function updateStats(combinedData, alerts) {
-            // Needs Fix
-            const needsFix = alerts ? alerts.length : 0;
-            document.getElementById('stat-needs-fix').textContent = needsFix;
-
-            // Today's entries
+        function updateStats() {
             const today = new Date().toISOString().split('T')[0];
-            const todayEntries = combinedData.filter(e => 
-                e.clock_in_time && e.clock_in_time.split('T')[0] === today
+
+            // Needs Fix
+            document.getElementById('stat-needs-fix').textContent = allAlerts.length;
+
+            // Geo Events Today
+            const todayGeoEvents = allGeofenceEvents.filter(e => 
+                e.event_time.split('T')[0] === today
             ).length;
-            document.getElementById('stat-today-entries').textContent = todayEntries;
+            document.getElementById('stat-geo-events').textContent = todayGeoEvents;
 
-            // Fixed today
-            db.from('admin_alerts')
-                .select('*', { count: 'exact', head: true })
-                .eq('is_resolved', true)
-                .gte('resolved_at', `${today}T00:00:00`)
-                .lte('resolved_at', `${today}T23:59:59`)
-                .then(({ count }) => {
-                    document.getElementById('stat-fixed').textContent = count || 0;
-                });
+            // Complete Entries
+            const completeEntries = allTimeEntries.filter(e => 
+                e.clock_in_time && e.clock_out_time
+            ).length;
+            document.getElementById('stat-complete').textContent = completeEntries;
 
-            // Total hours today
-            const todayHours = combinedData
-                .filter(e => e.clock_in_time && e.clock_in_time.split('T')[0] === today && e.clock_out_time)
+            // Total Hours
+            const totalHours = allTimeEntries
+                .filter(e => e.clock_in_time && e.clock_out_time)
                 .reduce((sum, e) => {
                     const hours = calculateHours(e.clock_in_time, e.clock_out_time);
                     return sum + hours;
                 }, 0);
-            document.getElementById('stat-total-hours').textContent = todayHours.toFixed(1);
+            document.getElementById('stat-total-hours').textContent = totalHours.toFixed(1);
         }
 
         // ========================================
-        // RENDER TIME ENTRIES
+        // COMBINE & RENDER
         // ========================================
-        function renderTimeEntries(data) {
-            const container = document.getElementById('timeEntriesList');
+        function combineAndRender(filterStatus) {
+            // Map alerts by user + date
+            const alertsByUserDate = {};
+            allAlerts.forEach(alert => {
+                const userId = alert.geofence_events.user_id;
+                const date = alert.geofence_events.event_time.split('T')[0];
+                const key = `${userId}_${date}`;
+                if (!alertsByUserDate[key]) alertsByUserDate[key] = [];
+                alertsByUserDate[key].push(alert);
+            });
+
+            // Map geofence events by user + date
+            const geoByUserDate = {};
+            allGeofenceEvents.forEach(geo => {
+                const date = geo.event_time.split('T')[0];
+                const key = `${geo.user_id}_${date}`;
+                if (!geoByUserDate[key]) geoByUserDate[key] = [];
+                geoByUserDate[key].push(geo);
+            });
+
+            // Attach alerts and geo events to entries
+            let combined = allTimeEntries.map(entry => {
+                const date = entry.clock_in_time.split('T')[0];
+                const key = `${entry.user_id}_${date}`;
+                return {
+                    ...entry,
+                    alerts: alertsByUserDate[key] || [],
+                    geoEvents: geoByUserDate[key] || []
+                };
+            });
+
+            // Add orphan alerts (no time entry)
+            Object.values(alertsByUserDate).forEach(alertGroup => {
+                alertGroup.forEach(alert => {
+                    const hasEntry = combined.some(item => 
+                        item.user_id === alert.geofence_events.user_id &&
+                        item.clock_in_time.split('T')[0] === alert.geofence_events.event_time.split('T')[0]
+                    );
+                    
+                    if (!hasEntry && alert.alert_type === 'missed_clock_in') {
+                        const date = alert.geofence_events.event_time.split('T')[0];
+                        const key = `${alert.geofence_events.user_id}_${date}`;
+                        combined.push({
+                            id: null,
+                            user_id: alert.geofence_events.user_id,
+                            clock_in_time: alert.geofence_events.event_time,
+                            clock_out_time: null,
+                            work_locations: alert.geofence_events.work_locations,
+                            alerts: [alert],
+                            geoEvents: geoByUserDate[key] || [],
+                            isPhantom: true,
+                            users: employees.find(e => e.id === alert.geofence_events.user_id) || { full_name: 'Unknown', email: '' }
+                        });
+                    }
+                });
+            });
+
+            // Apply status filter
+            if (filterStatus === 'alerts') {
+                combined = combined.filter(e => e.alerts.length > 0);
+            } else if (filterStatus === 'complete') {
+                combined = combined.filter(e => e.clock_in_time && e.clock_out_time);
+            } else if (filterStatus === 'in-progress') {
+                combined = combined.filter(e => e.clock_in_time && !e.clock_out_time && !e.isPhantom);
+            } else if (filterStatus === 'missing-out') {
+                combined = combined.filter(e => e.clock_in_time && !e.clock_out_time);
+            }
+
+            // Sort: alerts first
+            combined.sort((a, b) => {
+                if (a.alerts.length > 0 && b.alerts.length === 0) return -1;
+                if (a.alerts.length === 0 && b.alerts.length > 0) return 1;
+                return new Date(b.clock_in_time) - new Date(a.clock_in_time);
+            });
+
+            renderEntries(combined);
+        }
+
+        // ========================================
+        // RENDER ENTRIES
+        // ========================================
+        function renderEntries(data) {
+            const container = document.getElementById('entriesList');
             
             if (!data || data.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-16 bg-gray-50">
                         <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-                        <p class="text-xl font-semibold text-gray-600">No time entries found</p>
+                        <p class="text-xl font-semibold text-gray-600">No entries found</p>
                         <p class="text-gray-500 mt-2">Try adjusting your filters</p>
                     </div>
                 `;
@@ -480,7 +502,6 @@
                 const isPhantom = entry.isPhantom;
                 const isClockedIn = entry.clock_in_time && !entry.clock_out_time && !isPhantom;
                 
-                // Determine border color
                 let borderColor = 'border-green-500';
                 if (hasAlerts) {
                     const alertTypes = entry.alerts.map(a => a.alert_type);
@@ -490,18 +511,14 @@
                     borderColor = 'border-blue-500';
                 }
 
-                // Calculate hours
                 const hours = entry.clock_out_time 
                     ? calculateHours(entry.clock_in_time, entry.clock_out_time)
                     : (isClockedIn ? calculateHours(entry.clock_in_time, new Date().toISOString()) : 0);
 
                 return `
                     <div class="entry-row px-6 py-5 border-l-4 ${borderColor} ${hasAlerts ? 'bg-yellow-50' : ''}">
-                        <div class="flex items-start justify-between">
-                            
-                            <!-- Left: Entry Info -->
+                        <div class="flex items-start justify-between mb-4">
                             <div class="flex-1">
-                                <!-- Header -->
                                 <div class="flex items-center space-x-3 mb-3">
                                     <h3 class="text-lg font-bold text-gray-900">
                                         <i class="fas fa-user-circle mr-2 text-indigo-600"></i>
@@ -518,24 +535,22 @@
                                     ${isClockedIn ? `
                                         <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase">
                                             <i class="fas fa-circle fa-pulse mr-1"></i>
-                                            Currently Clocked In
+                                            Clocked In
                                         </span>
                                     ` : ''}
 
                                     ${entry.manually_adjusted ? `
                                         <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">
                                             <i class="fas fa-edit mr-1"></i>
-                                            Manually Adjusted
+                                            Adjusted
                                         </span>
                                     ` : ''}
                                 </div>
 
-                                <!-- Time Details -->
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                                     <div class="${isPhantom ? 'opacity-50' : ''}">
                                         <p class="text-gray-500 font-medium mb-1">
-                                            <i class="fas fa-sign-in-alt mr-1 text-green-600"></i>
-                                            Clock In
+                                            <i class="fas fa-sign-in-alt mr-1 text-green-600"></i>Clock In
                                         </p>
                                         <p class="text-gray-900 font-semibold">
                                             ${isPhantom ? 'MISSING' : formatTime(entry.clock_in_time)}
@@ -544,8 +559,7 @@
 
                                     <div>
                                         <p class="text-gray-500 font-medium mb-1">
-                                            <i class="fas fa-sign-out-alt mr-1 text-red-600"></i>
-                                            Clock Out
+                                            <i class="fas fa-sign-out-alt mr-1 text-red-600"></i>Clock Out
                                         </p>
                                         <p class="text-gray-900 font-semibold">
                                             ${entry.clock_out_time ? formatTime(entry.clock_out_time) : 
@@ -556,68 +570,415 @@
 
                                     <div>
                                         <p class="text-gray-500 font-medium mb-1">
-                                            <i class="fas fa-hourglass-half mr-1 text-purple-600"></i>
-                                            Hours
+                                            <i class="fas fa-hourglass-half mr-1 text-purple-600"></i>Hours
                                         </p>
                                         <p class="hours-badge text-xl ${isClockedIn ? 'text-blue-600' : 'text-gray-900'}">
                                             ${hours.toFixed(2)} hrs
                                         </p>
                                     </div>
+
+                                    <div>
+                                        <p class="text-gray-500 font-medium mb-1">
+                                            <i class="fas fa-map-marker-alt mr-1 text-indigo-600"></i>Location
+                                        </p>
+                                        <p class="text-gray-900 font-semibold text-xs">
+                                            ${entry.work_locations ? entry.work_locations.name : 'Unknown'}
+                                        </p>
+                                    </div>
                                 </div>
-
-                                <!-- Location -->
-                                ${entry.work_locations ? `
-                                    <div class="mt-3 text-sm text-gray-700">
-                                        <i class="fas fa-map-marker-alt mr-2 text-indigo-600"></i>
-                                        <strong>${entry.work_locations.name}</strong>
-                                        ${entry.work_locations.address ? ` • ${entry.work_locations.address}` : ''}
-                                    </div>
-                                ` : ''}
-
-                                <!-- Alerts Details -->
-                                ${hasAlerts ? `
-                                    <div class="mt-4 space-y-2">
-                                        ${entry.alerts.map(alert => `
-                                            <div class="bg-white border-2 border-${alert.alert_type === 'missed_clock_in' ? 'red' : 'orange'}-300 rounded-lg p-3">
-                                                <div class="flex items-center justify-between">
-                                                    <div class="flex-1">
-                                                        <p class="font-semibold text-${alert.alert_type === 'missed_clock_in' ? 'red' : 'orange'}-800">
-                                                            <i class="fas fa-${alert.alert_type === 'missed_clock_in' ? 'sign-in-alt' : 'sign-out-alt'} mr-2"></i>
-                                                            ${alert.alert_type === 'missed_clock_in' ? 'Missed Clock In' : 'Missed Clock Out'}
-                                                        </p>
-                                                        <p class="text-sm text-gray-700 mt-1">
-                                                            <i class="fas fa-${alert.geofence_events.event_type === 'entry' ? 'arrow-right' : 'arrow-left'} mr-1"></i>
-                                                            ${alert.geofence_events.event_type === 'entry' ? 'Entered' : 'Exited'} 
-                                                            <strong>${alert.geofence_events.work_locations.name}</strong> 
-                                                            at ${formatTime(alert.geofence_events.event_time)}
-                                                        </p>
-                                                        <p class="text-xs text-gray-500 mt-1">
-                                                            <i class="fas fa-clock mr-1"></i>
-                                                            ${getTimeAgo(new Date(alert.geofence_events.event_time))}
-                                                        </p>
-                                                    </div>
-                                                    <button 
-                                                        onclick="quickFix('${alert.id}', '${alert.geofence_event_id}', '${entry.id || 'null'}', '${alert.alert_type}')"
-                                                        class="fix-btn ml-4 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg shadow-lg"
-                                                    >
-                                                        <i class="fas fa-magic mr-2"></i>
-                                                        Fix with Geo Time
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                ` : ''}
                             </div>
 
+                            <div class="ml-4 flex flex-col space-y-2">
+                                <button 
+                                    onclick='openEditModal(${JSON.stringify(entry).replace(/'/g, "&#39;")})' 
+                                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm"
+                                >
+                                    <i class="fas fa-edit mr-2"></i>Edit Entry
+                                </button>
+                                
+                                ${entry.geoEvents.length > 0 ? `
+                                    <button 
+                                        onclick='showGeoEventsForEntry(${JSON.stringify(entry.geoEvents).replace(/'/g, "&#39;")})' 
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm"
+                                    >
+                                        <i class="fas fa-map-marked-alt mr-2"></i>Geo Data (${entry.geoEvents.length})
+                                    </button>
+                                ` : ''}
+                            </div>
                         </div>
+
+                        <!-- Alerts Section -->
+                        ${hasAlerts ? `
+                            <div class="mt-4 space-y-2">
+                                ${entry.alerts.map(alert => `
+                                    <div class="bg-white border-2 border-${alert.alert_type === 'missed_clock_in' ? 'red' : 'orange'}-300 rounded-lg p-4">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <p class="font-semibold text-${alert.alert_type === 'missed_clock_in' ? 'red' : 'orange'}-800 mb-2">
+                                                    <i class="fas fa-${alert.alert_type === 'missed_clock_in' ? 'sign-in-alt' : 'sign-out-alt'} mr-2"></i>
+                                                    ${alert.alert_type === 'missed_clock_in' ? 'Missed Clock In' : 'Missed Clock Out'}
+                                                </p>
+                                                
+                                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                                    <div>
+                                                        <p class="text-gray-600 font-medium">Geo Event:</p>
+                                                        <p class="text-gray-900">${alert.geofence_events.event_type === 'entry' ? '🟢 Entered' : '🔴 Exited'} ${alert.geofence_events.work_locations.name}</p>
+                                                        <p class="text-xs text-gray-500">${formatTime(alert.geofence_events.event_time)}</p>
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <p class="text-gray-600 font-medium">GPS Location:</p>
+                                                        <p class="geo-badge text-gray-900">
+                                                            📍 ${alert.geofence_events.latitude.toFixed(6)}, ${alert.geofence_events.longitude.toFixed(6)}
+                                                        </p>
+                                                        <a href="https://www.google.com/maps?q=${alert.geofence_events.latitude},${alert.geofence_events.longitude}" 
+                                                           target="_blank" 
+                                                           class="text-blue-600 hover:underline text-xs">
+                                                            View on Map <i class="fas fa-external-link-alt ml-1"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <button 
+                                                onclick="quickFix('${alert.id}', '${alert.geofence_event_id}', '${entry.id || 'null'}', '${alert.alert_type}')"
+                                                class="fix-btn ml-4 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg shadow-lg"
+                                            >
+                                                <i class="fas fa-magic mr-2"></i>
+                                                Fix with Geo Time
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        <!-- Geofence Events Preview (if no alerts) -->
+                        ${!hasAlerts && entry.geoEvents.length > 0 ? `
+                            <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <p class="text-sm text-blue-800 font-semibold mb-2">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    ${entry.geoEvents.length} Geofence Event${entry.geoEvents.length > 1 ? 's' : ''} Available
+                                </p>
+                                <div class="flex items-center space-x-4 text-xs text-blue-700">
+                                    ${entry.geoEvents.slice(0, 3).map(geo => `
+                                        <span>${geo.event_type === 'entry' ? '🟢 Entry' : '🔴 Exit'} at ${new Date(geo.event_time).toLocaleTimeString()}</span>
+                                    `).join('')}
+                                    ${entry.geoEvents.length > 3 ? `<span>+${entry.geoEvents.length - 3} more</span>` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             }).join('');
         }
 
         // ========================================
-        // QUICK FIX FUNCTION
+        // GEOFENCE LOG MODAL
+        // ========================================
+        function openGeofenceLog() {
+            const modal = document.getElementById('geofenceModal');
+            const content = document.getElementById('geofenceLogContent');
+            
+            if (allGeofenceEvents.length === 0) {
+                content.innerHTML = `
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fas fa-inbox text-5xl mb-4"></i>
+                        <p>No geofence events found</p>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div class="space-y-3">
+                        ${allGeofenceEvents.map(geo => `
+                            <div class="border-l-4 ${geo.event_type === 'entry' ? 'border-green-500' : 'border-red-500'} bg-gray-50 p-4 rounded-r-lg">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <p class="font-bold text-gray-900">
+                                            ${geo.event_type === 'entry' ? '🟢 ENTRY' : '🔴 EXIT'} - 
+                                            ${geo.users.full_name || geo.users.email}
+                                        </p>
+                                        <p class="text-sm text-gray-700 mt-1">
+                                            <i class="fas fa-map-marker-alt mr-1 text-indigo-600"></i>
+                                            ${geo.work_locations.name}
+                                        </p>
+                                        <p class="text-xs text-gray-600 mt-1">
+                                            <i class="fas fa-clock mr-1"></i>
+                                            ${formatTime(geo.event_time)}
+                                        </p>
+                                        <p class="geo-badge text-gray-600 mt-1">
+                                            📍 ${geo.latitude.toFixed(6)}, ${geo.longitude.toFixed(6)}
+                                        </p>
+                                        <div class="mt-2 flex items-center space-x-3 text-xs">
+                                            ${geo.has_clock_in ? '<span class="text-green-600">✓ Clock In Linked</span>' : ''}
+                                            ${geo.has_clock_out ? '<span class="text-red-600">✓ Clock Out Linked</span>' : ''}
+                                            ${!geo.has_clock_in && !geo.has_clock_out ? '<span class="text-gray-500">⚠️ Not Linked to Time Entry</span>' : ''}
+                                        </div>
+                                    </div>
+                                    <a href="https://www.google.com/maps?q=${geo.latitude},${geo.longitude}" 
+                                       target="_blank" 
+                                       class="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs">
+                                        View Map <i class="fas fa-external-link-alt ml-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            modal.classList.add('active');
+        }
+
+        function closeGeofenceLog() {
+            document.getElementById('geofenceModal').classList.remove('active');
+        }
+
+        function showGeoEventsForEntry(geoEvents) {
+            const modal = document.getElementById('geofenceModal');
+            const content = document.getElementById('geofenceLogContent');
+            
+            content.innerHTML = `
+                <h3 class="text-lg font-bold text-gray-900 mb-4">
+                    <i class="fas fa-map-marked-alt mr-2 text-blue-600"></i>
+                    Geofence Events for This Entry
+                </h3>
+                <div class="space-y-3">
+                    ${geoEvents.map(geo => `
+                        <div class="border-l-4 ${geo.event_type === 'entry' ? 'border-green-500' : 'border-red-500'} bg-gray-50 p-4 rounded-r-lg">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <p class="font-bold text-gray-900">
+                                        ${geo.event_type === 'entry' ? '🟢 ENTRY' : '🔴 EXIT'}
+                                    </p>
+                                    <p class="text-sm text-gray-700 mt-1">
+                                        <i class="fas fa-map-marker-alt mr-1 text-indigo-600"></i>
+                                        ${geo.work_locations.name}
+                                    </p>
+                                    <p class="text-xs text-gray-600 mt-1">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        ${formatTime(geo.event_time)}
+                                    </p>
+                                    <p class="geo-badge text-gray-600 mt-1">
+                                        📍 ${geo.latitude.toFixed(6)}, ${geo.longitude.toFixed(6)}
+                                    </p>
+                                    <div class="mt-2 flex items-center space-x-3 text-xs">
+                                        ${geo.has_clock_in ? '<span class="text-green-600">✓ Clock In Linked</span>' : ''}
+                                        ${geo.has_clock_out ? '<span class="text-red-600">✓ Clock Out Linked</span>' : ''}
+                                        ${!geo.has_clock_in && !geo.has_clock_out ? '<span class="text-gray-500">⚠️ Not Linked</span>' : ''}
+                                    </div>
+                                </div>
+                                <a href="https://www.google.com/maps?q=${geo.latitude},${geo.longitude}" 
+                                   target="_blank" 
+                                   class="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs">
+                                    View Map <i class="fas fa-external-link-alt ml-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        // ========================================
+        // EDIT MODAL
+        // ========================================
+        function openEditModal(entry) {
+            const modal = document.getElementById('editModal');
+            const content = document.getElementById('editModalContent');
+            
+            const clockInDate = entry.clock_in_time ? new Date(entry.clock_in_time) : new Date();
+            const clockOutDate = entry.clock_out_time ? new Date(entry.clock_out_time) : null;
+            
+            content.innerHTML = `
+                <form onsubmit="saveEditedEntry(event, '${entry.id}', ${entry.user_id})">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Employee</label>
+                            <p class="text-gray-900 font-semibold">${entry.users.full_name || entry.users.email}</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock In Date</label>
+                                <input 
+                                    type="date" 
+                                    id="edit-clock-in-date" 
+                                    value="${clockInDate.toISOString().split('T')[0]}"
+                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
+                                    required
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock In Time</label>
+                                <input 
+                                    type="time" 
+                                    id="edit-clock-in-time" 
+                                    value="${clockInDate.toTimeString().slice(0,5)}"
+                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
+                                    required
+                                >
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock Out Date</label>
+                                <input 
+                                    type="date" 
+                                    id="edit-clock-out-date" 
+                                    value="${clockOutDate ? clockOutDate.toISOString().split('T')[0] : ''}"
+                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock Out Time</label>
+                                <input 
+                                    type="time" 
+                                    id="edit-clock-out-time" 
+                                    value="${clockOutDate ? clockOutDate.toTimeString().slice(0,5) : ''}"
+                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
+                                >
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Location</label>
+                            <select id="edit-location" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2">
+                                <option value="">Select location...</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Adjustment Reason (Required)</label>
+                            <textarea 
+                                id="edit-reason" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" 
+                                rows="3" 
+                                placeholder="Example: Employee forgot to clock in, correcting from geofence data"
+                                required
+                            ></textarea>
+                        </div>
+
+                        <div class="flex items-center space-x-4 pt-4">
+                            <button 
+                                type="submit" 
+                                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg transition"
+                            >
+                                <i class="fas fa-save mr-2"></i>
+                                Save Changes
+                            </button>
+                            <button 
+                                type="button" 
+                                onclick="closeEditModal()" 
+                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-3 rounded-lg transition"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            `;
+            
+            // Load locations
+            loadLocationsForEdit(entry.work_location_id);
+            
+            modal.classList.add('active');
+        }
+
+        async function loadLocationsForEdit(selectedId) {
+            try {
+                const { data, error } = await db
+                    .from('work_locations')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('name');
+
+                if (error) throw error;
+
+                const select = document.getElementById('edit-location');
+                select.innerHTML = '<option value="">Select location...</option>' +
+                    data.map(loc => 
+                        `<option value="${loc.id}" ${loc.id === selectedId ? 'selected' : ''}>${loc.name}</option>`
+                    ).join('');
+            } catch (error) {
+                console.error('Error loading locations:', error);
+            }
+        }
+
+        async function saveEditedEntry(event, entryId, userId) {
+            event.preventDefault();
+            
+            const clockInDate = document.getElementById('edit-clock-in-date').value;
+            const clockInTime = document.getElementById('edit-clock-in-time').value;
+            const clockOutDate = document.getElementById('edit-clock-out-date').value;
+            const clockOutTime = document.getElementById('edit-clock-out-time').value;
+            const locationId = document.getElementById('edit-location').value;
+            const reason = document.getElementById('edit-reason').value;
+
+            if (!reason || reason.trim().length < 5) {
+                alert('⚠️ Please provide a reason (at least 5 characters)');
+                return;
+            }
+
+            const clockInISO = `${clockInDate}T${clockInTime}:00`;
+            const clockOutISO = clockOutDate && clockOutTime ? `${clockOutDate}T${clockOutTime}:00` : null;
+
+            try {
+                const updateData = {
+                    clock_in_time: clockInISO,
+                    clock_out_time: clockOutISO,
+                    work_location_id: locationId || null,
+                    manually_adjusted: true,
+                    adjusted_by: currentUser.id,
+                    adjusted_at: new Date().toISOString(),
+                    adjustment_reason: reason
+                };
+
+                let result;
+
+                if (entryId === 'null' || !entryId) {
+                    // CREATE NEW
+                    updateData.user_id = userId;
+                    const { data, error } = await db
+                        .from('time_entries')
+                        .insert(updateData)
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+                    result = data;
+                } else {
+                    // UPDATE EXISTING
+                    const { data, error } = await db
+                        .from('time_entries')
+                        .update(updateData)
+                        .eq('id', entryId)
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+                    result = data;
+                }
+
+                alert('✅ Entry saved successfully!');
+                closeEditModal();
+                await loadAllData();
+
+            } catch (error) {
+                console.error('Error saving entry:', error);
+                alert(`❌ Error: ${error.message}`);
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        // ========================================
+        // QUICK FIX
         // ========================================
         async function quickFix(alertId, geofenceEventId, timeEntryId, alertType) {
             const actionType = alertType === 'missed_clock_in' ? 'clock_in' : 'clock_out';
@@ -645,19 +1006,9 @@
             }
 
             try {
-                // Show loading
-                const btn = event.target.closest('button');
-                const originalHTML = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Fixing...';
-
-                // Fetch geofence event details
                 const { data: geoEvent, error: geoError } = await db
                     .from('geofence_events')
-                    .select(`
-                        *,
-                        work_locations (id, name)
-                    `)
+                    .select('*, work_locations (id, name)')
                     .eq('id', geofenceEventId)
                     .single();
 
@@ -666,7 +1017,6 @@
                 let result;
 
                 if (actionType === 'clock_in') {
-                    // CREATE NEW CLOCK IN
                     const { data, error } = await db
                         .from('time_entries')
                         .insert({
@@ -686,9 +1036,7 @@
 
                     if (error) throw error;
                     result = data;
-
                 } else {
-                    // UPDATE EXISTING ENTRY WITH CLOCK OUT
                     if (timeEntryId === 'null' || !timeEntryId) {
                         throw new Error('Cannot add clock out: No time entry found');
                     }
@@ -713,8 +1061,7 @@
                     result = data;
                 }
 
-                // Mark alert as resolved
-                const { error: alertError } = await db
+                await db
                     .from('admin_alerts')
                     .update({
                         is_resolved: true,
@@ -724,9 +1071,6 @@
                     })
                     .eq('id', alertId);
 
-                if (alertError) throw alertError;
-
-                // Update geofence event
                 await db
                     .from('geofence_events')
                     .update({
@@ -735,22 +1079,13 @@
                     })
                     .eq('id', geofenceEventId);
 
-                // Success!
-                alert(`✅ SUCCESS!\n\n${actionType === 'clock_in' ? 'Clock in created' : 'Clock out added'} at ${formatTime(geoEvent.event_time)}\n\nAlert dismissed and audit trail created.`);
+                alert(`✅ SUCCESS!\n\n${actionType === 'clock_in' ? 'Clock in created' : 'Clock out added'} at ${formatTime(geoEvent.event_time)}\n\nAlert dismissed!`);
                 
-                // Reload data
-                await loadTimeData();
+                await loadAllData();
 
             } catch (error) {
-                console.error('Error fixing time entry:', error);
-                alert(`❌ ERROR\n\nFailed to fix time entry:\n${error.message}`);
-                
-                // Restore button
-                const btn = event.target.closest('button');
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-magic mr-2"></i>Fix with Geo Time';
-                }
+                console.error('Error fixing entry:', error);
+                alert(`❌ ERROR: ${error.message}`);
             }
         }
 
@@ -775,19 +1110,6 @@
                 minute: '2-digit',
                 hour12: true
             });
-        }
-
-        function getTimeAgo(date) {
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / (1000 * 60));
-            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-            return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
         }
     </script>
 
