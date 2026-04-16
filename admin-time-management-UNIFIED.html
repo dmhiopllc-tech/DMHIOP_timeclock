@@ -1,25 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ✅ COMPLETE ONE-STOP TIME MANAGEMENT - 2026-04-16 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complete Time Management Dashboard</title>
+    <title>Time Management - Unified Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        .entry-row { transition: all 0.3s ease; }
-        .entry-row:hover { background-color: #f9fafb; transform: translateX(4px); }
-        .alert-badge { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .fix-btn { transition: all 0.2s; }
-        .fix-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4); }
-        .hours-badge { font-family: 'Courier New', monospace; font-weight: bold; }
-        .geo-badge { font-family: monospace; font-size: 11px; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
-        .modal.active { display: flex; align-items: center; justify-content: center; }
-        .modal-content { background-color: white; padding: 0; border-radius: 12px; max-width: 900px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .entry-row {
+            transition: all 0.3s ease;
+        }
+        .entry-row:hover {
+            background-color: #f9fafb;
+            transform: translateX(4px);
+        }
+        .alert-badge {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .fix-btn {
+            transition: all 0.2s;
+        }
+        .fix-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+        }
+        .hours-badge {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -30,9 +43,9 @@
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">
                     <i class="fas fa-business-time text-indigo-600 mr-2"></i>
-                    Complete Time Management
+                    Time Management Dashboard
                 </h1>
-                <p class="text-gray-600 text-sm mt-1">View geofence logs, fix entries, manage everything in one place</p>
+                <p class="text-gray-600 text-sm mt-1">Fix missed punches, view entries, manage hours - all in one place</p>
             </div>
             <div class="flex items-center space-x-4">
                 <span id="currentUser" class="text-gray-700 font-medium"></span>
@@ -46,35 +59,46 @@
     <main class="container mx-auto px-6 py-8 max-w-7xl">
         
         <!-- Stats Summary -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
             <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl p-6 shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-red-100 text-xs font-medium uppercase tracking-wide">Needs Fix</p>
                         <p id="stat-needs-fix" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-red-100 text-xs mt-1">Unresolved alerts</p>
+                        <p class="text-red-100 text-xs mt-1">Missed punches</p>
                     </div>
                     <i class="fas fa-exclamation-triangle text-6xl text-red-200 opacity-40"></i>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-orange-100 text-xs font-medium uppercase tracking-wide">Out of Hours</p>
+                        <p id="stat-violations" class="text-5xl font-bold mt-2">0</p>
+                        <p class="text-orange-100 text-xs mt-1">Business hours violations</p>
+                    </div>
+                    <i class="fas fa-clock text-6xl text-orange-200 opacity-40"></i>
                 </div>
             </div>
             
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-blue-100 text-xs font-medium uppercase tracking-wide">Geo Events Today</p>
-                        <p id="stat-geo-events" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-blue-100 text-xs mt-1">Entry/Exit logs</p>
+                        <p class="text-blue-100 text-xs font-medium uppercase tracking-wide">Today's Entries</p>
+                        <p id="stat-today-entries" class="text-5xl font-bold mt-2">0</p>
+                        <p class="text-blue-100 text-xs mt-1">Clock in/out records</p>
                     </div>
-                    <i class="fas fa-map-marker-alt text-6xl text-blue-200 opacity-40"></i>
+                    <i class="fas fa-clock text-6xl text-blue-200 opacity-40"></i>
                 </div>
             </div>
             
             <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-green-100 text-xs font-medium uppercase tracking-wide">Complete Entries</p>
-                        <p id="stat-complete" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-green-100 text-xs mt-1">Clock in + out</p>
+                        <p class="text-green-100 text-xs font-medium uppercase tracking-wide">Fixed Today</p>
+                        <p id="stat-fixed" class="text-5xl font-bold mt-2">0</p>
+                        <p class="text-green-100 text-xs mt-1">Corrections made</p>
                     </div>
                     <i class="fas fa-check-circle text-6xl text-green-200 opacity-40"></i>
                 </div>
@@ -83,11 +107,11 @@
             <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-purple-100 text-xs font-medium uppercase tracking-wide">Total Hours</p>
+                        <p class="text-purple-100 text-xs font-medium uppercase tracking-wide">Total Hours Today</p>
                         <p id="stat-total-hours" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-purple-100 text-xs mt-1">Today's total</p>
+                        <p class="text-purple-100 text-xs mt-1">All employees</p>
                     </div>
-                    <i class="fas fa-hourglass-half text-6xl text-purple-200 opacity-40"></i>
+                    <i class="fas fa-business-time text-6xl text-purple-200 opacity-40"></i>
                 </div>
             </div>
         </div>
@@ -104,100 +128,81 @@
                     type="date" 
                     id="filterDate" 
                     class="border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-indigo-500 focus:outline-none"
-                    onchange="loadAllData()"
+                    onchange="loadTimeData()"
                 >
                 
                 <select 
                     id="filterEmployee" 
                     class="border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-indigo-500 focus:outline-none"
-                    onchange="loadAllData()"
+                    onchange="loadTimeData()"
                 >
                     <option value="">All Employees</option>
                 </select>
 
-                <select 
-                    id="filterStatus" 
-                    class="border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-indigo-500 focus:outline-none"
-                    onchange="loadAllData()"
-                >
-                    <option value="">All Status</option>
-                    <option value="alerts">Only Alerts</option>
-                    <option value="complete">Complete Entries</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="missing-out">Missing Clock Out</option>
-                </select>
+                <div class="flex items-center space-x-2 ml-auto">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            id="showOnlyAlerts" 
+                            class="w-4 h-4 text-indigo-600"
+                            onchange="loadTimeData()"
+                        >
+                        <span class="text-sm font-medium text-gray-700">Show only entries with alerts</span>
+                    </label>
+                </div>
 
                 <button 
-                    onclick="loadAllData()" 
+                    onclick="loadTimeData()" 
                     class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold"
                 >
                     <i class="fas fa-sync-alt mr-2"></i>Refresh
                 </button>
-
-                <button 
-                    onclick="openGeofenceLog()" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition font-semibold"
-                >
-                    <i class="fas fa-map-marked-alt mr-2"></i>View Geofence Log
-                </button>
             </div>
         </div>
 
-        <!-- Main Entries List -->
+        <!-- Main Time Entries List -->
         <div class="bg-white rounded-xl shadow-md overflow-hidden">
             <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
                 <h2 class="text-2xl font-bold text-white">
                     <i class="fas fa-list-ul mr-2"></i>
-                    Time Entries & Geofence Data
+                    Time Entries & Alerts
                 </h2>
-                <p class="text-indigo-100 text-sm mt-1">Complete view with inline editing and one-click fixes</p>
+                <p class="text-indigo-100 text-sm mt-1">Unified view of all time entries with geo-based alerts</p>
             </div>
 
-            <div id="entriesList" class="divide-y divide-gray-200">
+            <div id="timeEntriesList" class="divide-y divide-gray-200">
+                <!-- Entries will be loaded here -->
                 <div class="text-center py-16 text-gray-400">
                     <i class="fas fa-spinner fa-spin text-5xl mb-4"></i>
-                    <p class="text-lg">Loading data...</p>
+                    <p class="text-lg">Loading time data...</p>
                 </div>
             </div>
         </div>
 
+        <!-- Legend -->
+        <div class="mt-6 bg-gray-100 rounded-lg p-4">
+            <div class="flex flex-wrap items-center gap-4 text-sm">
+                <span class="font-semibold text-gray-700"><i class="fas fa-info-circle mr-1"></i>Legend:</span>
+                <span class="flex items-center space-x-2">
+                    <span class="w-4 h-4 bg-red-500 rounded"></span>
+                    <span class="text-gray-700">Missed Clock In</span>
+                </span>
+                <span class="flex items-center space-x-2">
+                    <span class="w-4 h-4 bg-orange-500 rounded"></span>
+                    <span class="text-gray-700">Missed Clock Out</span>
+                </span>
+                <span class="flex items-center space-x-2">
+                    <span class="w-4 h-4 bg-green-500 rounded"></span>
+                    <span class="text-gray-700">Complete & Valid</span>
+                </span>
+                <span class="flex items-center space-x-2">
+                    <span class="w-4 h-4 bg-blue-500 rounded"></span>
+                    <span class="text-gray-700">Currently Clocked In</span>
+                </span>
+            </div>
+        </div>
+
     </main>
-
-    <!-- MODAL: Geofence Event Log -->
-    <div id="geofenceModal" class="modal">
-        <div class="modal-content">
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex justify-between items-center">
-                <h2 class="text-2xl font-bold text-white">
-                    <i class="fas fa-map-marked-alt mr-2"></i>
-                    Geofence Event Log
-                </h2>
-                <button onclick="closeGeofenceLog()" class="text-white hover:text-gray-200">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
-            </div>
-            <div id="geofenceLogContent" class="p-6">
-                <!-- Content loaded dynamically -->
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: Edit Entry -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 flex justify-between items-center">
-                <h2 class="text-2xl font-bold text-white">
-                    <i class="fas fa-edit mr-2"></i>
-                    Edit Time Entry
-                </h2>
-                <button onclick="closeEditModal()" class="text-white hover:text-gray-200">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
-            </div>
-            <div id="editModalContent" class="p-6">
-                <!-- Content loaded dynamically -->
-            </div>
-        </div>
-    </div>
 
     <script>
         // Supabase Configuration
@@ -207,20 +212,21 @@
 
         let currentUser = null;
         let employees = [];
-        let allGeofenceEvents = [];
-        let allTimeEntries = [];
-        let allAlerts = [];
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuth();
             await loadEmployees();
-            await loadAllData();
+            await loadTimeData();
             
+            // Set default date to today
             document.getElementById('filterDate').valueAsDate = new Date();
-            setInterval(loadAllData, 60000); // Refresh every minute
+            
+            // Auto-refresh every 30 seconds
+            setInterval(loadTimeData, 30000);
         });
 
+        // Authentication
         async function checkAuth() {
             try {
                 const { data: { session } } = await db.auth.getSession();
@@ -254,6 +260,7 @@
             window.location.href = 'login-standalone.html';
         }
 
+        // Load employee list for filter
         async function loadEmployees() {
             try {
                 const { data, error } = await db
@@ -276,221 +283,231 @@
         }
 
         // ========================================
-        // LOAD ALL DATA
+        // MAIN FUNCTION: Load Time Data (Unified View)
         // ========================================
-        async function loadAllData() {
+        async function loadTimeData() {
             try {
                 const filterDate = document.getElementById('filterDate').value;
                 const filterEmployee = document.getElementById('filterEmployee').value;
-                const filterStatus = document.getElementById('filterStatus').value;
+                const showOnlyAlerts = document.getElementById('showOnlyAlerts').checked;
 
-                // Date range
-                let startDate, endDate;
-                if (filterDate) {
-                    startDate = `${filterDate}T00:00:00`;
-                    endDate = `${filterDate}T23:59:59`;
-                } else {
-                    const sevenDaysAgo = new Date();
-                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                    startDate = sevenDaysAgo.toISOString();
-                    endDate = new Date().toISOString();
-                }
-
-                // Load Time Entries
-                let entriesQuery = db
+                // Build query
+                let query = db
                     .from('time_entries')
                     .select(`
                         *,
-                        users!time_entries_user_id_fkey (id, full_name, email),
-                        work_locations!time_entries_work_location_id_fkey (id, name, address)
+                        users!time_entries_user_id_fkey (
+                            id,
+                            full_name,
+                            email
+                        ),
+                        work_locations!time_entries_work_location_id_fkey (
+                            id,
+                            name,
+                            address
+                        )
                     `)
-                    .gte('clock_in_time', startDate)
-                    .lte('clock_in_time', endDate)
                     .order('clock_in_time', { ascending: false });
 
-                if (filterEmployee) {
-                    entriesQuery = entriesQuery.eq('user_id', filterEmployee);
+                // Apply filters
+                if (filterDate) {
+                    const startOfDay = `${filterDate}T00:00:00`;
+                    const endOfDay = `${filterDate}T23:59:59`;
+                    query = query
+                        .gte('clock_in_time', startOfDay)
+                        .lte('clock_in_time', endOfDay);
+                } else {
+                    // Default: last 7 days
+                    const sevenDaysAgo = new Date();
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    query = query.gte('clock_in_time', sevenDaysAgo.toISOString());
                 }
 
-                const { data: entries, error: entriesError } = await entriesQuery;
+                if (filterEmployee) {
+                    query = query.eq('user_id', filterEmployee);
+                }
+
+                const { data: entries, error: entriesError } = await query;
                 if (entriesError) throw entriesError;
-                allTimeEntries = entries || [];
 
-                // Load Geofence Events
-                let geoQuery = db
-                    .from('geofence_events')
-                    .select(`
-                        *,
-                        users!geofence_events_user_id_fkey (id, full_name, email),
-                        work_locations!geofence_events_location_id_fkey (id, name, address)
-                    `)
-                    .gte('event_time', startDate)
-                    .lte('event_time', endDate)
-                    .order('event_time', { ascending: false });
-
-                if (filterEmployee) {
-                    geoQuery = geoQuery.eq('user_id', filterEmployee);
-                }
-
-                const { data: geoEvents, error: geoError } = await geoQuery;
-                if (geoError) throw geoError;
-                allGeofenceEvents = geoEvents || [];
-
-                // Load Alerts
+                // Fetch ALL unresolved alerts
                 const { data: alerts, error: alertsError } = await db
                     .from('admin_alerts')
                     .select(`
                         *,
                         geofence_events!inner (
-                            id, event_type, event_time, user_id, latitude, longitude, location_id,
-                            work_locations (id, name, address)
+                            id,
+                            event_type,
+                            event_time,
+                            user_id,
+                            latitude,
+                            longitude,
+                            location_id,
+                            work_locations (
+                                id,
+                                name,
+                                address
+                            )
                         )
                     `)
                     .eq('is_resolved', false)
                     .in('alert_type', ['missed_clock_in', 'missed_clock_out']);
 
                 if (alertsError) throw alertsError;
-                allAlerts = alerts || [];
+
+                // Map alerts by user_id and date for easy lookup
+                const alertsByUserAndDate = {};
+                (alerts || []).forEach(alert => {
+                    const userId = alert.geofence_events.user_id;
+                    const date = alert.geofence_events.event_time.split('T')[0];
+                    const key = `${userId}_${date}`;
+                    
+                    if (!alertsByUserAndDate[key]) {
+                        alertsByUserAndDate[key] = [];
+                    }
+                    alertsByUserAndDate[key].push(alert);
+                });
+
+                // Combine entries with their alerts
+                let combinedData = (entries || []).map(entry => {
+                    const date = entry.clock_in_time.split('T')[0];
+                    const key = `${entry.user_id}_${date}`;
+                    return {
+                        ...entry,
+                        alerts: alertsByUserAndDate[key] || []
+                    };
+                });
+
+                // Also add ORPHAN alerts (alerts without entries)
+                Object.values(alertsByUserAndDate).forEach(alertGroup => {
+                    alertGroup.forEach(alert => {
+                        const hasEntry = combinedData.some(item => 
+                            item.user_id === alert.geofence_events.user_id &&
+                            item.clock_in_time.split('T')[0] === alert.geofence_events.event_time.split('T')[0]
+                        );
+                        
+                        if (!hasEntry && alert.alert_type === 'missed_clock_in') {
+                            // Create a "phantom" entry for missed clock in
+                            combinedData.push({
+                                id: null,
+                                user_id: alert.geofence_events.user_id,
+                                clock_in_time: alert.geofence_events.event_time,
+                                clock_out_time: null,
+                                work_locations: alert.geofence_events.work_locations,
+                                alerts: [alert],
+                                isPhantom: true,
+                                users: employees.find(e => e.id === alert.geofence_events.user_id) || { full_name: 'Unknown', email: '' }
+                            });
+                        }
+                    });
+                });
+
+                // Filter if "show only alerts" is checked
+                if (showOnlyAlerts) {
+                    combinedData = combinedData.filter(item => item.alerts.length > 0);
+                }
+
+                // Sort: alerts first, then by time
+                combinedData.sort((a, b) => {
+                    if (a.alerts.length > 0 && b.alerts.length === 0) return -1;
+                    if (a.alerts.length === 0 && b.alerts.length > 0) return 1;
+                    return new Date(b.clock_in_time) - new Date(a.clock_in_time);
+                });
 
                 // Update stats
-                updateStats();
+                updateStats(combinedData, alerts);
 
-                // Combine and render
-                combineAndRender(filterStatus);
+                // Render
+                renderTimeEntries(combinedData);
 
             } catch (error) {
-                console.error('Error loading data:', error);
-                document.getElementById('entriesList').innerHTML = `
+                console.error('Error loading time data:', error);
+                document.getElementById('timeEntriesList').innerHTML = `
                     <div class="p-8 bg-red-50 border-l-4 border-red-500">
                         <p class="text-red-800 font-semibold">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Error: ${error.message}
+                            Error loading data: ${error.message}
                         </p>
                     </div>
                 `;
             }
         }
 
-        function updateStats() {
+        // ========================================
+        // UPDATE STATS
+        // ========================================
+        function updateStats(combinedData, alerts) {
+            // Needs Fix (includes alerts + overtime detection)
+            let needsFix = alerts ? alerts.length : 0;
+            
+            // 🔥 AUTO-DETECT: Add overtime/long shift issues
+            const overtimeIssues = combinedData.filter(e => {
+                if (!e.clock_in_time) return false;
+                
+                const clockInTime = new Date(e.clock_in_time);
+                const now = new Date();
+                
+                // If still clocked in
+                if (!e.clock_out_time) {
+                    const hoursSinceClockIn = (now - clockInTime) / (1000 * 60 * 60);
+                    return hoursSinceClockIn > 12; // Over 12 hours clocked in
+                }
+                
+                // If clocked out, check if shift was over 12 hours
+                const hours = calculateHours(e.clock_in_time, e.clock_out_time);
+                return hours > 12;
+            });
+            
+            needsFix += overtimeIssues.length;
+            document.getElementById('stat-needs-fix').textContent = needsFix;
+
+            // Business Hours Violations
+            const violations = combinedData.filter(e => {
+                if (!e.clock_in_time) return false;
+                const clockInValid = validateBusinessHours(e.clock_in_time);
+                const clockOutValid = e.clock_out_time ? validateBusinessHours(e.clock_out_time) : { valid: true };
+                return !clockInValid.valid || !clockOutValid.valid;
+            }).length;
+            document.getElementById('stat-violations').textContent = violations;
+
+            // Today's entries
             const today = new Date().toISOString().split('T')[0];
-
-            // Needs Fix
-            document.getElementById('stat-needs-fix').textContent = allAlerts.length;
-
-            // Geo Events Today
-            const todayGeoEvents = allGeofenceEvents.filter(e => 
-                e.event_time.split('T')[0] === today
+            const todayEntries = combinedData.filter(e => 
+                e.clock_in_time && e.clock_in_time.split('T')[0] === today
             ).length;
-            document.getElementById('stat-geo-events').textContent = todayGeoEvents;
+            document.getElementById('stat-today-entries').textContent = todayEntries;
 
-            // Complete Entries
-            const completeEntries = allTimeEntries.filter(e => 
-                e.clock_in_time && e.clock_out_time
-            ).length;
-            document.getElementById('stat-complete').textContent = completeEntries;
+            // Fixed today
+            db.from('admin_alerts')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_resolved', true)
+                .gte('resolved_at', `${today}T00:00:00`)
+                .lte('resolved_at', `${today}T23:59:59`)
+                .then(({ count }) => {
+                    document.getElementById('stat-fixed').textContent = count || 0;
+                });
 
-            // Total Hours
-            const totalHours = allTimeEntries
-                .filter(e => e.clock_in_time && e.clock_out_time)
+            // Total hours today
+            const todayHours = combinedData
+                .filter(e => e.clock_in_time && e.clock_in_time.split('T')[0] === today && e.clock_out_time)
                 .reduce((sum, e) => {
                     const hours = calculateHours(e.clock_in_time, e.clock_out_time);
                     return sum + hours;
                 }, 0);
-            document.getElementById('stat-total-hours').textContent = totalHours.toFixed(1);
+            document.getElementById('stat-total-hours').textContent = todayHours.toFixed(1);
         }
 
         // ========================================
-        // COMBINE & RENDER
+        // RENDER TIME ENTRIES
         // ========================================
-        function combineAndRender(filterStatus) {
-            // Map alerts by user + date
-            const alertsByUserDate = {};
-            allAlerts.forEach(alert => {
-                const userId = alert.geofence_events.user_id;
-                const date = alert.geofence_events.event_time.split('T')[0];
-                const key = `${userId}_${date}`;
-                if (!alertsByUserDate[key]) alertsByUserDate[key] = [];
-                alertsByUserDate[key].push(alert);
-            });
-
-            // Map geofence events by user + date
-            const geoByUserDate = {};
-            allGeofenceEvents.forEach(geo => {
-                const date = geo.event_time.split('T')[0];
-                const key = `${geo.user_id}_${date}`;
-                if (!geoByUserDate[key]) geoByUserDate[key] = [];
-                geoByUserDate[key].push(geo);
-            });
-
-            // Attach alerts and geo events to entries
-            let combined = allTimeEntries.map(entry => {
-                const date = entry.clock_in_time.split('T')[0];
-                const key = `${entry.user_id}_${date}`;
-                return {
-                    ...entry,
-                    alerts: alertsByUserDate[key] || [],
-                    geoEvents: geoByUserDate[key] || []
-                };
-            });
-
-            // Add orphan alerts (no time entry)
-            Object.values(alertsByUserDate).forEach(alertGroup => {
-                alertGroup.forEach(alert => {
-                    const hasEntry = combined.some(item => 
-                        item.user_id === alert.geofence_events.user_id &&
-                        item.clock_in_time.split('T')[0] === alert.geofence_events.event_time.split('T')[0]
-                    );
-                    
-                    if (!hasEntry && alert.alert_type === 'missed_clock_in') {
-                        const date = alert.geofence_events.event_time.split('T')[0];
-                        const key = `${alert.geofence_events.user_id}_${date}`;
-                        combined.push({
-                            id: null,
-                            user_id: alert.geofence_events.user_id,
-                            clock_in_time: alert.geofence_events.event_time,
-                            clock_out_time: null,
-                            work_locations: alert.geofence_events.work_locations,
-                            alerts: [alert],
-                            geoEvents: geoByUserDate[key] || [],
-                            isPhantom: true,
-                            users: employees.find(e => e.id === alert.geofence_events.user_id) || { full_name: 'Unknown', email: '' }
-                        });
-                    }
-                });
-            });
-
-            // Apply status filter
-            if (filterStatus === 'alerts') {
-                combined = combined.filter(e => e.alerts.length > 0);
-            } else if (filterStatus === 'complete') {
-                combined = combined.filter(e => e.clock_in_time && e.clock_out_time);
-            } else if (filterStatus === 'in-progress') {
-                combined = combined.filter(e => e.clock_in_time && !e.clock_out_time && !e.isPhantom);
-            } else if (filterStatus === 'missing-out') {
-                combined = combined.filter(e => e.clock_in_time && !e.clock_out_time);
-            }
-
-            // Sort: alerts first
-            combined.sort((a, b) => {
-                if (a.alerts.length > 0 && b.alerts.length === 0) return -1;
-                if (a.alerts.length === 0 && b.alerts.length > 0) return 1;
-                return new Date(b.clock_in_time) - new Date(a.clock_in_time);
-            });
-
-            renderEntries(combined);
-        }
-
-        // ========================================
-        // RENDER ENTRIES
-        // ========================================
-        function renderEntries(data) {
-            const container = document.getElementById('entriesList');
+        function renderTimeEntries(data) {
+            const container = document.getElementById('timeEntriesList');
             
             if (!data || data.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-16 bg-gray-50">
                         <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-                        <p class="text-xl font-semibold text-gray-600">No entries found</p>
+                        <p class="text-xl font-semibold text-gray-600">No time entries found</p>
                         <p class="text-gray-500 mt-2">Try adjusting your filters</p>
                     </div>
                 `;
@@ -502,6 +519,7 @@
                 const isPhantom = entry.isPhantom;
                 const isClockedIn = entry.clock_in_time && !entry.clock_out_time && !isPhantom;
                 
+                // Determine border color
                 let borderColor = 'border-green-500';
                 if (hasAlerts) {
                     const alertTypes = entry.alerts.map(a => a.alert_type);
@@ -511,14 +529,42 @@
                     borderColor = 'border-blue-500';
                 }
 
+                // Calculate hours
                 const hours = entry.clock_out_time 
                     ? calculateHours(entry.clock_in_time, entry.clock_out_time)
                     : (isClockedIn ? calculateHours(entry.clock_in_time, new Date().toISOString()) : 0);
 
+                // Check business hours violations
+                const clockInValidation = entry.clock_in_time ? validateBusinessHours(entry.clock_in_time) : null;
+                const clockOutValidation = entry.clock_out_time ? validateBusinessHours(entry.clock_out_time) : null;
+                const hasViolation = (clockInValidation && !clockInValidation.valid) || (clockOutValidation && !clockOutValidation.valid);
+                
+                // 🔥 AUTO-DETECT: Check for overtime issues
+                const clockInTime = new Date(entry.clock_in_time);
+                const now = new Date();
+                let hasOvertimeIssue = false;
+                let overtimeMessage = '';
+                
+                if (!entry.clock_out_time && !isPhantom) {
+                    // Still clocked in - check duration
+                    const hoursSinceClockIn = (now - clockInTime) / (1000 * 60 * 60);
+                    if (hoursSinceClockIn > 12) {
+                        hasOvertimeIssue = true;
+                        overtimeMessage = `Clocked in for ${hoursSinceClockIn.toFixed(1)} hours - possible missed clock-out`;
+                    }
+                } else if (hours > 12) {
+                    // Completed shift over 12 hours
+                    hasOvertimeIssue = true;
+                    overtimeMessage = `Shift duration: ${hours.toFixed(2)} hours - exceeds normal 12-hour limit`;
+                }
+
                 return `
                     <div class="entry-row px-6 py-5 border-l-4 ${borderColor} ${hasAlerts ? 'bg-yellow-50' : ''}">
-                        <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-start justify-between">
+                            
+                            <!-- Left: Entry Info -->
                             <div class="flex-1">
+                                <!-- Header -->
                                 <div class="flex items-center space-x-3 mb-3">
                                     <h3 class="text-lg font-bold text-gray-900">
                                         <i class="fas fa-user-circle mr-2 text-indigo-600"></i>
@@ -535,22 +581,38 @@
                                     ${isClockedIn ? `
                                         <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase">
                                             <i class="fas fa-circle fa-pulse mr-1"></i>
-                                            Clocked In
+                                            Currently Clocked In
                                         </span>
                                     ` : ''}
 
                                     ${entry.manually_adjusted ? `
                                         <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">
                                             <i class="fas fa-edit mr-1"></i>
-                                            Adjusted
+                                            Manually Adjusted
+                                        </span>
+                                    ` : ''}
+
+                                    ${hasViolation ? `
+                                        <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold uppercase border-2 border-orange-400">
+                                            <i class="fas fa-exclamation-circle mr-1"></i>
+                                            Outside Business Hours
+                                        </span>
+                                    ` : ''}
+                                    
+                                    ${hasOvertimeIssue ? `
+                                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold uppercase border-2 border-red-500 animate-pulse">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            OVERTIME ALERT
                                         </span>
                                     ` : ''}
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                                <!-- Time Details -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                     <div class="${isPhantom ? 'opacity-50' : ''}">
                                         <p class="text-gray-500 font-medium mb-1">
-                                            <i class="fas fa-sign-in-alt mr-1 text-green-600"></i>Clock In
+                                            <i class="fas fa-sign-in-alt mr-1 text-green-600"></i>
+                                            Clock In
                                         </p>
                                         <p class="text-gray-900 font-semibold">
                                             ${isPhantom ? 'MISSING' : formatTime(entry.clock_in_time)}
@@ -559,7 +621,8 @@
 
                                     <div>
                                         <p class="text-gray-500 font-medium mb-1">
-                                            <i class="fas fa-sign-out-alt mr-1 text-red-600"></i>Clock Out
+                                            <i class="fas fa-sign-out-alt mr-1 text-red-600"></i>
+                                            Clock Out
                                         </p>
                                         <p class="text-gray-900 font-semibold">
                                             ${entry.clock_out_time ? formatTime(entry.clock_out_time) : 
@@ -570,415 +633,121 @@
 
                                     <div>
                                         <p class="text-gray-500 font-medium mb-1">
-                                            <i class="fas fa-hourglass-half mr-1 text-purple-600"></i>Hours
+                                            <i class="fas fa-hourglass-half mr-1 text-purple-600"></i>
+                                            Hours
                                         </p>
                                         <p class="hours-badge text-xl ${isClockedIn ? 'text-blue-600' : 'text-gray-900'}">
                                             ${hours.toFixed(2)} hrs
                                         </p>
                                     </div>
-
-                                    <div>
-                                        <p class="text-gray-500 font-medium mb-1">
-                                            <i class="fas fa-map-marker-alt mr-1 text-indigo-600"></i>Location
-                                        </p>
-                                        <p class="text-gray-900 font-semibold text-xs">
-                                            ${entry.work_locations ? entry.work_locations.name : 'Unknown'}
-                                        </p>
-                                    </div>
                                 </div>
-                            </div>
 
-                            <div class="ml-4 flex flex-col space-y-2">
-                                <button 
-                                    onclick='openEditModal(${JSON.stringify(entry).replace(/'/g, "&#39;")})' 
-                                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm"
-                                >
-                                    <i class="fas fa-edit mr-2"></i>Edit Entry
-                                </button>
-                                
-                                ${entry.geoEvents.length > 0 ? `
-                                    <button 
-                                        onclick='showGeoEventsForEntry(${JSON.stringify(entry.geoEvents).replace(/'/g, "&#39;")})' 
-                                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm"
-                                    >
-                                        <i class="fas fa-map-marked-alt mr-2"></i>Geo Data (${entry.geoEvents.length})
-                                    </button>
+                                <!-- Location -->
+                                ${entry.work_locations ? `
+                                    <div class="mt-3 text-sm text-gray-700">
+                                        <i class="fas fa-map-marker-alt mr-2 text-indigo-600"></i>
+                                        <strong>${entry.work_locations.name}</strong>
+                                        ${entry.work_locations.address ? ` • ${entry.work_locations.address}` : ''}
+                                    </div>
                                 ` : ''}
-                            </div>
-                        </div>
 
-                        <!-- Alerts Section -->
-                        ${hasAlerts ? `
-                            <div class="mt-4 space-y-2">
-                                ${entry.alerts.map(alert => `
-                                    <div class="bg-white border-2 border-${alert.alert_type === 'missed_clock_in' ? 'red' : 'orange'}-300 rounded-lg p-4">
-                                        <div class="flex items-start justify-between">
-                                            <div class="flex-1">
-                                                <p class="font-semibold text-${alert.alert_type === 'missed_clock_in' ? 'red' : 'orange'}-800 mb-2">
-                                                    <i class="fas fa-${alert.alert_type === 'missed_clock_in' ? 'sign-in-alt' : 'sign-out-alt'} mr-2"></i>
-                                                    ${alert.alert_type === 'missed_clock_in' ? 'Missed Clock In' : 'Missed Clock Out'}
+                                <!-- Overtime Alert -->
+                                ${hasOvertimeIssue ? `
+                                    <div class="mt-3 bg-red-50 border-l-4 border-red-500 p-3 rounded-r">
+                                        <p class="text-sm font-bold text-red-800 mb-2">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                            ⚠️ OVERTIME ALERT - Requires Immediate Attention
+                                        </p>
+                                        <div class="text-sm text-red-700 space-y-2">
+                                            <p><strong>Issue:</strong> ${overtimeMessage}</p>
+                                            <p><strong>Action Required:</strong></p>
+                                            <ul class="list-disc list-inside ml-4 space-y-1">
+                                                <li>Verify if this is a legitimate extended shift</li>
+                                                <li>Check if employee forgot to clock out</li>
+                                                <li>Use "Edit Entry" to correct clock-out time if needed</li>
+                                                <li>Contact employee to confirm actual work hours</li>
+                                            </ul>
+                                            <div class="mt-2 bg-red-100 px-3 py-2 rounded">
+                                                <p class="text-xs font-bold text-red-900">
+                                                    <i class="fas fa-info-circle mr-1"></i>
+                                                    Standard shifts should not exceed 12 hours. Shifts over 24 hours are always errors.
                                                 </p>
-                                                
-                                                <div class="grid grid-cols-2 gap-4 text-sm">
-                                                    <div>
-                                                        <p class="text-gray-600 font-medium">Geo Event:</p>
-                                                        <p class="text-gray-900">${alert.geofence_events.event_type === 'entry' ? '🟢 Entered' : '🔴 Exited'} ${alert.geofence_events.work_locations.name}</p>
-                                                        <p class="text-xs text-gray-500">${formatTime(alert.geofence_events.event_time)}</p>
-                                                    </div>
-                                                    
-                                                    <div>
-                                                        <p class="text-gray-600 font-medium">GPS Location:</p>
-                                                        <p class="geo-badge text-gray-900">
-                                                            📍 ${alert.geofence_events.latitude.toFixed(6)}, ${alert.geofence_events.longitude.toFixed(6)}
-                                                        </p>
-                                                        <a href="https://www.google.com/maps?q=${alert.geofence_events.latitude},${alert.geofence_events.longitude}" 
-                                                           target="_blank" 
-                                                           class="text-blue-600 hover:underline text-xs">
-                                                            View on Map <i class="fas fa-external-link-alt ml-1"></i>
-                                                        </a>
-                                                    </div>
-                                                </div>
                                             </div>
-                                            
-                                            <button 
-                                                onclick="quickFix('${alert.id}', '${alert.geofence_event_id}', '${entry.id || 'null'}', '${alert.alert_type}')"
-                                                class="fix-btn ml-4 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg shadow-lg"
-                                            >
-                                                <i class="fas fa-magic mr-2"></i>
-                                                Fix with Geo Time
-                                            </button>
                                         </div>
                                     </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
+                                ` : ''}
+                                
+                                <!-- Business Hours Validation -->
+                                ${hasViolation ? `
+                                    <div class="mt-3 bg-orange-50 border-l-4 border-orange-400 p-3 rounded-r">
+                                        <p class="text-sm font-bold text-orange-800 mb-2">
+                                            <i class="fas fa-clock mr-2"></i>
+                                            Business Hours Violation Detected
+                                        </p>
+                                        <div class="text-xs text-orange-700 space-y-1">
+                                            ${clockInValidation && !clockInValidation.valid ? `
+                                                <p>• Clock In: ${clockInValidation.message}</p>
+                                            ` : ''}
+                                            ${clockOutValidation && !clockOutValidation.valid ? `
+                                                <p>• Clock Out: ${clockOutValidation.message}</p>
+                                            ` : ''}
+                                            <p class="mt-2 text-orange-600">
+                                                <strong>Business Hours:</strong> Mon-Fri, 8:00 AM - 8:00 PM (±15 min grace period)
+                                            </p>
+                                            ${entry.requires_admin_approval ? `
+                                                <p class="mt-2 bg-orange-100 px-2 py-1 rounded">
+                                                    <i class="fas fa-user-shield mr-1"></i>
+                                                    <strong>Admin Override:</strong> This entry was approved by an administrator
+                                                </p>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                ` : ''}
 
-                        <!-- Geofence Events Preview (if no alerts) -->
-                        ${!hasAlerts && entry.geoEvents.length > 0 ? `
-                            <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                <p class="text-sm text-blue-800 font-semibold mb-2">
-                                    <i class="fas fa-info-circle mr-2"></i>
-                                    ${entry.geoEvents.length} Geofence Event${entry.geoEvents.length > 1 ? 's' : ''} Available
-                                </p>
-                                <div class="flex items-center space-x-4 text-xs text-blue-700">
-                                    ${entry.geoEvents.slice(0, 3).map(geo => `
-                                        <span>${geo.event_type === 'entry' ? '🟢 Entry' : '🔴 Exit'} at ${new Date(geo.event_time).toLocaleTimeString()}</span>
-                                    `).join('')}
-                                    ${entry.geoEvents.length > 3 ? `<span>+${entry.geoEvents.length - 3} more</span>` : ''}
-                                </div>
+                                <!-- Alerts Details -->
+                                ${hasAlerts ? `
+                                    <div class="mt-4 space-y-2">
+                                        ${entry.alerts.map(alert => `
+                                            <div class="bg-white border-2 border-${alert.alert_type === 'missed_clock_in' ? 'red' : 'orange'}-300 rounded-lg p-3">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex-1">
+                                                        <p class="font-semibold text-${alert.alert_type === 'missed_clock_in' ? 'red' : 'orange'}-800">
+                                                            <i class="fas fa-${alert.alert_type === 'missed_clock_in' ? 'sign-in-alt' : 'sign-out-alt'} mr-2"></i>
+                                                            ${alert.alert_type === 'missed_clock_in' ? 'Missed Clock In' : 'Missed Clock Out'}
+                                                        </p>
+                                                        <p class="text-sm text-gray-700 mt-1">
+                                                            <i class="fas fa-${alert.geofence_events.event_type === 'entry' ? 'arrow-right' : 'arrow-left'} mr-1"></i>
+                                                            ${alert.geofence_events.event_type === 'entry' ? 'Entered' : 'Exited'} 
+                                                            <strong>${alert.geofence_events.work_locations.name}</strong> 
+                                                            at ${formatTime(alert.geofence_events.event_time)}
+                                                        </p>
+                                                        <p class="text-xs text-gray-500 mt-1">
+                                                            <i class="fas fa-clock mr-1"></i>
+                                                            ${getTimeAgo(new Date(alert.geofence_events.event_time))}
+                                                        </p>
+                                                    </div>
+                                                    <button 
+                                                        onclick="quickFix('${alert.id}', '${alert.geofence_event_id}', '${entry.id || 'null'}', '${alert.alert_type}')"
+                                                        class="fix-btn ml-4 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg shadow-lg"
+                                                    >
+                                                        <i class="fas fa-magic mr-2"></i>
+                                                        Fix with Geo Time
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
                             </div>
-                        ` : ''}
+
+                        </div>
                     </div>
                 `;
             }).join('');
         }
 
         // ========================================
-        // GEOFENCE LOG MODAL
-        // ========================================
-        function openGeofenceLog() {
-            const modal = document.getElementById('geofenceModal');
-            const content = document.getElementById('geofenceLogContent');
-            
-            if (allGeofenceEvents.length === 0) {
-                content.innerHTML = `
-                    <div class="text-center py-8 text-gray-400">
-                        <i class="fas fa-inbox text-5xl mb-4"></i>
-                        <p>No geofence events found</p>
-                    </div>
-                `;
-            } else {
-                content.innerHTML = `
-                    <div class="space-y-3">
-                        ${allGeofenceEvents.map(geo => `
-                            <div class="border-l-4 ${geo.event_type === 'entry' ? 'border-green-500' : 'border-red-500'} bg-gray-50 p-4 rounded-r-lg">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <p class="font-bold text-gray-900">
-                                            ${geo.event_type === 'entry' ? '🟢 ENTRY' : '🔴 EXIT'} - 
-                                            ${geo.users.full_name || geo.users.email}
-                                        </p>
-                                        <p class="text-sm text-gray-700 mt-1">
-                                            <i class="fas fa-map-marker-alt mr-1 text-indigo-600"></i>
-                                            ${geo.work_locations.name}
-                                        </p>
-                                        <p class="text-xs text-gray-600 mt-1">
-                                            <i class="fas fa-clock mr-1"></i>
-                                            ${formatTime(geo.event_time)}
-                                        </p>
-                                        <p class="geo-badge text-gray-600 mt-1">
-                                            📍 ${geo.latitude.toFixed(6)}, ${geo.longitude.toFixed(6)}
-                                        </p>
-                                        <div class="mt-2 flex items-center space-x-3 text-xs">
-                                            ${geo.has_clock_in ? '<span class="text-green-600">✓ Clock In Linked</span>' : ''}
-                                            ${geo.has_clock_out ? '<span class="text-red-600">✓ Clock Out Linked</span>' : ''}
-                                            ${!geo.has_clock_in && !geo.has_clock_out ? '<span class="text-gray-500">⚠️ Not Linked to Time Entry</span>' : ''}
-                                        </div>
-                                    </div>
-                                    <a href="https://www.google.com/maps?q=${geo.latitude},${geo.longitude}" 
-                                       target="_blank" 
-                                       class="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs">
-                                        View Map <i class="fas fa-external-link-alt ml-1"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-            
-            modal.classList.add('active');
-        }
-
-        function closeGeofenceLog() {
-            document.getElementById('geofenceModal').classList.remove('active');
-        }
-
-        function showGeoEventsForEntry(geoEvents) {
-            const modal = document.getElementById('geofenceModal');
-            const content = document.getElementById('geofenceLogContent');
-            
-            content.innerHTML = `
-                <h3 class="text-lg font-bold text-gray-900 mb-4">
-                    <i class="fas fa-map-marked-alt mr-2 text-blue-600"></i>
-                    Geofence Events for This Entry
-                </h3>
-                <div class="space-y-3">
-                    ${geoEvents.map(geo => `
-                        <div class="border-l-4 ${geo.event_type === 'entry' ? 'border-green-500' : 'border-red-500'} bg-gray-50 p-4 rounded-r-lg">
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <p class="font-bold text-gray-900">
-                                        ${geo.event_type === 'entry' ? '🟢 ENTRY' : '🔴 EXIT'}
-                                    </p>
-                                    <p class="text-sm text-gray-700 mt-1">
-                                        <i class="fas fa-map-marker-alt mr-1 text-indigo-600"></i>
-                                        ${geo.work_locations.name}
-                                    </p>
-                                    <p class="text-xs text-gray-600 mt-1">
-                                        <i class="fas fa-clock mr-1"></i>
-                                        ${formatTime(geo.event_time)}
-                                    </p>
-                                    <p class="geo-badge text-gray-600 mt-1">
-                                        📍 ${geo.latitude.toFixed(6)}, ${geo.longitude.toFixed(6)}
-                                    </p>
-                                    <div class="mt-2 flex items-center space-x-3 text-xs">
-                                        ${geo.has_clock_in ? '<span class="text-green-600">✓ Clock In Linked</span>' : ''}
-                                        ${geo.has_clock_out ? '<span class="text-red-600">✓ Clock Out Linked</span>' : ''}
-                                        ${!geo.has_clock_in && !geo.has_clock_out ? '<span class="text-gray-500">⚠️ Not Linked</span>' : ''}
-                                    </div>
-                                </div>
-                                <a href="https://www.google.com/maps?q=${geo.latitude},${geo.longitude}" 
-                                   target="_blank" 
-                                   class="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs">
-                                    View Map <i class="fas fa-external-link-alt ml-1"></i>
-                                </a>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            
-            modal.classList.add('active');
-        }
-
-        // ========================================
-        // EDIT MODAL
-        // ========================================
-        function openEditModal(entry) {
-            const modal = document.getElementById('editModal');
-            const content = document.getElementById('editModalContent');
-            
-            const clockInDate = entry.clock_in_time ? new Date(entry.clock_in_time) : new Date();
-            const clockOutDate = entry.clock_out_time ? new Date(entry.clock_out_time) : null;
-            
-            content.innerHTML = `
-                <form onsubmit="saveEditedEntry(event, '${entry.id}', ${entry.user_id})">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Employee</label>
-                            <p class="text-gray-900 font-semibold">${entry.users.full_name || entry.users.email}</p>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock In Date</label>
-                                <input 
-                                    type="date" 
-                                    id="edit-clock-in-date" 
-                                    value="${clockInDate.toISOString().split('T')[0]}"
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
-                                    required
-                                >
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock In Time</label>
-                                <input 
-                                    type="time" 
-                                    id="edit-clock-in-time" 
-                                    value="${clockInDate.toTimeString().slice(0,5)}"
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
-                                    required
-                                >
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock Out Date</label>
-                                <input 
-                                    type="date" 
-                                    id="edit-clock-out-date" 
-                                    value="${clockOutDate ? clockOutDate.toISOString().split('T')[0] : ''}"
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
-                                >
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock Out Time</label>
-                                <input 
-                                    type="time" 
-                                    id="edit-clock-out-time" 
-                                    value="${clockOutDate ? clockOutDate.toTimeString().slice(0,5) : ''}"
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
-                                >
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Location</label>
-                            <select id="edit-location" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2">
-                                <option value="">Select location...</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Adjustment Reason (Required)</label>
-                            <textarea 
-                                id="edit-reason" 
-                                class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" 
-                                rows="3" 
-                                placeholder="Example: Employee forgot to clock in, correcting from geofence data"
-                                required
-                            ></textarea>
-                        </div>
-
-                        <div class="flex items-center space-x-4 pt-4">
-                            <button 
-                                type="submit" 
-                                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg transition"
-                            >
-                                <i class="fas fa-save mr-2"></i>
-                                Save Changes
-                            </button>
-                            <button 
-                                type="button" 
-                                onclick="closeEditModal()" 
-                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-3 rounded-lg transition"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            `;
-            
-            // Load locations
-            loadLocationsForEdit(entry.work_location_id);
-            
-            modal.classList.add('active');
-        }
-
-        async function loadLocationsForEdit(selectedId) {
-            try {
-                const { data, error } = await db
-                    .from('work_locations')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('name');
-
-                if (error) throw error;
-
-                const select = document.getElementById('edit-location');
-                select.innerHTML = '<option value="">Select location...</option>' +
-                    data.map(loc => 
-                        `<option value="${loc.id}" ${loc.id === selectedId ? 'selected' : ''}>${loc.name}</option>`
-                    ).join('');
-            } catch (error) {
-                console.error('Error loading locations:', error);
-            }
-        }
-
-        async function saveEditedEntry(event, entryId, userId) {
-            event.preventDefault();
-            
-            const clockInDate = document.getElementById('edit-clock-in-date').value;
-            const clockInTime = document.getElementById('edit-clock-in-time').value;
-            const clockOutDate = document.getElementById('edit-clock-out-date').value;
-            const clockOutTime = document.getElementById('edit-clock-out-time').value;
-            const locationId = document.getElementById('edit-location').value;
-            const reason = document.getElementById('edit-reason').value;
-
-            if (!reason || reason.trim().length < 5) {
-                alert('⚠️ Please provide a reason (at least 5 characters)');
-                return;
-            }
-
-            const clockInISO = `${clockInDate}T${clockInTime}:00`;
-            const clockOutISO = clockOutDate && clockOutTime ? `${clockOutDate}T${clockOutTime}:00` : null;
-
-            try {
-                const updateData = {
-                    clock_in_time: clockInISO,
-                    clock_out_time: clockOutISO,
-                    work_location_id: locationId || null,
-                    manually_adjusted: true,
-                    adjusted_by: currentUser.id,
-                    adjusted_at: new Date().toISOString(),
-                    adjustment_reason: reason
-                };
-
-                let result;
-
-                if (entryId === 'null' || !entryId) {
-                    // CREATE NEW
-                    updateData.user_id = userId;
-                    const { data, error } = await db
-                        .from('time_entries')
-                        .insert(updateData)
-                        .select()
-                        .single();
-
-                    if (error) throw error;
-                    result = data;
-                } else {
-                    // UPDATE EXISTING
-                    const { data, error } = await db
-                        .from('time_entries')
-                        .update(updateData)
-                        .eq('id', entryId)
-                        .select()
-                        .single();
-
-                    if (error) throw error;
-                    result = data;
-                }
-
-                alert('✅ Entry saved successfully!');
-                closeEditModal();
-                await loadAllData();
-
-            } catch (error) {
-                console.error('Error saving entry:', error);
-                alert(`❌ Error: ${error.message}`);
-            }
-        }
-
-        function closeEditModal() {
-            document.getElementById('editModal').classList.remove('active');
-        }
-
-        // ========================================
-        // QUICK FIX
+        // QUICK FIX FUNCTION
         // ========================================
         async function quickFix(alertId, geofenceEventId, timeEntryId, alertType) {
             const actionType = alertType === 'missed_clock_in' ? 'clock_in' : 'clock_out';
@@ -1006,17 +775,164 @@
             }
 
             try {
+                // Show loading
+                const btn = event.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Fixing...';
+
+                // Fetch geofence event details
                 const { data: geoEvent, error: geoError } = await db
                     .from('geofence_events')
-                    .select('*, work_locations (id, name)')
+                    .select(`
+                        *,
+                        work_locations (id, name)
+                    `)
                     .eq('id', geofenceEventId)
                     .single();
 
                 if (geoError) throw geoError;
 
+                // ✅ VALIDATE BUSINESS HOURS
+                const validation = validateBusinessHours(geoEvent.event_time);
+                
+                if (!validation.valid) {
+                    // Outside business hours - require admin approval
+                    if (!isAdminUser()) {
+                        alert(
+                            `⚠️ ADMIN APPROVAL REQUIRED\n\n` +
+                            `This time entry is outside business hours:\n` +
+                            `${validation.message}\n\n` +
+                            `Business Hours: Mon-Fri, 8:00 AM - 8:00 PM (±15 min grace period)\n\n` +
+                            `Only admins (you or Tatiana) can approve entries outside these hours.\n\n` +
+                            `Please contact an administrator.`
+                        );
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                        return;
+                    }
+
+                    // Admin user - show warning and require confirmation
+                    const adminApprove = confirm(
+                        `⚠️ OUTSIDE BUSINESS HOURS\n\n` +
+                        `${validation.message}\n\n` +
+                        `Business Hours: Mon-Fri, 8:00 AM - 8:00 PM (±15 min)\n\n` +
+                        `As an admin, you can approve this.\n\n` +
+                        `Do you want to proceed?\n\n` +
+                        `✓ YES - Approve and create entry\n` +
+                        `✗ NO - Cancel`
+                    );
+
+                    if (!adminApprove) {
+                        alert('❌ Entry cancelled - outside business hours not approved');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                        return;
+                    }
+
+                    // Admin approved - add note to reason
+                    const adminNote = prompt(
+                        `📝 ADMIN OVERRIDE REQUIRED\n\n` +
+                        `Please provide additional justification for this out-of-hours entry:\n\n` +
+                        `Example: "Emergency call-in for crisis support" or "Special event coverage"`
+                    );
+
+                    if (!adminNote || adminNote.trim().length < 5) {
+                        alert('⚠️ Admin override reason required (at least 5 characters)');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                        return;
+                    }
+
+                    // Append admin override to reason
+                    const fullReason = `${reason}\n\n[ADMIN OVERRIDE - ${validation.reason.toUpperCase()}]\n${adminNote}\nApproved by: ${currentUser.full_name || currentUser.email}`;
+                    
+                    // Replace reason with full reason including override
+                    arguments[0] = alertId;
+                    arguments[1] = geofenceEventId;
+                    arguments[2] = timeEntryId;
+                    arguments[3] = alertType;
+                    
+                    // Continue with override reason
+                    const overrideReason = fullReason;
+                    
+                    let result;
+
+                    if (actionType === 'clock_in') {
+                        const { data, error } = await db
+                            .from('time_entries')
+                            .insert({
+                                user_id: geoEvent.user_id,
+                                clock_in_time: geoEvent.event_time,
+                                clock_in_latitude: geoEvent.latitude,
+                                clock_in_longitude: geoEvent.longitude,
+                                work_location_id: geoEvent.location_id,
+                                manually_adjusted: true,
+                                adjusted_by: currentUser.id,
+                                adjusted_at: new Date().toISOString(),
+                                adjustment_reason: overrideReason,
+                                original_clock_in_time: geoEvent.event_time,
+                                requires_admin_approval: true
+                            })
+                            .select()
+                            .single();
+
+                        if (error) throw error;
+                        result = data;
+                    } else {
+                        if (timeEntryId === 'null' || !timeEntryId) {
+                            throw new Error('Cannot add clock out: No time entry found');
+                        }
+
+                        const { data, error } = await db
+                            .from('time_entries')
+                            .update({
+                                clock_out_time: geoEvent.event_time,
+                                clock_out_latitude: geoEvent.latitude,
+                                clock_out_longitude: geoEvent.longitude,
+                                manually_adjusted: true,
+                                adjusted_by: currentUser.id,
+                                adjusted_at: new Date().toISOString(),
+                                adjustment_reason: overrideReason,
+                                original_clock_out_time: geoEvent.event_time,
+                                requires_admin_approval: true
+                            })
+                            .eq('id', timeEntryId)
+                            .select()
+                            .single();
+
+                        if (error) throw error;
+                        result = data;
+                    }
+
+                    await db
+                        .from('admin_alerts')
+                        .update({
+                            is_resolved: true,
+                            resolved_at: new Date().toISOString(),
+                            resolved_by: currentUser.id,
+                            resolution_notes: overrideReason
+                        })
+                        .eq('id', alertId);
+
+                    await db
+                        .from('geofence_events')
+                        .update({
+                            [`has_${actionType}`]: true,
+                            time_entry_id: result.id
+                        })
+                        .eq('id', geofenceEventId);
+
+                    alert(`✅ ADMIN OVERRIDE APPROVED!\n\n${actionType === 'clock_in' ? 'Clock in created' : 'Clock out added'} at ${formatTime(geoEvent.event_time)}\n\n⚠️ Outside business hours - Admin override logged`);
+                    await loadTimeData();
+                    return;
+                }
+
+                // ✅ Within business hours - proceed normally
                 let result;
 
                 if (actionType === 'clock_in') {
+                    // CREATE NEW CLOCK IN
                     const { data, error } = await db
                         .from('time_entries')
                         .insert({
@@ -1036,7 +952,9 @@
 
                     if (error) throw error;
                     result = data;
+
                 } else {
+                    // UPDATE EXISTING ENTRY WITH CLOCK OUT
                     if (timeEntryId === 'null' || !timeEntryId) {
                         throw new Error('Cannot add clock out: No time entry found');
                     }
@@ -1061,7 +979,8 @@
                     result = data;
                 }
 
-                await db
+                // Mark alert as resolved
+                const { error: alertError } = await db
                     .from('admin_alerts')
                     .update({
                         is_resolved: true,
@@ -1071,6 +990,9 @@
                     })
                     .eq('id', alertId);
 
+                if (alertError) throw alertError;
+
+                // Update geofence event
                 await db
                     .from('geofence_events')
                     .update({
@@ -1079,14 +1001,89 @@
                     })
                     .eq('id', geofenceEventId);
 
-                alert(`✅ SUCCESS!\n\n${actionType === 'clock_in' ? 'Clock in created' : 'Clock out added'} at ${formatTime(geoEvent.event_time)}\n\nAlert dismissed!`);
+                // Success!
+                alert(`✅ SUCCESS!\n\n${actionType === 'clock_in' ? 'Clock in created' : 'Clock out added'} at ${formatTime(geoEvent.event_time)}\n\nAlert dismissed and audit trail created.`);
                 
-                await loadAllData();
+                // Reload data
+                await loadTimeData();
 
             } catch (error) {
-                console.error('Error fixing entry:', error);
-                alert(`❌ ERROR: ${error.message}`);
+                console.error('Error fixing time entry:', error);
+                alert(`❌ ERROR\n\nFailed to fix time entry:\n${error.message}`);
+                
+                // Restore button
+                const btn = event.target.closest('button');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-magic mr-2"></i>Fix with Geo Time';
+                }
             }
+        }
+
+        // ========================================
+        // BUSINESS HOURS VALIDATION
+        // ========================================
+        const BUSINESS_HOURS = {
+            weekdays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+            startTime: { hour: 8, minute: 0 },    // 8:00 AM
+            endTime: { hour: 20, minute: 0 },     // 8:00 PM
+            gracePeriodMinutes: 15                // ±15 minutes allowed
+        };
+
+        const ADMIN_EMAILS = ['tatiana@dmhiopllc.com', 'admin@dmhiopllc.com']; // Add your and Tatiana's emails
+
+        function validateBusinessHours(timestamp) {
+            const date = new Date(timestamp);
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+            const hour = date.getHours();
+            const minute = date.getMinutes();
+            const totalMinutes = hour * 60 + minute;
+
+            // Check if weekday (M-F)
+            if (!BUSINESS_HOURS.weekdays.includes(dayName)) {
+                return {
+                    valid: false,
+                    reason: 'weekend',
+                    message: `${dayName} - We are closed on weekends`
+                };
+            }
+
+            // Calculate business hours in minutes
+            const startMinutes = BUSINESS_HOURS.startTime.hour * 60 + BUSINESS_HOURS.startTime.minute;
+            const endMinutes = BUSINESS_HOURS.endTime.hour * 60 + BUSINESS_HOURS.endTime.minute;
+
+            // Check if within grace period
+            const beforeStart = startMinutes - totalMinutes;
+            const afterEnd = totalMinutes - endMinutes;
+
+            if (beforeStart > BUSINESS_HOURS.gracePeriodMinutes) {
+                return {
+                    valid: false,
+                    reason: 'too_early',
+                    message: `${formatTime(timestamp)} - Too early (before ${BUSINESS_HOURS.startTime.hour - 1}:45 AM)`,
+                    minutesOff: beforeStart
+                };
+            }
+
+            if (afterEnd > BUSINESS_HOURS.gracePeriodMinutes) {
+                return {
+                    valid: false,
+                    reason: 'too_late',
+                    message: `${formatTime(timestamp)} - Too late (after ${BUSINESS_HOURS.endTime.hour}:15 PM)`,
+                    minutesOff: afterEnd
+                };
+            }
+
+            // Within business hours + grace period
+            return {
+                valid: true,
+                message: 'Within business hours'
+            };
+        }
+
+        function isAdminUser() {
+            if (!currentUser) return false;
+            return ADMIN_EMAILS.includes(currentUser.email.toLowerCase()) || currentUser.role === 'admin';
         }
 
         // ========================================
@@ -1110,6 +1107,19 @@
                 minute: '2-digit',
                 hour12: true
             });
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
         }
     </script>
 
