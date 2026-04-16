@@ -135,9 +135,10 @@
                 <button onclick="switchTab('employees')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-employees">
                     <i class="fas fa-users mr-2"></i>Employees
                 </button>
-                <button onclick="switchTab('alerts')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-alerts">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>Alerts
-                </button>
+                <a href="admin-time-management-UNIFIED.html" class="tab-button px-6 py-4 font-medium whitespace-nowrap bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 rounded-lg flex items-center">
+                    <i class="fas fa-chart-line mr-2"></i>Time & Geo Management
+                    <span class="ml-2 bg-white text-indigo-600 px-2 py-0.5 rounded-full text-xs font-bold">UNIFIED</span>
+                </a>
                 <button onclick="switchTab('payroll')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-payroll">
                     <i class="fas fa-dollar-sign mr-2"></i>Payroll
                 </button>
@@ -146,9 +147,6 @@
                 </button>
                 <button onclick="switchTab('messages')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-messages">
                     <i class="fas fa-envelope mr-2"></i>Messages
-                </button>
-                <button onclick="switchTab('time-entries')" class="tab-button px-6 py-4 font-medium whitespace-nowrap" id="tab-time-entries">
-                    <i class="fas fa-calendar mr-2"></i>Time Entries
                 </button>
             </div>
         </div>
@@ -224,9 +222,9 @@
                     <button onclick="switchTab('payroll')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition">
                         <i class="fas fa-file-excel mr-2"></i>Export Payroll
                     </button>
-                    <button onclick="switchTab('alerts')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg transition">
-                        <i class="fas fa-bell mr-2"></i>View Alerts
-                    </button>
+                    <a href="admin-time-management-UNIFIED.html" class="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg transition inline-block text-center">
+                        <i class="fas fa-chart-line mr-2"></i>Time & Geo Management
+                    </a>
                 </div>
             </div>
         </div>
@@ -263,19 +261,6 @@
                             </tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Alerts Tab -->
-        <div id="content-alerts" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-2xl font-bold mb-6">System Alerts</h2>
-                <div id="alerts-container">
-                    <div class="text-center py-8">
-                        <div class="loading mx-auto"></div>
-                        <p class="mt-2 text-gray-500">Loading alerts...</p>
-                    </div>
                 </div>
             </div>
         </div>
@@ -350,54 +335,6 @@
                         <div class="loading mx-auto"></div>
                         <p class="mt-2 text-gray-500">Loading messages...</p>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Time Entries Tab -->
-        <div id="content-time-entries" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-2xl font-bold mb-6">Time Entries</h2>
-                
-                <div class="mb-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                            <input type="date" id="time-entries-start" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                            <input type="date" id="time-entries-end" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                        </div>
-                        <div class="flex items-end">
-                            <button onclick="loadTimeEntries()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition w-full">
-                                <i class="fas fa-search mr-2"></i>Search
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="bg-gray-50 border-b">
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock In</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock Out</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="time-entries-tbody" class="bg-white divide-y divide-gray-200">
-                            <tr>
-                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-                                    Please select a date range and click Search
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -526,7 +463,6 @@
             
             // Load data for specific tabs
             if (tabName === 'employees') loadEmployees();
-            if (tabName === 'alerts') loadAlerts();
             if (tabName === 'payroll') populatePayPeriodDropdown();
             if (tabName === 'approvals') loadApprovals();
             if (tabName === 'messages') loadMessages();
@@ -718,94 +654,6 @@
             } catch (error) {
                 console.error('Error updating employee:', error);
                 alert('Error updating employee: ' + error.message);
-            }
-        }
-
-        // Load Alerts
-        async function loadAlerts() {
-            try {
-                const { data, error } = await db
-                    .from('admin_alerts')
-                    .select(`
-                        *,
-                        users:user_id (full_name, employee_id)
-                    `)
-                    .eq('status', 'active')
-                    .order('created_at', { ascending: false })
-                    .limit(50);
-
-                if (error) throw error;
-
-                const container = document.getElementById('alerts-container');
-                
-                if (!data || data.length === 0) {
-                    container.innerHTML = '<p class="text-center text-gray-500 py-4">No active alerts</p>';
-                    return;
-                }
-
-                container.innerHTML = data.map(alert => `
-                    <div class="alert-row border-l-4 border-${getAlertColor(alert.alert_type)} bg-gray-50 p-4 mb-3 rounded">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <div class="flex items-center mb-2">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded bg-${getAlertColor(alert.alert_type)}-100 text-${getAlertColor(alert.alert_type)}-800">
-                                        ${alert.alert_type.replace(/_/g, ' ').toUpperCase()}
-                                    </span>
-                                    <span class="ml-2 text-sm text-gray-600">
-                                        ${alert.users?.full_name || 'Unknown'} (${alert.users?.employee_id || 'N/A'})
-                                    </span>
-                                </div>
-                                <p class="text-sm text-gray-700 mb-1">${alert.message}</p>
-                                <p class="text-xs text-gray-500">
-                                    ${new Date(alert.created_at).toLocaleString()}
-                                </p>
-                            </div>
-                            <div class="ml-4 flex space-x-2">
-                                <button onclick="dismissAlert('${alert.id}')" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
-                                    Dismiss
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-
-            } catch (error) {
-                console.error('Error loading alerts:', error);
-                document.getElementById('alerts-container').innerHTML = `
-                    <div class="text-center text-red-600 py-4">Error loading alerts: ${error.message}</div>
-                `;
-            }
-        }
-
-        function getAlertColor(type) {
-            const colors = {
-                'geofence_violation': 'red',
-                'missed_clock_out': 'yellow',
-                'overtime_alert': 'orange',
-                'system': 'blue'
-            };
-            return colors[type] || 'gray';
-        }
-
-        // Dismiss Alert
-        async function dismissAlert(alertId) {
-            try {
-                const { error } = await db
-                    .from('admin_alerts')
-                    .update({ 
-                        status: 'dismissed', 
-                        resolved_at: new Date().toISOString() 
-                    })
-                    .eq('id', alertId);
-
-                if (error) throw error;
-
-                loadAlerts();
-                loadDashboardData();
-
-            } catch (error) {
-                console.error('Error dismissing alert:', error);
-                alert('Error dismissing alert');
             }
         }
 
@@ -1202,93 +1050,6 @@
             return classes[priority] || classes.normal;
         }
 
-        // Load Time Entries
-        async function loadTimeEntries() {
-            const startDate = document.getElementById('time-entries-start').value;
-            const endDate = document.getElementById('time-entries-end').value;
-
-            if (!startDate || !endDate) {
-                alert('Please select both start and end dates');
-                return;
-            }
-
-            try {
-                const { data, error } = await db
-                    .from('time_entries')
-                    .select(`
-                        *,
-                        users:user_id (full_name, employee_id),
-                        clock_in_location:clock_in_location_id (name),
-                        clock_out_location:clock_out_location_id (name)
-                    `)
-                    .gte('clock_in_time', startDate)
-                    .lte('clock_in_time', endDate + 'T23:59:59')
-                    .order('clock_in_time', { ascending: false });
-
-                if (error) throw error;
-
-                const tbody = document.getElementById('time-entries-tbody');
-                
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No time entries for selected date range</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = data.map(entry => `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="font-medium text-gray-900">${entry.users?.full_name || 'Unknown'}</div>
-                            <div class="text-sm text-gray-500">${entry.users?.employee_id || 'N/A'}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            ${new Date(entry.clock_in_time).toLocaleString()}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            ${entry.clock_out_time ? new Date(entry.clock_out_time).toLocaleString() : '-'}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            ${entry.total_hours ? parseFloat(entry.total_hours).toFixed(2) : '-'}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div>${entry.clock_in_location?.name || 'Unknown'}</div>
-                            ${entry.clock_out_location ? `<div class="text-xs text-gray-400">Out: ${entry.clock_out_location.name}</div>` : ''}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(entry.status)}">
-                                ${entry.status.replace(/_/g, ' ')}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button onclick="viewTimeEntry('${entry.id}')" class="text-blue-600 hover:text-blue-900">
-                                <i class="fas fa-eye"></i> View
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
-
-            } catch (error) {
-                console.error('Error loading time entries:', error);
-                document.getElementById('time-entries-tbody').innerHTML = `
-                    <tr><td colspan="7" class="px-6 py-4 text-center text-red-600">Error loading time entries: ${error.message}</td></tr>
-                `;
-            }
-        }
-
-        function getStatusClass(status) {
-            const classes = {
-                'clocked_in': 'bg-green-100 text-green-800',
-                'clocked_out': 'bg-gray-100 text-gray-800',
-                'pending_approval': 'bg-yellow-100 text-yellow-800',
-                'approved': 'bg-blue-100 text-blue-800',
-                'rejected': 'bg-red-100 text-red-800'
-            };
-            return classes[status] || 'bg-gray-100 text-gray-800';
-        }
-
-        function viewTimeEntry(entryId) {
-            alert('View time entry details: ' + entryId);
-        }
-
         // Modal Functions
         function closeEditEmployeeModal() {
             document.getElementById('editEmployeeModal').style.display = 'none';
@@ -1311,9 +1072,6 @@
             
             document.getElementById('payroll-start').value = twoWeeksAgo.toISOString().split('T')[0];
             document.getElementById('payroll-end').value = today.toISOString().split('T')[0];
-            
-            document.getElementById('time-entries-start').value = twoWeeksAgo.toISOString().split('T')[0];
-            document.getElementById('time-entries-end').value = today.toISOString().split('T')[0];
         }
 
         // Initialize on page load
