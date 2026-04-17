@@ -1259,7 +1259,14 @@
         }
 
         function formatTime(isoString) {
-            const date = new Date(isoString);
+            if (!isoString) return 'N/A';
+            
+            // WORKAROUND: Database stores MST times as if they were UTC
+            // So we parse them without timezone conversion
+            const dateStr = isoString.replace('+00', '').replace('Z', '');
+            const date = new Date(dateStr);
+            
+            // Format as-is (treating the time as local MST)
             return date.toLocaleString('en-US', {
                 weekday: 'short',
                 month: 'short',
@@ -1354,8 +1361,17 @@
                 return;
             }
 
-            const clockInISO = `${clockInDate}T${clockInTime}:00`;
-            const clockOutISO = clockOutDate && clockOutTime ? `${clockOutDate}T${clockOutTime}:00` : null;
+            // Convert MST times to UTC before saving
+            const clockInLocal = `${clockInDate}T${clockInTime}:00`;
+            const clockInDate_MST = new Date(clockInLocal);
+            const clockInISO = new Date(clockInDate_MST.getTime() + (7 * 60 * 60 * 1000)).toISOString(); // Add 7 hours for MST->UTC
+            
+            let clockOutISO = null;
+            if (clockOutDate && clockOutTime) {
+                const clockOutLocal = `${clockOutDate}T${clockOutTime}:00`;
+                const clockOutDate_MST = new Date(clockOutLocal);
+                clockOutISO = new Date(clockOutDate_MST.getTime() + (7 * 60 * 60 * 1000)).toISOString(); // Add 7 hours for MST->UTC
+            }
 
             // Validate times
             if (clockOutISO && new Date(clockOutISO) <= new Date(clockInISO)) {
