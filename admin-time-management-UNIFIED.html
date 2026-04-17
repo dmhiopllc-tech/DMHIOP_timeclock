@@ -81,7 +81,7 @@
                     <i class="fas fa-business-time text-indigo-600 mr-2"></i>
                     Time Management Dashboard
                 </h1>
-                <p class="text-gray-600 text-sm mt-1">Fix missed punches, view entries, manage hours - all in one place</p>
+                <p class="text-gray-600 text-sm mt-1">Create manual time entries with full validation</p>
             </div>
             <div class="flex items-center space-x-4">
                 <span id="currentUser" class="text-gray-700 font-medium"></span>
@@ -92,301 +92,190 @@
         </div>
     </header>
 
-    <main class="container mx-auto px-6 py-8 max-w-7xl">
+    <main class="container mx-auto px-6 py-8 max-w-4xl">
         
-        <!-- Stats Summary -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-            <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl p-6 shadow-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-red-100 text-xs font-medium uppercase tracking-wide">Needs Fix</p>
-                        <p id="stat-needs-fix" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-red-100 text-xs mt-1">Missed punches</p>
-                    </div>
-                    <i class="fas fa-exclamation-triangle text-6xl text-red-200 opacity-40"></i>
+        <!-- Manual Entry Card -->
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">
+                        <i class="fas fa-calendar-plus text-green-600 mr-2"></i>
+                        Create Manual Time Entry
+                    </h2>
+                    <p class="text-gray-600 mt-1">Add time entries for employees with full audit trail</p>
                 </div>
             </div>
 
-            <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl p-6 shadow-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-orange-100 text-xs font-medium uppercase tracking-wide">Out of Hours</p>
-                        <p id="stat-violations" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-orange-100 text-xs mt-1">Business hours violations</p>
-                    </div>
-                    <i class="fas fa-clock text-6xl text-orange-200 opacity-40"></i>
-                </div>
-            </div>
-            
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-blue-100 text-xs font-medium uppercase tracking-wide">Today's Entries</p>
-                        <p id="stat-today-entries" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-blue-100 text-xs mt-1">Clock in/out records</p>
-                    </div>
-                    <i class="fas fa-clock text-6xl text-blue-200 opacity-40"></i>
-                </div>
-            </div>
-            
-            <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-green-100 text-xs font-medium uppercase tracking-wide">Fixed Today</p>
-                        <p id="stat-fixed" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-green-100 text-xs mt-1">Corrections made</p>
-                    </div>
-                    <i class="fas fa-check-circle text-6xl text-green-200 opacity-40"></i>
-                </div>
-            </div>
+            <button 
+                onclick="openManualEntryModal()" 
+                class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition transform hover:scale-[1.02]"
+            >
+                <i class="fas fa-plus-circle mr-2 text-xl"></i>
+                Create New Manual Entry
+            </button>
 
-            <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-purple-100 text-xs font-medium uppercase tracking-wide">Total Hours Today</p>
-                        <p id="stat-total-hours" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-purple-100 text-xs mt-1">All employees</p>
-                    </div>
-                    <i class="fas fa-business-time text-6xl text-purple-200 opacity-40"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Filter Controls -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-            <div class="flex flex-wrap items-center gap-4">
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-filter text-gray-600"></i>
-                    <span class="font-semibold text-gray-700">Filters:</span>
-                </div>
-                
-                <input 
-                    type="date" 
-                    id="filterDate" 
-                    class="border-2 border-gray-300 rounded-lg px-4 py-2"
-                    onchange="loadTimeData()"
-                >
-
-                <select 
-                    id="filterEmployee" 
-                    class="border-2 border-gray-300 rounded-lg px-4 py-2"
-                    onchange="loadTimeData()"
-                >
-                    <option value="">All Employees</option>
-                </select>
-
-                <div class="flex items-center space-x-2 ml-auto">
-                    <label class="flex items-center space-x-2 cursor-pointer">
-                        <input 
-                            type="checkbox" 
-                            id="showOnlyAlerts" 
-                            class="w-4 h-4 text-indigo-600"
-                            onchange="loadTimeData()"
-                        >
-                        <span class="text-sm font-medium text-gray-700">Show only entries with alerts</span>
-                    </label>
-                </div>
-
-                <button 
-                    onclick="loadTimeData()" 
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold"
-                >
-                    <i class="fas fa-sync-alt mr-2"></i>Refresh
-                </button>
-
-                <button 
-                    onclick="openManualEntryModal()" 
-                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition font-semibold"
-                >
-                    <i class="fas fa-plus-circle mr-2"></i>Create Manual Entry
-                </button>
-            </div>
-        </div>
-
-        <!-- Main Time Entries List -->
-        <div class="bg-white rounded-xl shadow-md overflow-hidden">
-            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
-                <h2 class="text-2xl font-bold text-white">
-                    <i class="fas fa-list-ul mr-2"></i>
-                    Time Entries & Alerts
-                </h2>
-                <p class="text-indigo-100 text-sm mt-1">Unified view of all time entries with geo-based alerts</p>
-            </div>
-
-            <div id="timeEntriesList" class="divide-y divide-gray-200">
-                <!-- Entries will be loaded here -->
-                <div class="text-center py-16 text-gray-400">
-                    <i class="fas fa-spinner fa-spin text-5xl mb-4"></i>
-                    <p class="text-lg">Loading time data...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Legend -->
-        <div class="mt-6 bg-gray-100 rounded-lg p-4">
-            <div class="flex flex-wrap items-center gap-4 text-sm">
-                <span class="font-semibold text-gray-700"><i class="fas fa-info-circle mr-1"></i>Legend:</span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-red-500 rounded"></span>
-                    <span class="text-gray-700">Missed Clock In</span>
-                </span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-orange-500 rounded"></span>
-                    <span class="text-gray-700">Missed Clock Out</span>
-                </span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-green-500 rounded"></span>
-                    <span class="text-gray-700">Complete & Valid</span>
-                </span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-blue-500 rounded"></span>
-                    <span class="text-gray-700">Currently Clocked In</span>
-                </span>
+            <div class="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Audit Trail:</strong> All manual entries are marked and include the admin name, timestamp, and reason for adjustment.
+                </p>
             </div>
         </div>
 
     </main>
 
-    <!-- MODAL: Create Manual Entry -->
+    <!-- Manual Entry Modal -->
     <div id="manualEntryModal" class="modal">
         <div class="modal-content">
-            <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 flex justify-between items-center">
-                <h2 class="text-2xl font-bold text-white">
-                    <i class="fas fa-plus-circle mr-2"></i>
+            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-xl">
+                <h3 class="text-2xl font-bold">
+                    <i class="fas fa-calendar-plus mr-2"></i>
                     Create Manual Time Entry
-                </h2>
-                <button onclick="closeManualEntryModal()" class="text-white hover:text-gray-200">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
+                </h3>
+                <p class="text-green-100 mt-1">All fields required • Full audit trail created</p>
             </div>
-            <div class="p-6">
-                <form id="manualEntryForm" onsubmit="saveManualEntry(event)">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Employee *</label>
-                            <select id="manual-employee" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" required>
-                                <option value="">Select employee...</option>
-                            </select>
-                        </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock In Date *</label>
-                                <input 
-                                    type="date" 
-                                    id="manual-clock-in-date" 
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" 
-                                    required
-                                >
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock In Time *</label>
-                                <input 
-                                    type="time" 
-                                    id="manual-clock-in-time" 
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" 
-                                    required
-                                >
-                            </div>
-                        </div>
+            <form id="manualEntryForm" onsubmit="saveManualEntry(event)" class="p-6">
+                <!-- Employee Selection -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-user mr-2 text-indigo-600"></i>Employee
+                    </label>
+                    <select 
+                        id="manual-employee" 
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                    >
+                        <option value="">Select Employee...</option>
+                    </select>
+                </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock Out Date</label>
-                                <input 
-                                    type="date" 
-                                    id="manual-clock-out-date" 
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
-                                >
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock Out Time</label>
-                                <input 
-                                    type="time" 
-                                    id="manual-clock-out-time" 
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
-                                >
-                            </div>
-                        </div>
+                <!-- Date Selection -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-calendar mr-2 text-indigo-600"></i>Date
+                    </label>
+                    <input 
+                        type="date" 
+                        id="manual-date" 
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                    >
+                </div>
 
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Work Location *</label>
-                            <select id="manual-location" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" required>
-                                <option value="">Select location...</option>
-                            </select>
-                        </div>
+                <!-- Clock In Time -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-clock mr-2 text-green-600"></i>Clock In Time
+                    </label>
+                    <input 
+                        type="time" 
+                        id="manual-clock-in" 
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                    >
+                </div>
 
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Reason for Manual Entry *</label>
-                            <textarea 
-                                id="manual-reason" 
-                                class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 h-24" 
-                                placeholder="Why are you creating this entry manually? (e.g., Employee forgot to clock in/out)"
-                                required
-                            ></textarea>
-                        </div>
+                <!-- Clock Out Time -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-clock mr-2 text-red-600"></i>Clock Out Time
+                    </label>
+                    <input 
+                        type="time" 
+                        id="manual-clock-out" 
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                    >
+                </div>
 
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-                            <p class="text-sm text-yellow-800">
-                                <i class="fas fa-info-circle mr-2"></i>
-                                <strong>Note:</strong> This entry will be marked as manually adjusted in the system for audit purposes.
-                            </p>
-                        </div>
+                <!-- Location Selection -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-map-marker-alt mr-2 text-indigo-600"></i>Work Location
+                    </label>
+                    <select 
+                        id="manual-location" 
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                    >
+                        <option value="">Select Location...</option>
+                    </select>
+                </div>
 
-                        <div class="flex items-center justify-end space-x-3 pt-4 border-t">
-                            <button 
-                                type="button" 
-                                onclick="closeManualEntryModal()" 
-                                class="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-semibold"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                type="submit" 
-                                class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-semibold"
-                            >
-                                <i class="fas fa-save mr-2"></i>Create Manual Entry
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
+                <!-- Reason for Manual Entry -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-edit mr-2 text-orange-600"></i>Reason for Manual Entry
+                    </label>
+                    <textarea 
+                        id="manual-reason" 
+                        required
+                        rows="3"
+                        placeholder="Explain why this entry is being created manually..."
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition resize-none"
+                    ></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Minimum 10 characters required for audit trail</p>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-4">
+                    <button 
+                        type="submit" 
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg transition"
+                    >
+                        <i class="fas fa-save mr-2"></i>
+                        Save Manual Entry
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="closeManualEntryModal()" 
+                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-3 rounded-lg transition"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        // Supabase configuration
+        // Supabase Configuration
         const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVrampsbnYiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczNTc2Njk3OSwiZXhwIjoyMDUxMzQyOTc5fQ.gCNg_21xVB1r6UpGY8iSXO9Z-y4tQhZfpGTbZJxYKfE';
-        
-        const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Admin email list
-        const ADMIN_EMAILS = [
-            'sean@dmhiop.com',
-            'dmhiop@gmail.com'
-        ];
-
-        // Global state
         let currentUser = null;
         let employees = [];
         let locations = [];
 
-        // ========================================
-        // AUTHENTICATION
-        // ========================================
-        async function checkAuth() {
-            const { data: { session } } = await db.auth.getSession();
-            
-            if (!session) {
-                window.location.href = 'login-standalone.html';
-                return;
-            }
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadEmployees();
+            await loadLocations();
+        });
 
-            currentUser = session.user;
-            
-            document.getElementById('currentUser').textContent = currentUser.email;
-            await loadAllData();
+        // Authentication - SIMPLIFIED to just check if logged in
+        async function checkAuth() {
+            try {
+                const { data: { session }, error } = await db.auth.getSession();
+                
+                if (error || !session) {
+                    console.error('No session found:', error);
+                    window.location.href = 'login-standalone.html';
+                    return;
+                }
+
+                currentUser = session.user;
+                document.getElementById('currentUser').textContent = `👤 ${session.user.email}`;
+                
+                console.log('✅ Authenticated as:', session.user.email);
+            } catch (error) {
+                console.error('Auth error:', error);
+                alert('Authentication error. Redirecting to login...');
+                window.location.href = 'login-standalone.html';
+            }
         }
 
         async function logout() {
@@ -394,387 +283,79 @@
             window.location.href = 'login-standalone.html';
         }
 
-        function isAdminUser() {
-            if (!currentUser) return false;
-            return ADMIN_EMAILS.includes(currentUser.email.toLowerCase()) || currentUser.role === 'admin';
-        }
-
-        // ========================================
-        // DATA LOADING
-        // ========================================
-        async function loadAllData() {
-            await loadEmployees();
-            await loadLocations();
-            await loadTimeData();
-        }
-
+        // Load employee list
         async function loadEmployees() {
             try {
                 const { data, error } = await db
                     .from('users')
-                    .select('*')
-                    .order('full_name');
+                    .select('id, full_name, email')
+                    .order('full_name', { ascending: true });
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Error loading employees:', error);
+                    alert('⚠️ Could not load employees. You may need to ask your database admin to grant SELECT access to the users table.');
+                    return;
+                }
 
                 employees = data || [];
-                
-                // Populate filter dropdown
-                const filterSelect = document.getElementById('filterEmployee');
-                filterSelect.innerHTML = '<option value="">All Employees</option>' +
-                    employees.map(emp => 
-                        `<option value="${emp.id}">${emp.full_name || emp.email}</option>`
-                    ).join('');
+                console.log(`✅ Loaded ${employees.length} employees`);
             } catch (error) {
                 console.error('Error loading employees:', error);
+                employees = [];
             }
         }
 
+        // Load locations
         async function loadLocations() {
             try {
                 const { data, error } = await db
                     .from('work_locations')
                     .select('*')
-                    .eq('is_active', true)
-                    .order('name');
+                    .order('name', { ascending: true });
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Error loading locations:', error);
+                    alert('⚠️ Could not load work locations. You may need to ask your database admin to grant SELECT access to the work_locations table.');
+                    return;
+                }
 
                 locations = data || [];
+                console.log(`✅ Loaded ${locations.length} locations`);
             } catch (error) {
                 console.error('Error loading locations:', error);
+                locations = [];
             }
-        }
-
-        async function loadTimeData() {
-            const selectedDate = document.getElementById('filterDate').value;
-            const selectedEmployee = document.getElementById('filterEmployee').value;
-            const showOnlyAlerts = document.getElementById('showOnlyAlerts').checked;
-
-            try {
-                let query = db
-                    .from('time_entries')
-                    .select(`
-                        *,
-                        user:users!time_entries_user_id_fkey(full_name, email),
-                        location:work_locations!time_entries_work_location_id_fkey(name)
-                    `)
-                    .order('clock_in_time', { ascending: false });
-
-                if (selectedDate) {
-                    const startDate = new Date(selectedDate);
-                    startDate.setHours(0, 0, 0, 0);
-                    const endDate = new Date(selectedDate);
-                    endDate.setHours(23, 59, 59, 999);
-                    
-                    query = query
-                        .gte('clock_in_time', startDate.toISOString())
-                        .lte('clock_in_time', endDate.toISOString());
-                } else {
-                    // Default to today
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    query = query.gte('clock_in_time', today.toISOString());
-                }
-
-                if (selectedEmployee) {
-                    query = query.eq('user_id', selectedEmployee);
-                }
-
-                const { data: entries, error } = await query;
-
-                if (error) throw error;
-
-                // Load alerts for these entries
-                const entryIds = entries.map(e => e.id);
-                let alerts = [];
-                
-                if (entryIds.length > 0) {
-                    const { data: alertData, error: alertError } = await db
-                        .from('admin_alerts')
-                        .select('*')
-                        .in('time_entry_id', entryIds)
-                        .eq('resolved', false);
-
-                    if (!alertError) {
-                        alerts = alertData || [];
-                    }
-                }
-
-                // Filter by alerts if checkbox is checked
-                let filteredEntries = entries;
-                if (showOnlyAlerts) {
-                    const entriesWithAlerts = new Set(alerts.map(a => a.time_entry_id));
-                    filteredEntries = entries.filter(e => entriesWithAlerts.has(e.id));
-                }
-
-                displayTimeEntries(filteredEntries, alerts);
-                updateStats(entries, alerts);
-
-            } catch (error) {
-                console.error('Error loading time data:', error);
-                alert('Error loading time data. Please try again.');
-            }
-        }
-
-        function displayTimeEntries(entries, alerts) {
-            const container = document.getElementById('timeEntriesList');
-
-            if (entries.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-16 text-gray-400">
-                        <i class="fas fa-calendar-times text-5xl mb-4"></i>
-                        <p class="text-lg">No time entries found for selected filters</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = entries.map(entry => {
-                const alert = alerts.find(a => a.time_entry_id === entry.id);
-                const hasAlert = !!alert;
-                const hours = entry.clock_out_time ? 
-                    calculateHours(entry.clock_in_time, entry.clock_out_time) : 0;
-
-                let statusBadge = '';
-                let statusColor = 'bg-green-500';
-
-                if (!entry.clock_out_time) {
-                    statusColor = 'bg-blue-500';
-                    statusBadge = '<span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded">ACTIVE</span>';
-                } else if (entry.manually_adjusted) {
-                    statusBadge = '<span class="ml-2 px-2 py-1 bg-purple-100 text-purple-800 text-xs font-bold rounded">ADJUSTED</span>';
-                }
-
-                let alertBadge = '';
-                if (hasAlert) {
-                    const alertType = alert.alert_type === 'missed_clock_in' ? 'MISSED CLOCK IN' : 'MISSED CLOCK OUT';
-                    const alertColor = alert.alert_type === 'missed_clock_in' ? 'bg-red-500' : 'bg-orange-500';
-                    alertBadge = `
-                        <div class="mt-2 p-3 ${alertColor} bg-opacity-10 border-l-4 border-${alertColor.replace('bg-', '')} rounded">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <span class="alert-badge px-3 py-1 ${alertColor} text-white text-xs font-bold rounded-full">
-                                        <i class="fas fa-exclamation-triangle mr-1"></i>${alertType}
-                                    </span>
-                                    <p class="text-sm text-gray-600 mt-2">${alert.message}</p>
-                                </div>
-                                ${alert.geofence_event_id ? `
-                                    <button 
-                                        onclick="fixWithGeofence('${entry.id}', '${alert.geofence_event_id}')"
-                                        class="fix-btn ml-4 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-sm"
-                                    >
-                                        <i class="fas fa-magic mr-1"></i>Fix with Geo Time
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                return `
-                    <div class="entry-row p-6">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-4">
-                                <div class="w-2 h-16 ${statusColor} rounded"></div>
-                                <div>
-                                    <div class="flex items-center">
-                                        <h3 class="text-lg font-bold text-gray-900">
-                                            ${entry.user?.full_name || entry.user?.email || 'Unknown'}
-                                        </h3>
-                                        ${statusBadge}
-                                    </div>
-                                    <p class="text-sm text-gray-600 mt-1">
-                                        <i class="fas fa-map-marker-alt mr-1"></i>
-                                        ${entry.location?.name || 'Unknown Location'}
-                                    </p>
-                                    <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                                        <span>
-                                            <i class="fas fa-sign-in-alt mr-1"></i>
-                                            In: ${formatTime(entry.clock_in_time)}
-                                        </span>
-                                        ${entry.clock_out_time ? `
-                                            <span>
-                                                <i class="fas fa-sign-out-alt mr-1"></i>
-                                                Out: ${formatTime(entry.clock_out_time)}
-                                            </span>
-                                        ` : `
-                                            <span class="text-blue-600 font-semibold">
-                                                <i class="fas fa-clock mr-1"></i>
-                                                Still clocked in
-                                            </span>
-                                        `}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <div class="hours-badge text-3xl font-bold text-gray-900">
-                                    ${hours.toFixed(2)}
-                                </div>
-                                <p class="text-xs text-gray-500 mt-1">hours</p>
-                            </div>
-                        </div>
-                        ${alertBadge}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function updateStats(entries, alerts) {
-            const needsFix = alerts.filter(a => !a.resolved).length;
-            const todayEntries = entries.length;
-            const fixedToday = entries.filter(e => e.manually_adjusted && 
-                new Date(e.adjusted_at).toDateString() === new Date().toDateString()).length;
-            const totalHours = entries.reduce((sum, e) => {
-                if (e.clock_out_time) {
-                    return sum + calculateHours(e.clock_in_time, e.clock_out_time);
-                }
-                return sum;
-            }, 0);
-
-            document.getElementById('stat-needs-fix').textContent = needsFix;
-            document.getElementById('stat-today-entries').textContent = todayEntries;
-            document.getElementById('stat-fixed').textContent = fixedToday;
-            document.getElementById('stat-total-hours').textContent = totalHours.toFixed(1);
-        }
-
-        // ========================================
-        // FIX WITH GEOFENCE
-        // ========================================
-        async function fixWithGeofence(entryId, geofenceEventId) {
-            if (!confirm('Fix this entry using the geofence timestamp?')) return;
-
-            try {
-                // Get geofence event
-                const { data: geofenceEvent, error: geoError } = await db
-                    .from('geofence_events')
-                    .select('*')
-                    .eq('id', geofenceEventId)
-                    .single();
-
-                if (geoError) throw geoError;
-
-                // Update time entry
-                const updateData = {
-                    manually_adjusted: true,
-                    adjusted_by: currentUser.id,
-                    adjusted_at: new Date().toISOString(),
-                    adjustment_reason: 'Fixed using geofence timestamp'
-                };
-
-                if (geofenceEvent.event_type === 'entry') {
-                    updateData.clock_in_time = geofenceEvent.timestamp;
-                } else {
-                    updateData.clock_out_time = geofenceEvent.timestamp;
-                }
-
-                const { error: updateError } = await db
-                    .from('time_entries')
-                    .update(updateData)
-                    .eq('id', entryId);
-
-                if (updateError) throw updateError;
-
-                // Resolve alert
-                const { error: resolveError } = await db
-                    .from('admin_alerts')
-                    .update({ 
-                        resolved: true, 
-                        resolved_at: new Date().toISOString(),
-                        resolved_by: currentUser.id
-                    })
-                    .eq('time_entry_id', entryId);
-
-                if (resolveError) throw resolveError;
-
-                alert('✅ Entry fixed successfully!');
-                await loadTimeData();
-
-            } catch (error) {
-                console.error('Error fixing entry:', error);
-                alert('Error fixing entry. Please try again.');
-            }
-        }
-
-        // ========================================
-        // UTILITY FUNCTIONS
-        // ========================================
-        function calculateHours(clockIn, clockOut) {
-            const start = new Date(clockIn);
-            const end = new Date(clockOut);
-            const diffMs = end - start;
-            const diffHours = diffMs / (1000 * 60 * 60);
-            return Math.max(0, diffHours);
-        }
-
-        function formatTime(isoString) {
-            const date = new Date(isoString);
-            return date.toLocaleString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
-        }
-
-        function getTimeAgo(date) {
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / (1000 * 60));
-            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-            return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
         }
 
         // ========================================
         // MANUAL ENTRY MODAL FUNCTIONS
         // ========================================
         async function openManualEntryModal() {
-            const modal = document.getElementById('manualEntryModal');
-            
-            // Load employees into dropdown
+            // Populate employee dropdown
             const employeeSelect = document.getElementById('manual-employee');
-            employeeSelect.innerHTML = '<option value="">Select employee...</option>' +
-                employees.map(emp => 
-                    `<option value="${emp.id}">${emp.full_name || emp.email}</option>`
-                ).join('');
-            
-            // Load locations
-            try {
-                const { data: locations, error } = await db
-                    .from('work_locations')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('name');
+            employeeSelect.innerHTML = '<option value="">Select Employee...</option>';
+            employees.forEach(emp => {
+                employeeSelect.innerHTML += `<option value="${emp.id}">${emp.full_name || emp.email}</option>`;
+            });
 
-                if (error) throw error;
+            // Populate location dropdown
+            const locationSelect = document.getElementById('manual-location');
+            locationSelect.innerHTML = '<option value="">Select Location...</option>';
+            locations.forEach(loc => {
+                locationSelect.innerHTML += `<option value="${loc.id}">${loc.name}</option>`;
+            });
 
-                const locationSelect = document.getElementById('manual-location');
-                locationSelect.innerHTML = '<option value="">Select location...</option>' +
-                    locations.map(loc => 
-                        `<option value="${loc.id}">${loc.name}</option>`
-                    ).join('');
-            } catch (error) {
-                console.error('Error loading locations:', error);
-            }
-            
-            // Set today's date as default
+            // Set today's date
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('manual-clock-in-date').value = today;
-            
-            // Clear other fields
-            document.getElementById('manual-clock-in-time').value = '';
-            document.getElementById('manual-clock-out-date').value = '';
-            document.getElementById('manual-clock-out-time').value = '';
+            document.getElementById('manual-date').value = today;
+
+            // Clear form
+            document.getElementById('manual-clock-in').value = '';
+            document.getElementById('manual-clock-out').value = '';
             document.getElementById('manual-reason').value = '';
-            
-            modal.classList.add('active');
+
+            // Show modal
+            document.getElementById('manualEntryModal').classList.add('active');
         }
 
         function closeManualEntryModal() {
@@ -784,35 +365,45 @@
 
         async function saveManualEntry(event) {
             event.preventDefault();
-            
-            const employeeId = document.getElementById('manual-employee').value;
-            const clockInDate = document.getElementById('manual-clock-in-date').value;
-            const clockInTime = document.getElementById('manual-clock-in-time').value;
-            const clockOutDate = document.getElementById('manual-clock-out-date').value;
-            const clockOutTime = document.getElementById('manual-clock-out-time').value;
-            const locationId = document.getElementById('manual-location').value;
-            const reason = document.getElementById('manual-reason').value;
-
-            if (!employeeId || !clockInDate || !clockInTime || !locationId || !reason) {
-                alert('⚠️ Please fill in all required fields (marked with *)');
-                return;
-            }
-
-            if (reason.trim().length < 5) {
-                alert('⚠️ Please provide a more detailed reason (at least 5 characters)');
-                return;
-            }
-
-            const clockInISO = `${clockInDate}T${clockInTime}:00`;
-            const clockOutISO = clockOutDate && clockOutTime ? `${clockOutDate}T${clockOutTime}:00` : null;
-
-            // Validate times
-            if (clockOutISO && new Date(clockOutISO) <= new Date(clockInISO)) {
-                alert('⚠️ Clock out time must be after clock in time');
-                return;
-            }
 
             try {
+                // Get form values
+                const employeeId = document.getElementById('manual-employee').value;
+                const date = document.getElementById('manual-date').value;
+                const clockInTime = document.getElementById('manual-clock-in').value;
+                const clockOutTime = document.getElementById('manual-clock-out').value;
+                const locationId = document.getElementById('manual-location').value;
+                const reason = document.getElementById('manual-reason').value.trim();
+
+                // Validation
+                if (!employeeId || !date || !clockInTime || !clockOutTime || !locationId || !reason) {
+                    alert('❌ All fields are required');
+                    return;
+                }
+
+                if (reason.length < 10) {
+                    alert('❌ Reason must be at least 10 characters for audit trail');
+                    return;
+                }
+
+                // Build ISO timestamps
+                const clockInISO = `${date}T${clockInTime}:00`;
+                const clockOutISO = `${date}T${clockOutTime}:00`;
+
+                // Validate clock out is after clock in
+                if (new Date(clockOutISO) <= new Date(clockInISO)) {
+                    alert('❌ Clock out time must be after clock in time');
+                    return;
+                }
+
+                // Calculate hours
+                const hours = ((new Date(clockOutISO) - new Date(clockInISO)) / (1000 * 60 * 60)).toFixed(2);
+
+                // Get employee name for confirmation
+                const employee = employees.find(e => e.id === employeeId);
+                const employeeName = employee ? (employee.full_name || employee.email) : 'Unknown';
+
+                // Build new entry object
                 const newEntry = {
                     user_id: employeeId,
                     work_location_id: locationId,
@@ -824,40 +415,40 @@
                     adjustment_reason: `[MANUAL ENTRY] ${reason}`
                 };
 
+                console.log('Creating manual entry:', newEntry);
+
+                // Insert into database
                 const { data, error } = await db
                     .from('time_entries')
-                    .insert(newEntry)
+                    .insert([newEntry])
                     .select()
                     .single();
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Database error:', error);
+                    throw new Error(error.message);
+                }
 
-                const employee = employees.find(e => e.id === employeeId);
-                const hours = clockOutISO ? calculateHours(clockInISO, clockOutISO) : 0;
+                console.log('✅ Entry created:', data);
 
-                alert(
-                    `✅ MANUAL ENTRY CREATED!\n\n` +
-                    `Employee: ${employee.full_name || employee.email}\n` +
-                    `Clock In: ${formatTime(clockInISO)}\n` +
-                    `Clock Out: ${clockOutISO ? formatTime(clockOutISO) : 'Not clocked out'}\n` +
-                    `Hours: ${hours.toFixed(2)}\n\n` +
-                    `This entry has been flagged as manually adjusted.`
-                );
+                // Success message
+                alert(`✅ MANUAL ENTRY CREATED!\n\nEmployee: ${employeeName}\nClock In: ${new Date(clockInISO).toLocaleString()}\nClock Out: ${new Date(clockOutISO).toLocaleString()}\nTotal Hours: ${hours}\n\n⚠️ Note: Entry marked as manually adjusted with full audit trail.`);
 
+                // Close modal and reset
                 closeManualEntryModal();
-                await loadAllData();
 
             } catch (error) {
                 console.error('Error creating manual entry:', error);
-                alert(`❌ ERROR: ${error.message}\n\nPlease check the console for details.`);
+                alert(`❌ ERROR\n\nFailed to create manual entry:\n${error.message}\n\nPlease check:\n1. Database permissions\n2. Network connection\n3. All required fields are filled`);
             }
         }
 
-        // Initialize on page load
-        checkAuth();
-        
-        // Set today's date as default
-        document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
+        // Close modal when clicking outside
+        document.getElementById('manualEntryModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeManualEntryModal();
+            }
+        });
     </script>
 
 </body>
