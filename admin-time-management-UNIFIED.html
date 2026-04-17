@@ -385,13 +385,6 @@
 
             currentUser = session.user;
             
-            // Check if user is admin
-            if (!isAdminUser()) {
-                alert('Access denied. Admin privileges required.');
-                window.location.href = 'employee-dashboard-clean-fix.html';
-                return;
-            }
-
             document.getElementById('currentUser').textContent = currentUser.email;
             await loadAllData();
         }
