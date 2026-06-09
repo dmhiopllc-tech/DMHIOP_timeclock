@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- 🚀 ENHANCED: 2026-04-14 - ADDED ADMIN ALERT CREATION + GEOFENCE MONITOR -->
+    <!-- 🔥 UPDATED: 2026-06-09 - DISABLED GEOFENCE ALERTS (keeping validation) -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Dashboard - Enhanced with PTO</title>
@@ -288,9 +288,6 @@
     <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- 🔥 ENHANCED: Admin Alert Creation Script -->
-    <script src="geofence-monitor-ENHANCED.js"></script>
-    
     <script>
         // ===== SUPABASE CONFIGURATION - SINGLE CLIENT INSTANCE =====
         const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
@@ -302,7 +299,6 @@
         let currentEntry = null;
         let deferredPrompt = null;
         let locationWatchId = null;
-        let geofenceMonitor = null; // 🔥 NEW: Enhanced geofence monitor instance
 
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', async () => {
@@ -312,7 +308,6 @@
             requestLocationPermission();
             startLocationMonitoring();
             requestNotificationPermission();
-            initializeEnhancedGeofence(); // 🔥 NEW: Start enhanced monitoring
         });
 
         // Request notification permission
@@ -324,22 +319,6 @@
                     console.log('Notification permission error:', error);
                 }
             }
-        }
-
-        // 🔥 NEW: Initialize Enhanced Geofence Monitor
-        function initializeEnhancedGeofence() {
-            if (!currentUser) {
-                console.error('Cannot initialize enhanced geofence: no current user');
-                return;
-            }
-
-            console.log('🚀 Starting Enhanced Geofence Monitor with admin alert creation...');
-            
-            // Create instance - it will run alongside existing geofence logging
-            geofenceMonitor = new GeofenceMonitorEnhanced(dashboardSupabase, currentUser.id);
-            
-            // Make it globally accessible
-            window.geofenceMonitor = geofenceMonitor;
         }
 
         // ===== AUTHENTICATION =====
@@ -372,10 +351,6 @@
 
         async function logout() {
             try {
-                // 🔥 ENHANCED: Stop geofence monitor before logout
-                if (window.geofenceMonitor) {
-                    window.geofenceMonitor.stopMonitoring();
-                }
                 await dashboardSupabase.auth.signOut();
                 window.location.href = 'login-standalone.html';
             } catch (error) {
@@ -624,7 +599,7 @@
                         related_time_entry_id: data.id,
                         time_entry_id: data.id,
                         has_clock_entry: true,
-                        is_resolved: true,  // AUTO-RESOLVE
+                        is_resolved: true,
                         alert_resolved: true
                     })
                     .eq('user_id', currentUser.id)
@@ -635,7 +610,7 @@
                     .limit(1)
                     .select();
                 
-                // Also auto-resolve related admin alerts
+                // Also auto-resolve related admin alerts (if any exist)
                 if (linkedEvents && linkedEvents.length > 0) {
                     await dashboardSupabase
                         .from('admin_alerts')
@@ -649,11 +624,6 @@
                 }
             } catch (linkError) {
                 console.log('Could not link/resolve geofence event:', linkError);
-            }
-            
-            // 🔥 ENHANCED: Notify geofence monitor to cancel pending alerts
-            if (window.geofenceMonitor) {
-                window.geofenceMonitor.updateClockStatus(true);
             }
             
             showMessage(`✓ Clocked in at ${workLocation.name}!`, 'success');
@@ -686,7 +656,7 @@
                         related_time_entry_id: currentEntry.id,
                         time_entry_id: currentEntry.id,
                         has_clock_entry: true,
-                        is_resolved: true,  // AUTO-RESOLVE
+                        is_resolved: true,
                         alert_resolved: true
                     })
                     .eq('user_id', currentUser.id)
@@ -697,7 +667,7 @@
                     .limit(1)
                     .select();
                 
-                // Also auto-resolve related admin alerts
+                // Also auto-resolve related admin alerts (if any exist)
                 if (linkedEvents && linkedEvents.length > 0) {
                     await dashboardSupabase
                         .from('admin_alerts')
@@ -713,17 +683,11 @@
                 console.log('Could not link/resolve geofence event:', linkError);
             }
             
-            // 🔥 ENHANCED: Notify geofence monitor
-            if (window.geofenceMonitor) {
-                window.geofenceMonitor.updateClockStatus(false);
-            }
-            
             showMessage(`✓ Clocked out from ${workLocation.name}!`, 'success');
             currentEntry = null;
         }
 
-        // ===== GEOLOCATION ===== 
-        // (REST OF CODE UNCHANGED - keeping your existing geolocation functions)
+        // ===== GEOLOCATION =====
         function getCurrentLocation() {
             return new Promise((resolve, reject) => {
                 if (!navigator.geolocation) {
@@ -872,7 +836,7 @@
                                     statusEl.className = 'location-status location-invalid';
                                 }
                                 
-                                // Log geofence entry/exit events
+                                // Log geofence entry/exit events (WITHOUT creating admin alerts)
                                 logGeofenceEvent(location, validation);
                             });
                     },
@@ -899,7 +863,7 @@
                         .eq('name', locationName)
                         .single();
                     
-                    // Create geofence event
+                    // Create geofence event (for logging purposes only - NO ALERT CREATION)
                     const { data: geofenceEvent, error: geoError } = await dashboardSupabase
                         .from('geofence_events')
                         .insert({
@@ -913,7 +877,7 @@
                             nearest_location: locationName,
                             is_resolved: false,
                             has_clock_entry: false,
-                            alert_generated: true,
+                            alert_generated: false,  // 🔥 CHANGED: No alert generated
                             alert_resolved: false
                         })
                         .select()
@@ -924,7 +888,7 @@
                         return;
                     }
 
-                    console.log(`Geofence ${eventType} logged:`, geofenceEvent);
+                    console.log(`✅ Geofence ${eventType} logged (no alert created):`, geofenceEvent);
                     
                     // Show notification to employee
                     // Re-check current clock status from database to be accurate
@@ -968,18 +932,8 @@
                         }
                     }
                     
-                    // Create admin alert for manual review
-                    await dashboardSupabase
-                        .from('admin_alerts')
-                        .insert({
-                            user_id: currentUser.id,
-                            geofence_event_id: geofenceEvent.id,
-                            alert_type: 'geofence_tracking',
-                            severity: 'LOW',
-                            message: `${currentUser.full_name || currentUser.email} ${eventType === 'entry' ? 'entered' : 'exited'} ${locationName}`,
-                            resolved: false,
-                            created_at: eventTime
-                        });
+                    // 🔥 REMOVED: Admin alert creation code that was here
+                    // NO LONGER CREATES ALERTS IN admin_alerts TABLE
                         
                 } catch (error) {
                     console.error('Error logging geofence event:', error);
