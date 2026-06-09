@@ -331,6 +331,82 @@
         </div>
     </div>
 
+    <!-- Modal: Edit Entry -->
+    <div id="editEntryModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-xl">
+                <h3 class="text-2xl font-bold">
+                    <i class="fas fa-edit mr-2"></i>
+                    Edit Time Entry
+                </h3>
+                <p class="text-blue-100 mt-1">Update clock in/out times</p>
+            </div>
+
+            <form id="editEntryForm" onsubmit="saveEditEntry(event)" class="p-6">
+                <input type="hidden" id="edit-entry-id">
+                
+                <!-- Clock In -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-clock mr-2 text-green-600"></i>Clock In Time *
+                    </label>
+                    <input 
+                        type="datetime-local" 
+                        id="edit-clock-in" 
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition"
+                    >
+                </div>
+
+                <!-- Clock Out -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-clock mr-2 text-red-600"></i>Clock Out Time (Optional)
+                    </label>
+                    <input 
+                        type="datetime-local" 
+                        id="edit-clock-out" 
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition"
+                    >
+                    <p class="text-sm text-gray-500 mt-1">Leave blank if still clocked in</p>
+                </div>
+
+                <!-- Edit Reason -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-edit mr-2 text-orange-600"></i>Reason for Edit *
+                    </label>
+                    <textarea 
+                        id="edit-reason" 
+                        required
+                        rows="3"
+                        placeholder="Explain why this entry is being edited..."
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition resize-none"
+                    ></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Minimum 5 characters required for audit trail</p>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-4">
+                    <button 
+                        type="submit" 
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition"
+                    >
+                        <i class="fas fa-save mr-2"></i>
+                        Save Changes
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="closeEditEntryModal()" 
+                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-3 rounded-lg transition"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Supabase Configuration
         const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
@@ -584,6 +660,9 @@
         }
 
         function displayTimeEntries(entries) {
+            // Store entries globally for edit function
+            currentTimeEntries = entries;
+            
             const container = document.getElementById('timeEntriesContainer');
             
             if (!entries || entries.length === 0) {
@@ -607,6 +686,7 @@
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Clock Out</th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Hours</th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -643,6 +723,24 @@
                                                 '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><i class="fas fa-pen mr-1"></i>Manual</span>' : 
                                                 '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-check mr-1"></i>Auto</span>'
                                             }
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex gap-2">
+                                                <button 
+                                                    onclick="editEntry('${entry.id}')"
+                                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                    title="Edit this entry"
+                                                >
+                                                    <i class="fas fa-edit mr-1"></i>Edit
+                                                </button>
+                                                <button 
+                                                    onclick="deleteEntry('${entry.id}', '${entry.users?.full_name || 'Unknown'}', '${formatTime(entry.clock_in_time)}')"
+                                                    class="text-red-600 hover:text-red-800 text-sm font-medium"
+                                                    title="Delete this entry"
+                                                >
+                                                    <i class="fas fa-trash mr-1"></i>Delete
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 `;
@@ -855,6 +953,153 @@
 
         // Load employee filter options after employees are loaded
         setTimeout(populateEmployeeFilter, 1000);
+
+        // ========================================
+        // EDIT ENTRY FUNCTIONS
+        // ========================================
+        let currentTimeEntries = []; // Store loaded entries for editing
+
+        async function editEntry(entryId) {
+            try {
+                // Find the entry in our loaded data
+                const entry = currentTimeEntries.find(e => e.id === entryId);
+                if (!entry) {
+                    alert('Entry not found. Please refresh and try again.');
+                    return;
+                }
+
+                // Populate edit form
+                document.getElementById('edit-entry-id').value = entry.id;
+                
+                // Convert UTC timestamps to local datetime-local format for editing
+                const clockInDate = new Date(entry.clock_in_time);
+                const clockInLocal = new Date(clockInDate.getTime() - (clockInDate.getTimezoneOffset() * 60000));
+                document.getElementById('edit-clock-in').value = clockInLocal.toISOString().slice(0, 16);
+                
+                if (entry.clock_out_time) {
+                    const clockOutDate = new Date(entry.clock_out_time);
+                    const clockOutLocal = new Date(clockOutDate.getTime() - (clockOutDate.getTimezoneOffset() * 60000));
+                    document.getElementById('edit-clock-out').value = clockOutLocal.toISOString().slice(0, 16);
+                } else {
+                    document.getElementById('edit-clock-out').value = '';
+                }
+                
+                document.getElementById('edit-reason').value = '';
+
+                // Show modal
+                document.getElementById('editEntryModal').classList.add('active');
+
+            } catch (error) {
+                console.error('Error loading entry for edit:', error);
+                alert(`❌ ERROR: Failed to load entry\n\n${error.message}`);
+            }
+        }
+
+        function closeEditEntryModal() {
+            document.getElementById('editEntryModal').classList.remove('active');
+            document.getElementById('editEntryForm').reset();
+        }
+
+        async function saveEditEntry(event) {
+            event.preventDefault();
+
+            const entryId = document.getElementById('edit-entry-id').value;
+            const clockInValue = document.getElementById('edit-clock-in').value;
+            const clockOutValue = document.getElementById('edit-clock-out').value;
+            const reason = document.getElementById('edit-reason').value;
+
+            if (reason.trim().length < 5) {
+                alert('⚠️ Please provide a more detailed reason (at least 5 characters)');
+                return;
+            }
+
+            try {
+                // Convert local datetime input to UTC for storage
+                const clockInLocal = new Date(clockInValue);
+                const clockInISO = new Date(clockInLocal.getTime() + (7 * 60 * 60 * 1000)).toISOString();
+                
+                let clockOutISO = null;
+                if (clockOutValue) {
+                    const clockOutLocal = new Date(clockOutValue);
+                    clockOutISO = new Date(clockOutLocal.getTime() + (7 * 60 * 60 * 1000)).toISOString();
+                    
+                    // Validate clock out is after clock in
+                    if (new Date(clockOutISO) <= new Date(clockInISO)) {
+                        alert('⚠️ Clock out time must be after clock in time');
+                        return;
+                    }
+                }
+
+                // Get the original entry for preserving adjustment reason
+                const entry = currentTimeEntries.find(e => e.id === entryId);
+                
+                const updates = {
+                    clock_in_time: clockInISO,
+                    clock_out_time: clockOutISO,
+                    manually_adjusted: true,
+                    adjusted_by: currentUser.id,
+                    adjusted_at: new Date().toISOString(),
+                    adjustment_reason: entry?.adjustment_reason ? 
+                        `${entry.adjustment_reason}\n\n[EDITED] ${reason}` : 
+                        `[EDITED] ${reason}`
+                };
+
+                const { error } = await db
+                    .from('time_entries')
+                    .update(updates)
+                    .eq('id', entryId);
+
+                if (error) throw error;
+
+                const hours = clockOutISO ? calculateHours(clockInISO, clockOutISO) : 0;
+
+                alert(
+                    `✅ TIME ENTRY UPDATED!\n\n` +
+                    `Clock In: ${formatTime(clockInISO)}\n` +
+                    `Clock Out: ${clockOutISO ? formatTime(clockOutISO) : 'Still clocked in'}\n` +
+                    `Hours: ${hours.toFixed(2)}`
+                );
+
+                closeEditEntryModal();
+                await loadTimeData();
+
+            } catch (error) {
+                console.error('Error updating entry:', error);
+                alert(`❌ ERROR: Failed to update entry\n\n${error.message}`);
+            }
+        }
+
+        // Close edit modal when clicking outside
+        document.getElementById('editEntryModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditEntryModal();
+            }
+        });
+
+        // ========================================
+        // DELETE ENTRY FUNCTION
+        // ========================================
+        async function deleteEntry(entryId, employeeName, clockInTime) {
+            if (!confirm(`⚠️ DELETE TIME ENTRY?\n\nEmployee: ${employeeName}\nClock In: ${clockInTime}\n\nThis action CANNOT be undone!\n\nAre you sure?`)) {
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('time_entries')
+                    .delete()
+                    .eq('id', entryId);
+
+                if (error) throw error;
+
+                alert('✅ Time entry deleted successfully!');
+                await loadTimeData();
+
+            } catch (error) {
+                console.error('Error deleting entry:', error);
+                alert(`❌ ERROR: Failed to delete entry\n\n${error.message}`);
+            }
+        }
     </script>
 
 </body>
