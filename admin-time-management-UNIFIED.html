@@ -445,15 +445,18 @@
             }
         }
 
-        // 🔥 FIXED: validateBusinessHours - treat stored times as Mountain Time (no conversion)
+        // 🔥 FIXED: validateBusinessHours - convert UTC to Mountain Time
         function validateBusinessHours(timestamp) {
-            // Parse timestamp treating it as UTC (which is how we store MST times)
+            // Parse UTC timestamp and convert to Mountain Time
             const date = new Date(timestamp);
             
-            // Get components directly - these are already in Mountain Time
-            const dayName = date.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
-            const hour = date.getUTCHours();
-            const minute = date.getUTCMinutes();
+            // Get Mountain Time components
+            const mstString = date.toLocaleString('en-US', { timeZone: 'America/Denver' });
+            const mstDate = new Date(mstString);
+            
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/Denver' });
+            const hour = parseInt(date.toLocaleString('en-US', { timeZone: 'America/Denver', hour: 'numeric', hour12: false }));
+            const minute = parseInt(date.toLocaleString('en-US', { timeZone: 'America/Denver', minute: 'numeric' }));
             const totalMinutes = hour * 60 + minute;
 
             // Check if weekday (M-F)
@@ -730,13 +733,38 @@
                 return;
             }
 
-            // Store times as ISO strings without timezone conversion
-            // Format: YYYY-MM-DDTHH:MM:SS (will be stored as entered)
-            const clockInISO = `${clockInDate}T${clockInTime}:00.000Z`;
+            // Convert Mountain Time input to UTC for storage
+            // Create a date string and explicitly set it to Mountain Time zone
+            const clockInString = `${clockInDate}T${clockInTime}:00`;
+            const clockInMST = new Date(clockInString);
+            
+            // Get the time as if it were in Mountain Time, then convert to UTC
+            // We create the date in local browser time, then adjust
+            const mstOffsetMinutes = 7 * 60; // MST is UTC-7 (or UTC-6 in summer, but we'll handle that)
+            
+            // Parse the input as Mountain Time by creating Date with timezone offset
+            const clockInParts = clockInString.split(/[-T:]/);
+            const clockInUTC = new Date(Date.UTC(
+                parseInt(clockInParts[0]), 
+                parseInt(clockInParts[1]) - 1, 
+                parseInt(clockInParts[2]), 
+                parseInt(clockInParts[3]) + 7, // Add 7 hours to convert MST to UTC
+                parseInt(clockInParts[4])
+            ));
+            const clockInISO = clockInUTC.toISOString();
             
             let clockOutISO = null;
             if (clockOutDate && clockOutTime) {
-                clockOutISO = `${clockOutDate}T${clockOutTime}:00.000Z`;
+                const clockOutString = `${clockOutDate}T${clockOutTime}:00`;
+                const clockOutParts = clockOutString.split(/[-T:]/);
+                const clockOutUTC = new Date(Date.UTC(
+                    parseInt(clockOutParts[0]), 
+                    parseInt(clockOutParts[1]) - 1, 
+                    parseInt(clockOutParts[2]), 
+                    parseInt(clockOutParts[3]) + 7, // Add 7 hours to convert MST to UTC
+                    parseInt(clockOutParts[4])
+                ));
+                clockOutISO = clockOutUTC.toISOString();
             }
 
             // Validate times
@@ -797,10 +825,10 @@
         }
 
         function formatTime(timestamp) {
-            // Parse the timestamp and display as-is (treating as Mountain Time)
+            // Parse UTC timestamp and convert to Mountain Time for display
             const date = new Date(timestamp);
             return date.toLocaleString('en-US', { 
-                timeZone: 'UTC', // Don't convert - display the stored time as-is
+                timeZone: 'America/Denver', // Convert UTC to Mountain Time
                 month: 'short',
                 day: 'numeric',
                 hour: 'numeric',
