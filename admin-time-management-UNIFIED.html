@@ -94,64 +94,6 @@
 
     <main class="container mx-auto px-6 py-8 max-w-full">
         
-        <!-- Stats Summary -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-            <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl p-6 shadow-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-red-100 text-xs font-medium uppercase tracking-wide">Needs Fix</p>
-                        <p id="stat-needs-fix" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-red-100 text-xs mt-1">Missed punches</p>
-                    </div>
-                    <i class="fas fa-exclamation-triangle text-6xl text-red-200 opacity-40"></i>
-                </div>
-            </div>
-
-            <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl p-6 shadow-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-orange-100 text-xs font-medium uppercase tracking-wide">Out of Hours</p>
-                        <p id="stat-violations" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-orange-100 text-xs mt-1">Business hours violations</p>
-                    </div>
-                    <i class="fas fa-clock text-6xl text-orange-200 opacity-40"></i>
-                </div>
-            </div>
-            
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-blue-100 text-xs font-medium uppercase tracking-wide">Today's Entries</p>
-                        <p id="stat-today-entries" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-blue-100 text-xs mt-1">Clock in/out records</p>
-                    </div>
-                    <i class="fas fa-clock text-6xl text-blue-200 opacity-40"></i>
-                </div>
-            </div>
-            
-            <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-green-100 text-xs font-medium uppercase tracking-wide">Fixed Today</p>
-                        <p id="stat-fixed" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-green-100 text-xs mt-1">Corrections made</p>
-                    </div>
-                    <i class="fas fa-check-circle text-6xl text-green-200 opacity-40"></i>
-                </div>
-            </div>
-
-            <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-purple-100 text-xs font-medium uppercase tracking-wide">Total Hours Today</p>
-                        <p id="stat-total-hours" class="text-5xl font-bold mt-2">0</p>
-                        <p class="text-purple-100 text-xs mt-1">All employees</p>
-                    </div>
-                    <i class="fas fa-business-time text-6xl text-purple-200 opacity-40"></i>
-                </div>
-            </div>
-        </div>
-
         <!-- Filter Controls -->
         <div class="bg-white rounded-xl shadow-md p-6 mb-6">
             <div class="flex flex-wrap items-center gap-4">
@@ -646,7 +588,6 @@
                 }
 
                 displayTimeEntries(timeEntries || []);
-                updateStats(timeEntries || []);
 
             } catch (error) {
                 console.error('Error loading time data:', error);
@@ -751,27 +692,7 @@
             `;
         }
 
-        function updateStats(entries) {
-            const today = new Date().toISOString().split('T')[0];
-            const todayEntries = entries.filter(e => e.clock_in_time.startsWith(today));
-            
-            const needsFix = todayEntries.filter(e => !e.clock_out_time).length;
-            const violations = todayEntries.filter(e => {
-                const clockInValid = validateBusinessHours(e.clock_in_time);
-                const clockOutValid = e.clock_out_time ? validateBusinessHours(e.clock_out_time) : { valid: true };
-                return !clockInValid.valid || !clockOutValid.valid;
-            }).length;
-            const fixed = todayEntries.filter(e => e.manually_adjusted).length;
-            const totalHours = todayEntries.reduce((sum, e) => {
-                return sum + (e.clock_out_time ? calculateHours(e.clock_in_time, e.clock_out_time) : 0);
-            }, 0);
-
-            document.getElementById('stat-needs-fix').textContent = needsFix;
-            document.getElementById('stat-violations').textContent = violations;
-            document.getElementById('stat-today-entries').textContent = todayEntries.length;
-            document.getElementById('stat-fixed').textContent = fixed;
-            document.getElementById('stat-total-hours').textContent = totalHours.toFixed(1);
-        }
+        // Stats function removed - stat boxes deleted from UI
 
         // ========================================
         // MANUAL ENTRY MODAL FUNCTIONS
