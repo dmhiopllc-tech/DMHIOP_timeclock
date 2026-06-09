@@ -445,17 +445,15 @@
             }
         }
 
-        // 🔥 FIXED: validateBusinessHours now uses Mountain Time conversion
+        // 🔥 FIXED: validateBusinessHours - treat stored times as Mountain Time (no conversion)
         function validateBusinessHours(timestamp) {
-            // Convert UTC timestamp to Mountain Time
+            // Parse timestamp treating it as UTC (which is how we store MST times)
             const date = new Date(timestamp);
             
-            // Get time in Mountain Time (UTC-7 for MST, UTC-6 for MDT)
-            const mstDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/Denver' }));
-            
-            const dayName = mstDate.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/Denver' });
-            const hour = mstDate.getHours();
-            const minute = mstDate.getMinutes();
+            // Get components directly - these are already in Mountain Time
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+            const hour = date.getUTCHours();
+            const minute = date.getUTCMinutes();
             const totalMinutes = hour * 60 + minute;
 
             // Check if weekday (M-F)
@@ -732,20 +730,13 @@
                 return;
             }
 
-            // 🔥 FIXED: Convert MST times to UTC properly
-            // Input times are in Mountain Time, need to convert to UTC for database
-            const clockInLocal = `${clockInDate}T${clockInTime}:00`;
-            const clockInMST = new Date(clockInLocal);
-            
-            // Get UTC offset for Mountain Time (will be -7 or -6 depending on DST)
-            const mstOffset = new Date().toLocaleString('en-US', { timeZone: 'America/Denver', timeZoneName: 'short' }).includes('MST') ? 7 : 6;
-            const clockInISO = new Date(clockInMST.getTime() + (mstOffset * 60 * 60 * 1000)).toISOString();
+            // Store times as ISO strings without timezone conversion
+            // Format: YYYY-MM-DDTHH:MM:SS (will be stored as entered)
+            const clockInISO = `${clockInDate}T${clockInTime}:00.000Z`;
             
             let clockOutISO = null;
             if (clockOutDate && clockOutTime) {
-                const clockOutLocal = `${clockOutDate}T${clockOutTime}:00`;
-                const clockOutMST = new Date(clockOutLocal);
-                clockOutISO = new Date(clockOutMST.getTime() + (mstOffset * 60 * 60 * 1000)).toISOString();
+                clockOutISO = `${clockOutDate}T${clockOutTime}:00.000Z`;
             }
 
             // Validate times
@@ -806,9 +797,10 @@
         }
 
         function formatTime(timestamp) {
+            // Parse the timestamp and display as-is (treating as Mountain Time)
             const date = new Date(timestamp);
             return date.toLocaleString('en-US', { 
-                timeZone: 'America/Denver',
+                timeZone: 'UTC', // Don't convert - display the stored time as-is
                 month: 'short',
                 day: 'numeric',
                 hour: 'numeric',
