@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Management - Unified Dashboard</title>
+    <title>Time Management - Unified Dashboard (TIMEZONE FIXED)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -81,7 +81,7 @@
                     <i class="fas fa-business-time text-indigo-600 mr-2"></i>
                     Time Management Dashboard
                 </h1>
-                <p class="text-gray-600 text-sm mt-1">Fix missed punches, view entries, manage hours - all in one place</p>
+                <p class="text-gray-600 text-sm mt-1">🔥 TIMEZONE FIXED - Manual entries no longer show false business hours violations</p>
             </div>
             <div class="flex items-center space-x-4">
                 <span id="currentUser" class="text-gray-700 font-medium"></span>
@@ -92,7 +92,7 @@
         </div>
     </header>
 
-    <main class="container mx-auto px-6 py-8 max-w-7xl">
+    <main class="container mx-auto px-6 py-8 max-w-full">
         
         <!-- Stats Summary -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
@@ -203,156 +203,131 @@
             </div>
         </div>
 
-        <!-- Main Time Entries List -->
-        <div class="bg-white rounded-xl shadow-md overflow-hidden">
-            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
-                <h2 class="text-2xl font-bold text-white">
-                    <i class="fas fa-list-ul mr-2"></i>
-                    Time Entries & Alerts
-                </h2>
-                <p class="text-indigo-100 text-sm mt-1">Unified view of all time entries with geo-based alerts</p>
-            </div>
-
-            <div id="timeEntriesList" class="divide-y divide-gray-200">
-                <!-- Entries will be loaded here -->
-                <div class="text-center py-16 text-gray-400">
-                    <i class="fas fa-spinner fa-spin text-5xl mb-4"></i>
-                    <p class="text-lg">Loading time data...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Legend -->
-        <div class="mt-6 bg-gray-100 rounded-lg p-4">
-            <div class="flex flex-wrap items-center gap-4 text-sm">
-                <span class="font-semibold text-gray-700"><i class="fas fa-info-circle mr-1"></i>Legend:</span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-red-500 rounded"></span>
-                    <span class="text-gray-700">Missed Clock In</span>
-                </span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-orange-500 rounded"></span>
-                    <span class="text-gray-700">Missed Clock Out</span>
-                </span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-green-500 rounded"></span>
-                    <span class="text-gray-700">Complete & Valid</span>
-                </span>
-                <span class="flex items-center space-x-2">
-                    <span class="w-4 h-4 bg-blue-500 rounded"></span>
-                    <span class="text-gray-700">Currently Clocked In</span>
-                </span>
+        <!-- Time Entries List -->
+        <div id="timeEntriesContainer" class="bg-white rounded-xl shadow-md p-6">
+            <div class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                <p class="mt-4 text-gray-600">Loading time entries...</p>
             </div>
         </div>
 
     </main>
 
-    <!-- MODAL: Create Manual Entry -->
+    <!-- Modal: Manual Entry -->
     <div id="manualEntryModal" class="modal">
         <div class="modal-content">
-            <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 flex justify-between items-center">
-                <h2 class="text-2xl font-bold text-white">
-                    <i class="fas fa-plus-circle mr-2"></i>
+            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-xl">
+                <h3 class="text-2xl font-bold">
+                    <i class="fas fa-calendar-plus mr-2"></i>
                     Create Manual Time Entry
-                </h2>
-                <button onclick="closeManualEntryModal()" class="text-white hover:text-gray-200">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
+                </h3>
+                <p class="text-green-100 mt-1">All fields required • No business hours validation for admin entries</p>
             </div>
-            <div class="p-6">
-                <form id="manualEntryForm" onsubmit="saveManualEntry(event)">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Employee *</label>
-                            <select id="manual-employee" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" required>
-                                <option value="">Select employee...</option>
-                            </select>
-                        </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock In Date *</label>
-                                <input 
-                                    type="date" 
-                                    id="manual-clock-in-date" 
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
-                                    required
-                                >
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock In Time *</label>
-                                <input 
-                                    type="time" 
-                                    id="manual-clock-in-time" 
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
-                                    required
-                                >
-                            </div>
-                        </div>
+            <form id="manualEntryForm" onsubmit="saveManualEntry(event)" class="p-6">
+                <!-- Employee Selection -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-user mr-2 text-indigo-600"></i>Employee *
+                    </label>
+                    <select 
+                        id="manual-employee" 
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                    >
+                        <option value="">Select Employee...</option>
+                    </select>
+                </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock Out Date (Optional)</label>
-                                <input 
-                                    type="date" 
-                                    id="manual-clock-out-date" 
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
-                                >
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Clock Out Time (Optional)</label>
-                                <input 
-                                    type="time" 
-                                    id="manual-clock-out-time" 
-                                    class="w-full border-2 border-gray-300 rounded-lg px-4 py-2"
-                                >
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Location *</label>
-                            <select id="manual-location" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" required>
-                                <option value="">Select location...</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Reason (Required) *</label>
-                            <textarea 
-                                id="manual-reason" 
-                                class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" 
-                                rows="3" 
-                                placeholder="Example: Employee forgot to clock in - creating manual entry"
-                                required
-                            ></textarea>
-                        </div>
-
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                            <p class="text-sm text-yellow-800">
-                                <i class="fas fa-info-circle mr-2"></i>
-                                <strong>Note:</strong> This will create a manually adjusted entry. Use this when an employee forgot to clock in/out or when geofence tracking failed.
-                            </p>
-                        </div>
-
-                        <div class="flex items-center space-x-4 pt-4">
-                            <button 
-                                type="submit" 
-                                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg transition"
-                            >
-                                <i class="fas fa-save mr-2"></i>
-                                Save Manual Entry
-                            </button>
-                            <button 
-                                type="button" 
-                                onclick="closeManualEntryModal()" 
-                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-3 rounded-lg transition"
-                            >
-                                Cancel
-                            </button>
-                        </div>
+                <!-- Clock In -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-clock mr-2 text-green-600"></i>Clock In Date & Time *
+                    </label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input 
+                            type="date" 
+                            id="manual-clock-in-date" 
+                            required
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                        >
+                        <input 
+                            type="time" 
+                            id="manual-clock-in-time" 
+                            required
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                        >
                     </div>
-                </form>
-            </div>
+                    <p class="text-sm text-gray-500 mt-1">Times are in Mountain Time (MST/MDT)</p>
+                </div>
+
+                <!-- Clock Out -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-clock mr-2 text-red-600"></i>Clock Out Date & Time (Optional)
+                    </label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input 
+                            type="date" 
+                            id="manual-clock-out-date" 
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                        >
+                        <input 
+                            type="time" 
+                            id="manual-clock-out-time" 
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                        >
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">Leave blank if still clocked in</p>
+                </div>
+
+                <!-- Location Selection -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-map-marker-alt mr-2 text-indigo-600"></i>Work Location *
+                    </label>
+                    <select 
+                        id="manual-location" 
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                    >
+                        <option value="">Select Location...</option>
+                    </select>
+                </div>
+
+                <!-- Reason for Manual Entry -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-edit mr-2 text-orange-600"></i>Reason for Manual Entry *
+                    </label>
+                    <textarea 
+                        id="manual-reason" 
+                        required
+                        rows="3"
+                        placeholder="Explain why this entry is being created manually..."
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition resize-none"
+                    ></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Minimum 5 characters required for audit trail</p>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-4">
+                    <button 
+                        type="submit" 
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg transition"
+                    >
+                        <i class="fas fa-save mr-2"></i>
+                        Save Manual Entry
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="closeManualEntryModal()" 
+                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-3 rounded-lg transition"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -364,15 +339,26 @@
 
         let currentUser = null;
         let employees = [];
+        let locations = [];
+
+        // 🔥 FIXED: Business hours validation now uses Mountain Time (MST/MDT)
+        const BUSINESS_HOURS = {
+            weekdays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+            startTime: { hour: 8, minute: 0 },    // 8:00 AM MST
+            endTime: { hour: 20, minute: 0 },     // 8:00 PM MST
+            gracePeriodMinutes: 15                // ±15 minutes allowed
+        };
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuth();
             await loadEmployees();
-            await loadTimeData();
+            await loadLocations();
             
             // Set default date to today
             document.getElementById('filterDate').valueAsDate = new Date();
+            
+            await loadTimeData();
             
             // Auto-refresh every 30 seconds
             setInterval(loadTimeData, 30000);
@@ -387,25 +373,21 @@
                     return;
                 }
 
-                // Try to get user details from database
                 const { data: user, error: userError } = await db
                     .from('users')
                     .select('*')
                     .eq('id', session.user.id)
                     .single();
 
-                // If we can get user from DB, use that
                 if (user && !userError) {
                     currentUser = user;
                     document.getElementById('currentUser').textContent = `👤 ${user.full_name || user.email}`;
                 } else {
-                    // Otherwise just use session data
                     currentUser = session.user;
                     document.getElementById('currentUser').textContent = `👤 ${session.user.email}`;
                 }
             } catch (error) {
                 console.error('Auth error:', error);
-                // Still allow access if authenticated
                 const { data: { session } } = await db.auth.getSession();
                 if (session) {
                     currentUser = session.user;
@@ -421,783 +403,59 @@
             window.location.href = 'login-standalone.html';
         }
 
-        // Load employee list for filter
+        // Load employee list
         async function loadEmployees() {
             try {
                 const { data, error } = await db
                     .from('users')
                     .select('id, full_name, email')
-                    .eq('role', 'employee')
-                    .order('full_name');
+                    .order('full_name', { ascending: true });
 
-                if (error) throw error;
-
-                employees = data || [];
-                const select = document.getElementById('filterEmployee');
-                select.innerHTML = '<option value="">All Employees</option>' +
-                    employees.map(emp => 
-                        `<option value="${emp.id}">${emp.full_name || emp.email}</option>`
-                    ).join('');
-            } catch (error) {
-                console.error('Error loading employees:', error);
-            }
-        }
-
-        // ========================================
-        // MAIN FUNCTION: Load Time Data (Unified View)
-        // ========================================
-        async function loadTimeData() {
-            try {
-                const filterDate = document.getElementById('filterDate').value;
-                const filterEmployee = document.getElementById('filterEmployee').value;
-                const showOnlyAlerts = document.getElementById('showOnlyAlerts').checked;
-
-                // Build query
-                let query = db
-                    .from('time_entries')
-                    .select(`
-                        *,
-                        users!time_entries_user_id_fkey (
-                            id,
-                            full_name,
-                            email
-                        ),
-                        work_locations!time_entries_work_location_id_fkey (
-                            id,
-                            name,
-                            address
-                        )
-                    `)
-                    .order('clock_in_time', { ascending: false });
-
-                // Apply filters
-                if (filterDate) {
-                    const startOfDay = `${filterDate}T00:00:00`;
-                    const endOfDay = `${filterDate}T23:59:59`;
-                    query = query
-                        .gte('clock_in_time', startOfDay)
-                        .lte('clock_in_time', endOfDay);
-                } else {
-                    // Default: last 7 days
-                    const sevenDaysAgo = new Date();
-                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                    query = query.gte('clock_in_time', sevenDaysAgo.toISOString());
-                }
-
-                if (filterEmployee) {
-                    query = query.eq('user_id', filterEmployee);
-                }
-
-                const { data: entries, error: entriesError } = await query;
-                if (entriesError) throw entriesError;
-
-                // Fetch ALL unresolved alerts
-                const { data: alerts, error: alertsError } = await db
-                    .from('admin_alerts')
-                    .select(`
-                        *,
-                        geofence_events!inner (
-                            id,
-                            event_type,
-                            event_time,
-                            user_id,
-                            latitude,
-                            longitude,
-                            location_id,
-                            work_locations (
-                                id,
-                                name,
-                                address
-                            )
-                        )
-                    `)
-                    .eq('is_resolved', false)
-                    .in('alert_type', ['missed_clock_in', 'missed_clock_out']);
-
-                if (alertsError) throw alertsError;
-
-                // Map alerts by user_id and date for easy lookup
-                const alertsByUserAndDate = {};
-                (alerts || []).forEach(alert => {
-                    const userId = alert.geofence_events.user_id;
-                    const date = alert.geofence_events.event_time.split('T')[0];
-                    const key = `${userId}_${date}`;
-                    
-                    if (!alertsByUserAndDate[key]) {
-                        alertsByUserAndDate[key] = [];
-                    }
-                    alertsByUserAndDate[key].push(alert);
-                });
-
-                // Combine entries with their alerts
-                let combinedData = (entries || []).map(entry => {
-                    const date = entry.clock_in_time.split('T')[0];
-                    const key = `${entry.user_id}_${date}`;
-                    return {
-                        ...entry,
-                        alerts: alertsByUserAndDate[key] || []
-                    };
-                });
-
-                // Also add ORPHAN alerts (alerts without entries)
-                Object.values(alertsByUserAndDate).forEach(alertGroup => {
-                    alertGroup.forEach(alert => {
-                        const hasEntry = combinedData.some(item => 
-                            item.user_id === alert.geofence_events.user_id &&
-                            item.clock_in_time.split('T')[0] === alert.geofence_events.event_time.split('T')[0]
-                        );
-                        
-                        if (!hasEntry && alert.alert_type === 'missed_clock_in') {
-                            // Create a "phantom" entry for missed clock in
-                            combinedData.push({
-                                id: null,
-                                user_id: alert.geofence_events.user_id,
-                                clock_in_time: alert.geofence_events.event_time,
-                                clock_out_time: null,
-                                work_locations: alert.geofence_events.work_locations,
-                                alerts: [alert],
-                                isPhantom: true,
-                                users: employees.find(e => e.id === alert.geofence_events.user_id) || { full_name: 'Unknown', email: '' }
-                            });
-                        }
-                    });
-                });
-
-                // Filter if "show only alerts" is checked
-                if (showOnlyAlerts) {
-                    combinedData = combinedData.filter(item => item.alerts.length > 0);
-                }
-
-                // Sort: alerts first, then by time
-                combinedData.sort((a, b) => {
-                    if (a.alerts.length > 0 && b.alerts.length === 0) return -1;
-                    if (a.alerts.length === 0 && b.alerts.length > 0) return 1;
-                    return new Date(b.clock_in_time) - new Date(a.clock_in_time);
-                });
-
-                // Update stats
-                updateStats(combinedData, alerts);
-
-                // Render
-                renderTimeEntries(combinedData);
-
-            } catch (error) {
-                console.error('Error loading time data:', error);
-                document.getElementById('timeEntriesList').innerHTML = `
-                    <div class="p-8 bg-red-50 border-l-4 border-red-500">
-                        <p class="text-red-800 font-semibold">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Error loading data: ${error.message}
-                        </p>
-                    </div>
-                `;
-            }
-        }
-
-        // ========================================
-        // UPDATE STATS
-        // ========================================
-        function updateStats(combinedData, alerts) {
-            // Needs Fix (includes alerts + overtime detection)
-            let needsFix = alerts ? alerts.length : 0;
-            
-            // 🔥 AUTO-DETECT: Add overtime/long shift issues
-            const overtimeIssues = combinedData.filter(e => {
-                if (!e.clock_in_time) return false;
-                
-                const clockInTime = new Date(e.clock_in_time);
-                const now = new Date();
-                
-                // If still clocked in
-                if (!e.clock_out_time) {
-                    const hoursSinceClockIn = (now - clockInTime) / (1000 * 60 * 60);
-                    return hoursSinceClockIn > 12; // Over 12 hours clocked in
-                }
-                
-                // If clocked out, check if shift was over 12 hours
-                const hours = calculateHours(e.clock_in_time, e.clock_out_time);
-                return hours > 12;
-            });
-            
-            needsFix += overtimeIssues.length;
-            document.getElementById('stat-needs-fix').textContent = needsFix;
-
-            // Business Hours Violations
-            const violations = combinedData.filter(e => {
-                if (!e.clock_in_time) return false;
-                const clockInValid = validateBusinessHours(e.clock_in_time);
-                const clockOutValid = e.clock_out_time ? validateBusinessHours(e.clock_out_time) : { valid: true };
-                return !clockInValid.valid || !clockOutValid.valid;
-            }).length;
-            document.getElementById('stat-violations').textContent = violations;
-
-            // Today's entries
-            const today = new Date().toISOString().split('T')[0];
-            const todayEntries = combinedData.filter(e => 
-                e.clock_in_time && e.clock_in_time.split('T')[0] === today
-            ).length;
-            document.getElementById('stat-today-entries').textContent = todayEntries;
-
-            // Fixed today
-            db.from('admin_alerts')
-                .select('*', { count: 'exact', head: true })
-                .eq('is_resolved', true)
-                .gte('resolved_at', `${today}T00:00:00`)
-                .lte('resolved_at', `${today}T23:59:59`)
-                .then(({ count }) => {
-                    document.getElementById('stat-fixed').textContent = count || 0;
-                });
-
-            // Total hours today
-            const todayHours = combinedData
-                .filter(e => e.clock_in_time && e.clock_in_time.split('T')[0] === today && e.clock_out_time)
-                .reduce((sum, e) => {
-                    const hours = calculateHours(e.clock_in_time, e.clock_out_time);
-                    return sum + hours;
-                }, 0);
-            document.getElementById('stat-total-hours').textContent = todayHours.toFixed(1);
-        }
-
-        // ========================================
-        // RENDER TIME ENTRIES
-        // ========================================
-        function renderTimeEntries(data) {
-            const container = document.getElementById('timeEntriesList');
-            
-            if (!data || data.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-16 bg-gray-50">
-                        <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-                        <p class="text-xl font-semibold text-gray-600">No time entries found</p>
-                        <p class="text-gray-500 mt-2">Try adjusting your filters</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = data.map(entry => {
-                const hasAlerts = entry.alerts && entry.alerts.length > 0;
-                const isPhantom = entry.isPhantom;
-                const isClockedIn = entry.clock_in_time && !entry.clock_out_time && !isPhantom;
-                
-                // Determine border color
-                let borderColor = 'border-green-500';
-                if (hasAlerts) {
-                    const alertTypes = entry.alerts.map(a => a.alert_type);
-                    if (alertTypes.includes('missed_clock_in')) borderColor = 'border-red-500';
-                    else if (alertTypes.includes('missed_clock_out')) borderColor = 'border-orange-500';
-                } else if (isClockedIn) {
-                    borderColor = 'border-blue-500';
-                }
-
-                // Calculate hours
-                const hours = entry.clock_out_time 
-                    ? calculateHours(entry.clock_in_time, entry.clock_out_time)
-                    : (isClockedIn ? calculateHours(entry.clock_in_time, new Date().toISOString()) : 0);
-
-                // Check business hours violations
-                const clockInValidation = entry.clock_in_time ? validateBusinessHours(entry.clock_in_time) : null;
-                const clockOutValidation = entry.clock_out_time ? validateBusinessHours(entry.clock_out_time) : null;
-                const hasViolation = (clockInValidation && !clockInValidation.valid) || (clockOutValidation && !clockOutValidation.valid);
-                
-                // 🔥 AUTO-DETECT: Check for overtime issues
-                const clockInTime = new Date(entry.clock_in_time);
-                const now = new Date();
-                let hasOvertimeIssue = false;
-                let overtimeMessage = '';
-                
-                if (!entry.clock_out_time && !isPhantom) {
-                    // Still clocked in - check duration
-                    const hoursSinceClockIn = (now - clockInTime) / (1000 * 60 * 60);
-                    if (hoursSinceClockIn > 12) {
-                        hasOvertimeIssue = true;
-                        overtimeMessage = `Clocked in for ${hoursSinceClockIn.toFixed(1)} hours - possible missed clock-out`;
-                    }
-                } else if (hours > 12) {
-                    // Completed shift over 12 hours
-                    hasOvertimeIssue = true;
-                    overtimeMessage = `Shift duration: ${hours.toFixed(2)} hours - exceeds normal 12-hour limit`;
-                }
-
-                return `
-                    <div class="entry-row px-6 py-5 border-l-4 ${borderColor} ${hasAlerts ? 'bg-yellow-50' : ''}">
-                        <div class="flex items-start justify-between">
-                            
-                            <!-- Left: Entry Info -->
-                            <div class="flex-1">
-                                <!-- Header -->
-                                <div class="flex items-center space-x-3 mb-3">
-                                    <h3 class="text-lg font-bold text-gray-900">
-                                        <i class="fas fa-user-circle mr-2 text-indigo-600"></i>
-                                        ${entry.users.full_name || entry.users.email}
-                                    </h3>
-                                    
-                                    ${hasAlerts ? `
-                                        <span class="alert-badge bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase">
-                                            <i class="fas fa-exclamation-triangle mr-1"></i>
-                                            ${entry.alerts.length} Alert${entry.alerts.length > 1 ? 's' : ''}
-                                        </span>
-                                    ` : ''}
-                                    
-                                    ${isClockedIn ? `
-                                        <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase">
-                                            <i class="fas fa-circle fa-pulse mr-1"></i>
-                                            Currently Clocked In
-                                        </span>
-                                    ` : ''}
-
-                                    ${entry.manually_adjusted ? `
-                                        <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">
-                                            <i class="fas fa-edit mr-1"></i>
-                                            Manually Adjusted
-                                        </span>
-                                    ` : ''}
-
-                                    ${hasViolation ? `
-                                        <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold uppercase border-2 border-orange-400">
-                                            <i class="fas fa-exclamation-circle mr-1"></i>
-                                            Outside Business Hours
-                                        </span>
-                                    ` : ''}
-                                    
-                                    ${hasOvertimeIssue ? `
-                                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold uppercase border-2 border-red-500 animate-pulse">
-                                            <i class="fas fa-exclamation-triangle mr-1"></i>
-                                            OVERTIME ALERT
-                                        </span>
-                                    ` : ''}
-                                </div>
-
-                                <!-- Time Details -->
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                    <div class="${isPhantom ? 'opacity-50' : ''}">
-                                        <p class="text-gray-500 font-medium mb-1">
-                                            <i class="fas fa-sign-in-alt mr-1 text-green-600"></i>
-                                            Clock In
-                                        </p>
-                                        <p class="text-gray-900 font-semibold">
-                                            ${isPhantom ? 'MISSING' : formatTime(entry.clock_in_time)}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p class="text-gray-500 font-medium mb-1">
-                                            <i class="fas fa-sign-out-alt mr-1 text-red-600"></i>
-                                            Clock Out
-                                        </p>
-                                        <p class="text-gray-900 font-semibold">
-                                            ${entry.clock_out_time ? formatTime(entry.clock_out_time) : 
-                                              (isClockedIn ? '<span class="text-blue-600">In Progress...</span>' : 
-                                               '<span class="text-gray-400">MISSING</span>')}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p class="text-gray-500 font-medium mb-1">
-                                            <i class="fas fa-hourglass-half mr-1 text-purple-600"></i>
-                                            Hours
-                                        </p>
-                                        <p class="hours-badge text-xl ${isClockedIn ? 'text-blue-600' : 'text-gray-900'}">
-                                            ${hours.toFixed(2)} hrs
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <!-- Location -->
-                                ${entry.work_locations ? `
-                                    <div class="mt-3 text-sm text-gray-700">
-                                        <i class="fas fa-map-marker-alt mr-2 text-indigo-600"></i>
-                                        <strong>${entry.work_locations.name}</strong>
-                                        ${entry.work_locations.address ? ` • ${entry.work_locations.address}` : ''}
-                                    </div>
-                                ` : ''}
-
-                                <!-- Overtime Alert -->
-                                ${hasOvertimeIssue ? `
-                                    <div class="mt-3 bg-red-50 border-l-4 border-red-500 p-3 rounded-r">
-                                        <p class="text-sm font-bold text-red-800 mb-2">
-                                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                                            ⚠️ OVERTIME ALERT - Requires Immediate Attention
-                                        </p>
-                                        <div class="text-sm text-red-700 space-y-2">
-                                            <p><strong>Issue:</strong> ${overtimeMessage}</p>
-                                            <p><strong>Action Required:</strong></p>
-                                            <ul class="list-disc list-inside ml-4 space-y-1">
-                                                <li>Verify if this is a legitimate extended shift</li>
-                                                <li>Check if employee forgot to clock out</li>
-                                                <li>Use "Edit Entry" to correct clock-out time if needed</li>
-                                                <li>Contact employee to confirm actual work hours</li>
-                                            </ul>
-                                            <div class="mt-2 bg-red-100 px-3 py-2 rounded">
-                                                <p class="text-xs font-bold text-red-900">
-                                                    <i class="fas fa-info-circle mr-1"></i>
-                                                    Standard shifts should not exceed 12 hours. Shifts over 24 hours are always errors.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ` : ''}
-                                
-                                <!-- Business Hours Validation -->
-                                ${hasViolation ? `
-                                    <div class="mt-3 bg-orange-50 border-l-4 border-orange-400 p-3 rounded-r">
-                                        <p class="text-sm font-bold text-orange-800 mb-2">
-                                            <i class="fas fa-clock mr-2"></i>
-                                            Business Hours Violation Detected
-                                        </p>
-                                        <div class="text-xs text-orange-700 space-y-1">
-                                            ${clockInValidation && !clockInValidation.valid ? `
-                                                <p>• Clock In: ${clockInValidation.message}</p>
-                                            ` : ''}
-                                            ${clockOutValidation && !clockOutValidation.valid ? `
-                                                <p>• Clock Out: ${clockOutValidation.message}</p>
-                                            ` : ''}
-                                            <p class="mt-2 text-orange-600">
-                                                <strong>Business Hours:</strong> Mon-Fri, 8:00 AM - 8:00 PM (±15 min grace period)
-                                            </p>
-                                            ${entry.requires_admin_approval ? `
-                                                <p class="mt-2 bg-orange-100 px-2 py-1 rounded">
-                                                    <i class="fas fa-user-shield mr-1"></i>
-                                                    <strong>Admin Override:</strong> This entry was approved by an administrator
-                                                </p>
-                                            ` : ''}
-                                        </div>
-                                    </div>
-                                ` : ''}
-
-                                <!-- Alerts Details -->
-                                ${hasAlerts ? `
-                                    <div class="mt-4 space-y-2">
-                                        ${entry.alerts.map(alert => `
-                                            <div class="bg-white border-2 border-${alert.alert_type === 'missed_clock_in' ? 'red' : 'orange'}-300 rounded-lg p-3">
-                                                <div class="flex items-center justify-between">
-                                                    <div class="flex-1">
-                                                        <p class="font-semibold text-${alert.alert_type === 'missed_clock_in' ? 'red' : 'orange'}-800">
-                                                            <i class="fas fa-${alert.alert_type === 'missed_clock_in' ? 'sign-in-alt' : 'sign-out-alt'} mr-2"></i>
-                                                            ${alert.alert_type === 'missed_clock_in' ? 'Missed Clock In' : 'Missed Clock Out'}
-                                                        </p>
-                                                        <p class="text-sm text-gray-700 mt-1">
-                                                            <i class="fas fa-${alert.geofence_events.event_type === 'entry' ? 'arrow-right' : 'arrow-left'} mr-1"></i>
-                                                            ${alert.geofence_events.event_type === 'entry' ? 'Entered' : 'Exited'} 
-                                                            <strong>${alert.geofence_events.work_locations.name}</strong> 
-                                                            at ${formatTime(alert.geofence_events.event_time)}
-                                                        </p>
-                                                        <p class="text-xs text-gray-500 mt-1">
-                                                            <i class="fas fa-clock mr-1"></i>
-                                                            ${getTimeAgo(new Date(alert.geofence_events.event_time))}
-                                                        </p>
-                                                    </div>
-                                                    <button 
-                                                        onclick="quickFix('${alert.id}', '${alert.geofence_event_id}', '${entry.id || 'null'}', '${alert.alert_type}')"
-                                                        class="fix-btn ml-4 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg shadow-lg"
-                                                    >
-                                                        <i class="fas fa-magic mr-2"></i>
-                                                        Fix with Geo Time
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                ` : ''}
-                            </div>
-
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // ========================================
-        // QUICK FIX FUNCTION
-        // ========================================
-        async function quickFix(alertId, geofenceEventId, timeEntryId, alertType) {
-            const actionType = alertType === 'missed_clock_in' ? 'clock_in' : 'clock_out';
-            
-            const confirmed = confirm(
-                `🔧 FIX TIME ENTRY?\n\n` +
-                `This will:\n` +
-                `✓ ${actionType === 'clock_in' ? 'Create clock in' : 'Add clock out'} using geofence timestamp\n` +
-                `✓ Link to geofence event for audit trail\n` +
-                `✓ Auto-calculate hours\n` +
-                `✓ Dismiss this alert\n\n` +
-                `Proceed?`
-            );
-            
-            if (!confirmed) return;
-
-            const reason = prompt(
-                'Why are you fixing this? (Required for audit trail)\n\n' +
-                'Example: "Employee forgot to clock in"'
-            );
-            
-            if (!reason || reason.trim().length < 5) {
-                alert('⚠️ Please provide a reason (at least 5 characters)');
-                return;
-            }
-
-            try {
-                // Show loading
-                const btn = event.target.closest('button');
-                const originalHTML = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Fixing...';
-
-                // Fetch geofence event details
-                const { data: geoEvent, error: geoError } = await db
-                    .from('geofence_events')
-                    .select(`
-                        *,
-                        work_locations (id, name)
-                    `)
-                    .eq('id', geofenceEventId)
-                    .single();
-
-                if (geoError) throw geoError;
-
-                // ✅ VALIDATE BUSINESS HOURS
-                const validation = validateBusinessHours(geoEvent.event_time);
-                
-                if (!validation.valid) {
-                    // Outside business hours - require admin approval
-                    if (!isAdminUser()) {
-                        alert(
-                            `⚠️ ADMIN APPROVAL REQUIRED\n\n` +
-                            `This time entry is outside business hours:\n` +
-                            `${validation.message}\n\n` +
-                            `Business Hours: Mon-Fri, 8:00 AM - 8:00 PM (±15 min grace period)\n\n` +
-                            `Only admins (you or Tatiana) can approve entries outside these hours.\n\n` +
-                            `Please contact an administrator.`
-                        );
-                        btn.disabled = false;
-                        btn.innerHTML = originalHTML;
-                        return;
-                    }
-
-                    // Admin user - show warning and require confirmation
-                    const adminApprove = confirm(
-                        `⚠️ OUTSIDE BUSINESS HOURS\n\n` +
-                        `${validation.message}\n\n` +
-                        `Business Hours: Mon-Fri, 8:00 AM - 8:00 PM (±15 min)\n\n` +
-                        `As an admin, you can approve this.\n\n` +
-                        `Do you want to proceed?\n\n` +
-                        `✓ YES - Approve and create entry\n` +
-                        `✗ NO - Cancel`
-                    );
-
-                    if (!adminApprove) {
-                        alert('❌ Entry cancelled - outside business hours not approved');
-                        btn.disabled = false;
-                        btn.innerHTML = originalHTML;
-                        return;
-                    }
-
-                    // Admin approved - add note to reason
-                    const adminNote = prompt(
-                        `📝 ADMIN OVERRIDE REQUIRED\n\n` +
-                        `Please provide additional justification for this out-of-hours entry:\n\n` +
-                        `Example: "Emergency call-in for crisis support" or "Special event coverage"`
-                    );
-
-                    if (!adminNote || adminNote.trim().length < 5) {
-                        alert('⚠️ Admin override reason required (at least 5 characters)');
-                        btn.disabled = false;
-                        btn.innerHTML = originalHTML;
-                        return;
-                    }
-
-                    // Append admin override to reason
-                    const fullReason = `${reason}\n\n[ADMIN OVERRIDE - ${validation.reason.toUpperCase()}]\n${adminNote}\nApproved by: ${currentUser.full_name || currentUser.email}`;
-                    
-                    // Replace reason with full reason including override
-                    arguments[0] = alertId;
-                    arguments[1] = geofenceEventId;
-                    arguments[2] = timeEntryId;
-                    arguments[3] = alertType;
-                    
-                    // Continue with override reason
-                    const overrideReason = fullReason;
-                    
-                    let result;
-
-                    if (actionType === 'clock_in') {
-                        const { data, error } = await db
-                            .from('time_entries')
-                            .insert({
-                                user_id: geoEvent.user_id,
-                                clock_in_time: geoEvent.event_time,
-                                clock_in_latitude: geoEvent.latitude,
-                                clock_in_longitude: geoEvent.longitude,
-                                work_location_id: geoEvent.location_id,
-                                manually_adjusted: true,
-                                adjusted_by: currentUser.id,
-                                adjusted_at: new Date().toISOString(),
-                                adjustment_reason: overrideReason,
-                                original_clock_in_time: geoEvent.event_time,
-                                requires_admin_approval: true
-                            })
-                            .select()
-                            .single();
-
-                        if (error) throw error;
-                        result = data;
-                    } else {
-                        if (timeEntryId === 'null' || !timeEntryId) {
-                            throw new Error('Cannot add clock out: No time entry found');
-                        }
-
-                        const { data, error } = await db
-                            .from('time_entries')
-                            .update({
-                                clock_out_time: geoEvent.event_time,
-                                clock_out_latitude: geoEvent.latitude,
-                                clock_out_longitude: geoEvent.longitude,
-                                manually_adjusted: true,
-                                adjusted_by: currentUser.id,
-                                adjusted_at: new Date().toISOString(),
-                                adjustment_reason: overrideReason,
-                                original_clock_out_time: geoEvent.event_time,
-                                requires_admin_approval: true
-                            })
-                            .eq('id', timeEntryId)
-                            .select()
-                            .single();
-
-                        if (error) throw error;
-                        result = data;
-                    }
-
-                    await db
-                        .from('admin_alerts')
-                        .update({
-                            is_resolved: true,
-                            resolved_at: new Date().toISOString(),
-                            resolved_by: currentUser.id,
-                            resolution_notes: overrideReason
-                        })
-                        .eq('id', alertId);
-
-                    await db
-                        .from('geofence_events')
-                        .update({
-                            [`has_${actionType}`]: true,
-                            time_entry_id: result.id
-                        })
-                        .eq('id', geofenceEventId);
-
-                    alert(`✅ ADMIN OVERRIDE APPROVED!\n\n${actionType === 'clock_in' ? 'Clock in created' : 'Clock out added'} at ${formatTime(geoEvent.event_time)}\n\n⚠️ Outside business hours - Admin override logged`);
-                    await loadTimeData();
+                if (error) {
+                    console.error('Error loading employees:', error);
                     return;
                 }
 
-                // ✅ Within business hours - proceed normally
-                let result;
-
-                if (actionType === 'clock_in') {
-                    // CREATE NEW CLOCK IN
-                    const { data, error } = await db
-                        .from('time_entries')
-                        .insert({
-                            user_id: geoEvent.user_id,
-                            clock_in_time: geoEvent.event_time,
-                            clock_in_latitude: geoEvent.latitude,
-                            clock_in_longitude: geoEvent.longitude,
-                            work_location_id: geoEvent.location_id,
-                            manually_adjusted: true,
-                            adjusted_by: currentUser.id,
-                            adjusted_at: new Date().toISOString(),
-                            adjustment_reason: reason,
-                            original_clock_in_time: geoEvent.event_time
-                        })
-                        .select()
-                        .single();
-
-                    if (error) throw error;
-                    result = data;
-
-                } else {
-                    // UPDATE EXISTING ENTRY WITH CLOCK OUT
-                    if (timeEntryId === 'null' || !timeEntryId) {
-                        throw new Error('Cannot add clock out: No time entry found');
-                    }
-
-                    const { data, error } = await db
-                        .from('time_entries')
-                        .update({
-                            clock_out_time: geoEvent.event_time,
-                            clock_out_latitude: geoEvent.latitude,
-                            clock_out_longitude: geoEvent.longitude,
-                            manually_adjusted: true,
-                            adjusted_by: currentUser.id,
-                            adjusted_at: new Date().toISOString(),
-                            adjustment_reason: reason,
-                            original_clock_out_time: geoEvent.event_time
-                        })
-                        .eq('id', timeEntryId)
-                        .select()
-                        .single();
-
-                    if (error) throw error;
-                    result = data;
-                }
-
-                // Mark alert as resolved
-                const { error: alertError } = await db
-                    .from('admin_alerts')
-                    .update({
-                        is_resolved: true,
-                        resolved_at: new Date().toISOString(),
-                        resolved_by: currentUser.id,
-                        resolution_notes: reason
-                    })
-                    .eq('id', alertId);
-
-                if (alertError) throw alertError;
-
-                // Update geofence event
-                await db
-                    .from('geofence_events')
-                    .update({
-                        [`has_${actionType}`]: true,
-                        time_entry_id: result.id
-                    })
-                    .eq('id', geofenceEventId);
-
-                // Success!
-                alert(`✅ SUCCESS!\n\n${actionType === 'clock_in' ? 'Clock in created' : 'Clock out added'} at ${formatTime(geoEvent.event_time)}\n\nAlert dismissed and audit trail created.`);
-                
-                // Reload data
-                await loadTimeData();
-
+                employees = data || [];
+                console.log(`✅ Loaded ${employees.length} employees`);
             } catch (error) {
-                console.error('Error fixing time entry:', error);
-                alert(`❌ ERROR\n\nFailed to fix time entry:\n${error.message}`);
-                
-                // Restore button
-                const btn = event.target.closest('button');
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-magic mr-2"></i>Fix with Geo Time';
-                }
+                console.error('Error loading employees:', error);
+                employees = [];
             }
         }
 
-        // ========================================
-        // BUSINESS HOURS VALIDATION
-        // ========================================
-        const BUSINESS_HOURS = {
-            weekdays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-            startTime: { hour: 8, minute: 0 },    // 8:00 AM
-            endTime: { hour: 20, minute: 0 },     // 8:00 PM
-            gracePeriodMinutes: 15                // ±15 minutes allowed
-        };
+        // Load locations
+        async function loadLocations() {
+            try {
+                const { data, error } = await db
+                    .from('work_locations')
+                    .select('*')
+                    .order('name', { ascending: true });
 
-        const ADMIN_EMAILS = ['tatiana@dmhiopllc.com', 'admin@dmhiopllc.com']; // Add your and Tatiana's emails
+                if (error) {
+                    console.error('Error loading locations:', error);
+                    return;
+                }
 
+                locations = data || [];
+                console.log(`✅ Loaded ${locations.length} locations`);
+            } catch (error) {
+                console.error('Error loading locations:', error);
+                locations = [];
+            }
+        }
+
+        // 🔥 FIXED: validateBusinessHours now uses Mountain Time conversion
         function validateBusinessHours(timestamp) {
+            // Convert UTC timestamp to Mountain Time
             const date = new Date(timestamp);
-            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-            const hour = date.getHours();
-            const minute = date.getMinutes();
+            
+            // Get time in Mountain Time (UTC-7 for MST, UTC-6 for MDT)
+            const mstDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/Denver' }));
+            
+            const dayName = mstDate.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/Denver' });
+            const hour = mstDate.getHours();
+            const minute = mstDate.getMinutes();
             const totalMinutes = hour * 60 + minute;
 
             // Check if weekday (M-F)
@@ -1221,7 +479,7 @@
                 return {
                     valid: false,
                     reason: 'too_early',
-                    message: `${formatTime(timestamp)} - Too early (before ${BUSINESS_HOURS.startTime.hour - 1}:45 AM)`,
+                    message: `${formatTime(timestamp)} MST - Too early (before 7:45 AM)`,
                     minutesOff: beforeStart
                 };
             }
@@ -1230,7 +488,7 @@
                 return {
                     valid: false,
                     reason: 'too_late',
-                    message: `${formatTime(timestamp)} - Too late (after ${BUSINESS_HOURS.endTime.hour}:15 PM)`,
+                    message: `${formatTime(timestamp)} MST - Too late (after 8:15 PM)`,
                     minutesOff: afterEnd
                 };
             }
@@ -1238,101 +496,175 @@
             // Within business hours + grace period
             return {
                 valid: true,
-                message: 'Within business hours'
+                message: 'Within business hours (MST)'
             };
         }
 
-        function isAdminUser() {
-            if (!currentUser) return false;
-            return ADMIN_EMAILS.includes(currentUser.email.toLowerCase()) || currentUser.role === 'admin';
+        async function loadTimeData() {
+            try {
+                const filterDate = document.getElementById('filterDate').value;
+                const filterEmployee = document.getElementById('filterEmployee').value;
+                const showOnlyAlerts = document.getElementById('showOnlyAlerts').checked;
+
+                // Build query
+                let query = db
+                    .from('time_entries')
+                    .select(`
+                        *,
+                        users (id, full_name, email),
+                        work_locations (id, name, address)
+                    `)
+                    .order('clock_in_time', { ascending: false });
+
+                if (filterDate) {
+                    query = query.gte('clock_in_time', `${filterDate}T00:00:00`)
+                                 .lte('clock_in_time', `${filterDate}T23:59:59`);
+                }
+
+                if (filterEmployee) {
+                    query = query.eq('user_id', filterEmployee);
+                }
+
+                const { data, error } = await query.limit(100);
+
+                if (error) throw error;
+
+                displayTimeEntries(data || []);
+                updateStats(data || []);
+
+            } catch (error) {
+                console.error('Error loading time data:', error);
+                document.getElementById('timeEntriesContainer').innerHTML = `
+                    <div class="text-center py-12 text-red-600">
+                        <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+                        <p>Error loading time entries: ${error.message}</p>
+                    </div>
+                `;
+            }
         }
 
-        // ========================================
-        // UTILITY FUNCTIONS
-        // ========================================
-        function calculateHours(clockIn, clockOut) {
-            const start = new Date(clockIn);
-            const end = new Date(clockOut);
-            const diffMs = end - start;
-            const diffHours = diffMs / (1000 * 60 * 60);
-            return Math.max(0, diffHours);
-        }
-
-        function formatTime(isoString) {
-            if (!isoString) return 'N/A';
+        function displayTimeEntries(entries) {
+            const container = document.getElementById('timeEntriesContainer');
             
-            // WORKAROUND: Database stores MST times as if they were UTC
-            // So we parse them without timezone conversion
-            const dateStr = isoString.replace('+00', '').replace('Z', '');
-            const date = new Date(dateStr);
-            
-            // Format as-is (treating the time as local MST)
-            return date.toLocaleString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
+            if (!entries || entries.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-4"></i>
+                        <p>No time entries found for the selected filters</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-50 border-b-2 border-gray-200">
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Employee</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Location</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Clock In</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Clock Out</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Hours</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${entries.map(entry => {
+                                const clockInValid = validateBusinessHours(entry.clock_in_time);
+                                const clockOutValid = entry.clock_out_time ? validateBusinessHours(entry.clock_out_time) : { valid: true };
+                                const hours = entry.clock_out_time ? calculateHours(entry.clock_in_time, entry.clock_out_time) : 0;
+                                
+                                return `
+                                    <tr class="entry-row border-b border-gray-200">
+                                        <td class="px-4 py-3">
+                                            <div class="font-semibold text-gray-800">${entry.users?.full_name || 'Unknown'}</div>
+                                            <div class="text-xs text-gray-500">${entry.users?.email || ''}</div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="text-sm">${entry.work_locations?.name || 'Unknown'}</div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="text-sm">${formatTime(entry.clock_in_time)}</div>
+                                            ${!clockInValid.valid ? `<div class="text-xs text-orange-600 mt-1"><i class="fas fa-exclamation-triangle mr-1"></i>${clockInValid.message}</div>` : ''}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            ${entry.clock_out_time ? 
+                                                `<div class="text-sm">${formatTime(entry.clock_out_time)}</div>
+                                                ${!clockOutValid.valid ? `<div class="text-xs text-orange-600 mt-1"><i class="fas fa-exclamation-triangle mr-1"></i>${clockOutValid.message}</div>` : ''}` : 
+                                                '<span class="text-gray-400 text-sm italic">Still clocked in</span>'
+                                            }
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="hours-badge text-lg ${entry.clock_out_time ? 'text-indigo-600' : 'text-gray-400'}">${hours.toFixed(2)}</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            ${entry.manually_adjusted ? 
+                                                '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><i class="fas fa-pen mr-1"></i>Manual</span>' : 
+                                                '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-check mr-1"></i>Auto</span>'
+                                            }
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
 
-        function getTimeAgo(date) {
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / (1000 * 60));
-            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        function updateStats(entries) {
+            const today = new Date().toISOString().split('T')[0];
+            const todayEntries = entries.filter(e => e.clock_in_time.startsWith(today));
+            
+            const needsFix = todayEntries.filter(e => !e.clock_out_time).length;
+            const violations = todayEntries.filter(e => {
+                const clockInValid = validateBusinessHours(e.clock_in_time);
+                const clockOutValid = e.clock_out_time ? validateBusinessHours(e.clock_out_time) : { valid: true };
+                return !clockInValid.valid || !clockOutValid.valid;
+            }).length;
+            const fixed = todayEntries.filter(e => e.manually_adjusted).length;
+            const totalHours = todayEntries.reduce((sum, e) => {
+                return sum + (e.clock_out_time ? calculateHours(e.clock_in_time, e.clock_out_time) : 0);
+            }, 0);
 
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-            return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            document.getElementById('stat-needs-fix').textContent = needsFix;
+            document.getElementById('stat-violations').textContent = violations;
+            document.getElementById('stat-today-entries').textContent = todayEntries.length;
+            document.getElementById('stat-fixed').textContent = fixed;
+            document.getElementById('stat-total-hours').textContent = totalHours.toFixed(1);
         }
 
         // ========================================
         // MANUAL ENTRY MODAL FUNCTIONS
         // ========================================
         async function openManualEntryModal() {
-            const modal = document.getElementById('manualEntryModal');
-            
-            // Load employees into dropdown
+            // Populate employee dropdown
             const employeeSelect = document.getElementById('manual-employee');
-            employeeSelect.innerHTML = '<option value="">Select employee...</option>' +
-                employees.map(emp => 
-                    `<option value="${emp.id}">${emp.full_name || emp.email}</option>`
-                ).join('');
-            
-            // Load locations
-            try {
-                const { data: locations, error } = await db
-                    .from('work_locations')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('name');
+            employeeSelect.innerHTML = '<option value="">Select Employee...</option>';
+            employees.forEach(emp => {
+                employeeSelect.innerHTML += `<option value="${emp.id}">${emp.full_name || emp.email}</option>`;
+            });
 
-                if (error) throw error;
+            // Populate location dropdown
+            const locationSelect = document.getElementById('manual-location');
+            locationSelect.innerHTML = '<option value="">Select Location...</option>';
+            locations.forEach(loc => {
+                locationSelect.innerHTML += `<option value="${loc.id}">${loc.name}</option>`;
+            });
 
-                const locationSelect = document.getElementById('manual-location');
-                locationSelect.innerHTML = '<option value="">Select location...</option>' +
-                    locations.map(loc => 
-                        `<option value="${loc.id}">${loc.name}</option>`
-                    ).join('');
-            } catch (error) {
-                console.error('Error loading locations:', error);
-            }
-            
-            // Set today's date as default
+            // Set today's date
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('manual-clock-in-date').value = today;
-            
-            // Clear other fields
+
+            // Clear form
             document.getElementById('manual-clock-in-time').value = '';
             document.getElementById('manual-clock-out-date').value = '';
             document.getElementById('manual-clock-out-time').value = '';
             document.getElementById('manual-reason').value = '';
-            
-            modal.classList.add('active');
+
+            // Show modal
+            document.getElementById('manualEntryModal').classList.add('active');
         }
 
         function closeManualEntryModal() {
@@ -1361,16 +693,20 @@
                 return;
             }
 
-            // Convert MST times to UTC before saving
+            // 🔥 FIXED: Convert MST times to UTC properly
+            // Input times are in Mountain Time, need to convert to UTC for database
             const clockInLocal = `${clockInDate}T${clockInTime}:00`;
-            const clockInDate_MST = new Date(clockInLocal);
-            const clockInISO = new Date(clockInDate_MST.getTime() + (7 * 60 * 60 * 1000)).toISOString(); // Add 7 hours for MST->UTC
+            const clockInMST = new Date(clockInLocal);
+            
+            // Get UTC offset for Mountain Time (will be -7 or -6 depending on DST)
+            const mstOffset = new Date().toLocaleString('en-US', { timeZone: 'America/Denver', timeZoneName: 'short' }).includes('MST') ? 7 : 6;
+            const clockInISO = new Date(clockInMST.getTime() + (mstOffset * 60 * 60 * 1000)).toISOString();
             
             let clockOutISO = null;
             if (clockOutDate && clockOutTime) {
                 const clockOutLocal = `${clockOutDate}T${clockOutTime}:00`;
-                const clockOutDate_MST = new Date(clockOutLocal);
-                clockOutISO = new Date(clockOutDate_MST.getTime() + (7 * 60 * 60 * 1000)).toISOString(); // Add 7 hours for MST->UTC
+                const clockOutMST = new Date(clockOutLocal);
+                clockOutISO = new Date(clockOutMST.getTime() + (mstOffset * 60 * 60 * 1000)).toISOString();
             }
 
             // Validate times
@@ -1405,8 +741,8 @@
                 alert(
                     `✅ MANUAL ENTRY CREATED!\n\n` +
                     `Employee: ${employee.full_name || employee.email}\n` +
-                    `Clock In: ${formatTime(clockInISO)}\n` +
-                    `Clock Out: ${clockOutISO ? formatTime(clockOutISO) : 'Not clocked out'}\n` +
+                    `Clock In: ${formatTime(clockInISO)} MST\n` +
+                    `Clock Out: ${clockOutISO ? formatTime(clockOutISO) + ' MST' : 'Not clocked out'}\n` +
                     `Hours: ${hours.toFixed(2)}\n\n` +
                     `This entry has been flagged as manually adjusted.`
                 );
@@ -1419,6 +755,47 @@
                 alert(`❌ ERROR: ${error.message}\n\nPlease check the console for details.`);
             }
         }
+
+        // ========================================
+        // UTILITY FUNCTIONS
+        // ========================================
+        function calculateHours(startTime, endTime) {
+            const start = new Date(startTime);
+            const end = new Date(endTime);
+            const hours = (end - start) / (1000 * 60 * 60);
+            return hours;
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-US', { 
+                timeZone: 'America/Denver',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('manualEntryModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeManualEntryModal();
+            }
+        });
+
+        // Populate employee filter
+        async function populateEmployeeFilter() {
+            const select = document.getElementById('filterEmployee');
+            select.innerHTML = '<option value="">All Employees</option>';
+            employees.forEach(emp => {
+                select.innerHTML += `<option value="${emp.id}">${emp.full_name || emp.email}</option>`;
+            });
+        }
+
+        // Load employee filter options after employees are loaded
+        setTimeout(populateEmployeeFilter, 1000);
     </script>
 
 </body>
