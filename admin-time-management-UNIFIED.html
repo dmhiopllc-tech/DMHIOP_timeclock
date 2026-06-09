@@ -506,14 +506,10 @@
                 const filterEmployee = document.getElementById('filterEmployee').value;
                 const showOnlyAlerts = document.getElementById('showOnlyAlerts').checked;
 
-                // Build query
+                // Build query - fetch time entries without joins to avoid relationship conflicts
                 let query = db
                     .from('time_entries')
-                    .select(`
-                        *,
-                        users (id, full_name, email),
-                        work_locations (id, name, address)
-                    `)
+                    .select('*')
                     .order('clock_in_time', { ascending: false });
 
                 if (filterDate) {
@@ -525,12 +521,55 @@
                     query = query.eq('user_id', filterEmployee);
                 }
 
-                const { data, error } = await query.limit(100);
+                const { data: timeEntries, error: entriesError } = await query.limit(100);
 
-                if (error) throw error;
+                if (entriesError) throw entriesError;
 
-                displayTimeEntries(data || []);
-                updateStats(data || []);
+                // Now fetch related data separately to avoid relationship ambiguity
+                if (timeEntries && timeEntries.length > 0) {
+                    // Get unique user IDs
+                    const userIds = [...new Set(timeEntries.map(e => e.user_id))];
+                    
+                    // Fetch user data
+                    const { data: usersData } = await db
+                        .from('users')
+                        .select('id, full_name, email')
+                        .in('id', userIds);
+                    
+                    // Create user lookup map
+                    const userMap = {};
+                    if (usersData) {
+                        usersData.forEach(user => {
+                            userMap[user.id] = user;
+                        });
+                    }
+                    
+                    // Get unique location IDs
+                    const locationIds = [...new Set(timeEntries.map(e => e.work_location_id).filter(id => id))];
+                    
+                    // Fetch location data
+                    const { data: locationsData } = await db
+                        .from('work_locations')
+                        .select('id, name, address')
+                        .in('id', locationIds);
+                    
+                    // Create location lookup map
+                    const locationMap = {};
+                    if (locationsData) {
+                        locationsData.forEach(loc => {
+                            locationMap[loc.id] = loc;
+                        });
+                    }
+                    
+                    // Attach user and location data to time entries
+                    timeEntries.forEach(entry => {
+                        entry.users = userMap[entry.user_id] || null;
+                        entry.work_locations = locationMap[entry.work_location_id] || null;
+                    });
+                }
+
+                displayTimeEntries(timeEntries || []);
+                updateStats(timeEntries || []);
 
             } catch (error) {
                 console.error('Error loading time data:', error);
@@ -578,8 +617,8 @@
                                 return `
                                     <tr class="entry-row border-b border-gray-200">
                                         <td class="px-4 py-3">
-                                            <div class="font-semibold text-gray-800">${entry.users?.full_name || 'Unknown'}</div>
-                                            <div class="text-xs text-gray-500">${entry.users?.email || ''}</div>
+                                            <div class="font-semibold text-gray-800">${entry.users?.full_name || entry.user_name || 'Unknown'}</div>
+                                            <div class="text-xs text-gray-500">${entry.users?.email || entry.user_email || ''}</div>
                                         </td>
                                         <td class="px-4 py-3">
                                             <div class="text-sm">${entry.work_locations?.name || 'Unknown'}</div>
