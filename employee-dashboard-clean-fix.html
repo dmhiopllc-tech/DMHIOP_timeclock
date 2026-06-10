@@ -494,12 +494,12 @@
                 };
             }
             
-            // Business hours: 7:45 AM - 8:15 PM (with 15-minute grace period)
-            const startTime = 7 * 60 + 45;  // 7:45 AM = 465 minutes
-            const endTime = 20 * 60 + 15;   // 8:15 PM = 1215 minutes
+            // Business hours: 7:30 AM - 8:30 PM (with 30-minute grace period)
+            const startTime = 7 * 60 + 30;  // 7:30 AM = 450 minutes
+            const endTime = 20 * 60 + 30;   // 8:30 PM = 1230 minutes
             
             if (totalMinutes < startTime) {
-                const openTime = '7:45 AM';
+                const openTime = '7:30 AM';
                 return {
                     valid: false,
                     error: `⏰ Too early! Business hours start at ${openTime}. Current time: ${formatTime(now)}`,
@@ -508,7 +508,7 @@
             }
             
             if (totalMinutes > endTime) {
-                const closeTime = '8:15 PM';
+                const closeTime = '8:30 PM';
                 return {
                     valid: false,
                     error: `⏰ Too late! Business hours end at ${closeTime}. Current time: ${formatTime(now)}`,
@@ -695,6 +695,7 @@
                     return;
                 }
 
+                // Try high accuracy first with longer timeout
                 navigator.geolocation.getCurrentPosition(
                     position => resolve({
                         latitude: position.coords.latitude,
@@ -702,14 +703,27 @@
                         accuracy: position.coords.accuracy
                     }),
                     error => {
-                        const messages = {
-                            1: 'Location permission denied',
-                            2: 'Location unavailable',
-                            3: 'Location request timeout'
-                        };
-                        reject(new Error(messages[error.code] || 'Location error'));
+                        console.log('High accuracy failed, trying low accuracy...', error);
+                        
+                        // If high accuracy fails, try again with low accuracy
+                        navigator.geolocation.getCurrentPosition(
+                            position => resolve({
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude,
+                                accuracy: position.coords.accuracy
+                            }),
+                            error => {
+                                const messages = {
+                                    1: 'Location permission denied',
+                                    2: 'Location unavailable',
+                                    3: 'Location request timeout - please try again'
+                                };
+                                reject(new Error(messages[error.code] || 'Location error'));
+                            },
+                            { enableHighAccuracy: false, timeout: 15000, maximumAge: 30000 }
+                        );
                     },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
                 );
             });
         }
