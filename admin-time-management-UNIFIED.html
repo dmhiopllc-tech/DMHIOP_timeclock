@@ -1,87 +1,1033 @@
-<!-- Find the saveEditEntry function around line 880 and replace this section: -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Management - Unified Dashboard (TIMEZONE FIXED)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .entry-row {
+            transition: all 0.3s ease;
+        }
+        .entry-row:hover {
+            background-color: #f9fafb;
+            transform: translateX(4px);
+        }
+        .alert-badge {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .fix-btn {
+            transition: all 0.2s;
+        }
+        .fix-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+        }
+        .hours-badge {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.3s;
+        }
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
 
-async function saveEditEntry(event) {
-    event.preventDefault();
+    <!-- Header -->
+    <header class="bg-white shadow-md border-b-4 border-indigo-600">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    <i class="fas fa-business-time text-indigo-600 mr-2"></i>
+                    Time Management Dashboard
+                </h1>
+                <p class="text-gray-600 text-sm mt-1">🔥 TIMEZONE FIXED - Manual & Edit entries now correctly handle MST ↔ UTC conversion</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="currentUser" class="text-gray-700 font-medium"></span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+            </div>
+        </div>
+    </header>
 
-    const entryId = document.getElementById('edit-entry-id').value;
-    const clockInValue = document.getElementById('edit-clock-in').value;
-    const clockOutValue = document.getElementById('edit-clock-out').value;
-    const reason = document.getElementById('edit-reason').value;
-
-    if (reason.trim().length < 5) {
-        alert('⚠️ Please provide a more detailed reason (at least 5 characters)');
-        return;
-    }
-
-    try {
-        // 🔥 FIXED: Convert local datetime-local input to UTC
-        // datetime-local gives us the time as displayed (already in MST from user input)
-        // We need to parse it as MST and convert to UTC for storage
+    <main class="container mx-auto px-6 py-8 max-w-full">
         
-        const clockInParts = clockInValue.split(/[-T:]/);
-        const clockInUTC = new Date(Date.UTC(
-            parseInt(clockInParts[0]), 
-            parseInt(clockInParts[1]) - 1, 
-            parseInt(clockInParts[2]), 
-            parseInt(clockInParts[3]) + 7, // Add 7 hours to convert MST to UTC
-            parseInt(clockInParts[4])
-        ));
-        const clockInISO = clockInUTC.toISOString();
-        
-        let clockOutISO = null;
-        if (clockOutValue) {
-            const clockOutParts = clockOutValue.split(/[-T:]/);
-            const clockOutUTC = new Date(Date.UTC(
-                parseInt(clockOutParts[0]), 
-                parseInt(clockOutParts[1]) - 1, 
-                parseInt(clockOutParts[2]), 
-                parseInt(clockOutParts[3]) + 7, // Add 7 hours to convert MST to UTC
-                parseInt(clockOutParts[4])
-            ));
-            clockOutISO = clockOutUTC.toISOString();
+        <!-- Filter Controls -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-filter text-gray-600"></i>
+                    <span class="font-semibold text-gray-700">Filters:</span>
+                </div>
+                
+                <input 
+                    type="date" 
+                    id="filterDate" 
+                    class="border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-indigo-500 focus:outline-none"
+                    onchange="loadTimeData()"
+                >
+                
+                <select 
+                    id="filterEmployee" 
+                    class="border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-indigo-500 focus:outline-none"
+                    onchange="loadTimeData()"
+                >
+                    <option value="">All Employees</option>
+                </select>
+
+                <div class="flex items-center space-x-2 ml-auto">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            id="showOnlyAlerts" 
+                            class="w-4 h-4 text-indigo-600"
+                            onchange="loadTimeData()"
+                        >
+                        <span class="text-sm font-medium text-gray-700">Show only entries with alerts</span>
+                    </label>
+                </div>
+
+                <button 
+                    onclick="loadTimeData()" 
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold"
+                >
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+
+                <button 
+                    onclick="openManualEntryModal()" 
+                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition font-semibold"
+                >
+                    <i class="fas fa-plus-circle mr-2"></i>Create Manual Entry
+                </button>
+            </div>
+        </div>
+
+        <!-- Time Entries List -->
+        <div id="timeEntriesContainer" class="bg-white rounded-xl shadow-md p-6">
+            <div class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                <p class="mt-4 text-gray-600">Loading time entries...</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Manual Entry -->
+    <div id="manualEntryModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-xl">
+                <h3 class="text-2xl font-bold">
+                    <i class="fas fa-calendar-plus mr-2"></i>
+                    Create Manual Time Entry
+                </h3>
+                <p class="text-green-100 mt-1">All fields required • No business hours validation for admin entries</p>
+            </div>
+
+            <form id="manualEntryForm" onsubmit="saveManualEntry(event)" class="p-6">
+                <!-- Employee Selection -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-user mr-2 text-indigo-600"></i>Employee *
+                    </label>
+                    <select 
+                        id="manual-employee" 
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                    >
+                        <option value="">Select Employee...</option>
+                    </select>
+                </div>
+
+                <!-- Clock In -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-clock mr-2 text-green-600"></i>Clock In Date & Time *
+                    </label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input 
+                            type="date" 
+                            id="manual-clock-in-date" 
+                            required
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                        >
+                        <input 
+                            type="time" 
+                            id="manual-clock-in-time" 
+                            required
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                        >
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">Times are in Mountain Time (MST/MDT)</p>
+                </div>
+
+                <!-- Clock Out -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-clock mr-2 text-red-600"></i>Clock Out Date & Time (Optional)
+                    </label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input 
+                            type="date" 
+                            id="manual-clock-out-date" 
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                        >
+                        <input 
+                            type="time" 
+                            id="manual-clock-out-time" 
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                        >
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">Leave blank if still clocked in</p>
+                </div>
+
+                <!-- Location Selection -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-map-marker-alt mr-2 text-indigo-600"></i>Work Location *
+                    </label>
+                    <select 
+                        id="manual-location" 
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                    >
+                        <option value="">Select Location...</option>
+                    </select>
+                </div>
+
+                <!-- Reason for Manual Entry -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-edit mr-2 text-orange-600"></i>Reason for Manual Entry *
+                    </label>
+                    <textarea 
+                        id="manual-reason" 
+                        required
+                        rows="3"
+                        placeholder="Explain why this entry is being created manually..."
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition resize-none"
+                    ></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Minimum 5 characters required for audit trail</p>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-4">
+                    <button 
+                        type="submit" 
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg transition"
+                    >
+                        <i class="fas fa-save mr-2"></i>
+                        Save Manual Entry
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="closeManualEntryModal()" 
+                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-3 rounded-lg transition"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Entry -->
+    <div id="editEntryModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-xl">
+                <h3 class="text-2xl font-bold">
+                    <i class="fas fa-edit mr-2"></i>
+                    Edit Time Entry
+                </h3>
+                <p class="text-blue-100 mt-1">Update clock in/out times</p>
+            </div>
+
+            <form id="editEntryForm" onsubmit="saveEditEntry(event)" class="p-6">
+                <input type="hidden" id="edit-entry-id">
+                
+                <!-- Clock In -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-clock mr-2 text-green-600"></i>Clock In Time *
+                    </label>
+                    <input 
+                        type="datetime-local" 
+                        id="edit-clock-in" 
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition"
+                    >
+                    <p class="text-sm text-gray-500 mt-1">Times are in Mountain Time (MST/MDT)</p>
+                </div>
+
+                <!-- Clock Out -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-clock mr-2 text-red-600"></i>Clock Out Time (Optional)
+                    </label>
+                    <input 
+                        type="datetime-local" 
+                        id="edit-clock-out" 
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition"
+                    >
+                    <p class="text-sm text-gray-500 mt-1">Leave blank if still clocked in</p>
+                </div>
+
+                <!-- Edit Reason -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        <i class="fas fa-edit mr-2 text-orange-600"></i>Reason for Edit *
+                    </label>
+                    <textarea 
+                        id="edit-reason" 
+                        required
+                        rows="3"
+                        placeholder="Explain why this entry is being edited..."
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition resize-none"
+                    ></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Minimum 5 characters required for audit trail</p>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-4">
+                    <button 
+                        type="submit" 
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition"
+                    >
+                        <i class="fas fa-save mr-2"></i>
+                        Save Changes
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="closeEditEntryModal()" 
+                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-3 rounded-lg transition"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://dgfzrkbgrzenukjelnjl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZnpya2JncnplbnVramVsbmpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjgwNjcsImV4cCI6MjA4NTA0NDA2N30.09RieWZ-iB23e94iA5BWaYR4KHFFC9FOSV1O8ZeUIz4';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+        let employees = [];
+        let locations = [];
+
+        // 🔥 FIXED: Business hours validation now uses Mountain Time (MST/MDT)
+        const BUSINESS_HOURS = {
+            weekdays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+            startTime: { hour: 8, minute: 0 },    // 8:00 AM MST
+            endTime: { hour: 20, minute: 0 },     // 8:00 PM MST
+            gracePeriodMinutes: 15                // ±15 minutes allowed
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadEmployees();
+            await loadLocations();
             
-            // Validate clock out is after clock in
-            if (new Date(clockOutISO) <= new Date(clockInISO)) {
-                alert('⚠️ Clock out time must be after clock in time');
-                return;
+            // Set default date to today
+            document.getElementById('filterDate').valueAsDate = new Date();
+            
+            await loadTimeData();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(loadTimeData, 30000);
+        });
+
+        // Authentication
+        async function checkAuth() {
+            try {
+                const { data: { session } } = await db.auth.getSession();
+                if (!session) {
+                    window.location.href = 'login-standalone.html';
+                    return;
+                }
+
+                const { data: user, error: userError } = await db
+                    .from('users')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (user && !userError) {
+                    currentUser = user;
+                    document.getElementById('currentUser').textContent = `👤 ${user.full_name || user.email}`;
+                } else {
+                    currentUser = session.user;
+                    document.getElementById('currentUser').textContent = `👤 ${session.user.email}`;
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                const { data: { session } } = await db.auth.getSession();
+                if (session) {
+                    currentUser = session.user;
+                    document.getElementById('currentUser').textContent = `👤 ${session.user.email}`;
+                } else {
+                    window.location.href = 'login-standalone.html';
+                }
             }
         }
 
-        // Get the original entry for preserving adjustment reason
-        const entry = currentTimeEntries.find(e => e.id === entryId);
-        
-        const updates = {
-            clock_in_time: clockInISO,
-            clock_out_time: clockOutISO,
-            manually_adjusted: true,
-            adjusted_by: currentUser.id,
-            adjusted_at: new Date().toISOString(),
-            adjustment_reason: entry?.adjustment_reason ? 
-                `${entry.adjustment_reason}\n\n[EDITED] ${reason}` : 
-                `[EDITED] ${reason}`
-        };
+        async function logout() {
+            await db.auth.signOut();
+            window.location.href = 'login-standalone.html';
+        }
 
-        const { error } = await db
-            .from('time_entries')
-            .update(updates)
-            .eq('id', entryId);
+        // Load employee list
+        async function loadEmployees() {
+            try {
+                const { data, error } = await db
+                    .from('users')
+                    .select('id, full_name, email')
+                    .order('full_name', { ascending: true });
 
-        if (error) throw error;
+                if (error) {
+                    console.error('Error loading employees:', error);
+                    return;
+                }
 
-        const hours = clockOutISO ? calculateHours(clockInISO, clockOutISO) : 0;
+                employees = data || [];
+                console.log(`✅ Loaded ${employees.length} employees`);
+            } catch (error) {
+                console.error('Error loading employees:', error);
+                employees = [];
+            }
+        }
 
-        alert(
-            `✅ TIME ENTRY UPDATED!\n\n` +
-            `Clock In: ${formatTime(clockInISO)} MST\n` +
-            `Clock Out: ${clockOutISO ? formatTime(clockOutISO) + ' MST' : 'Still clocked in'}\n` +
-            `Hours: ${hours.toFixed(2)}`
-        );
+        // Load locations
+        async function loadLocations() {
+            try {
+                const { data, error } = await db
+                    .from('work_locations')
+                    .select('*')
+                    .order('name', { ascending: true });
 
-        closeEditEntryModal();
-        await loadTimeData();
+                if (error) {
+                    console.error('Error loading locations:', error);
+                    return;
+                }
 
-    } catch (error) {
-        console.error('Error updating entry:', error);
-        alert(`❌ ERROR: Failed to update entry\n\n${error.message}`);
-    }
-}
+                locations = data || [];
+                console.log(`✅ Loaded ${locations.length} locations`);
+            } catch (error) {
+                console.error('Error loading locations:', error);
+                locations = [];
+            }
+        }
+
+        // 🔥 FIXED: validateBusinessHours - convert UTC to Mountain Time
+        function validateBusinessHours(timestamp) {
+            // Parse UTC timestamp and convert to Mountain Time
+            const date = new Date(timestamp);
+            
+            // Get Mountain Time components
+            const mstString = date.toLocaleString('en-US', { timeZone: 'America/Denver' });
+            const mstDate = new Date(mstString);
+            
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/Denver' });
+            const hour = parseInt(date.toLocaleString('en-US', { timeZone: 'America/Denver', hour: 'numeric', hour12: false }));
+            const minute = parseInt(date.toLocaleString('en-US', { timeZone: 'America/Denver', minute: 'numeric' }));
+            const totalMinutes = hour * 60 + minute;
+
+            // Check if weekday (M-F)
+            if (!BUSINESS_HOURS.weekdays.includes(dayName)) {
+                return {
+                    valid: false,
+                    reason: 'weekend',
+                    message: `${dayName} - We are closed on weekends`
+                };
+            }
+
+            // Calculate business hours in minutes
+            const startMinutes = BUSINESS_HOURS.startTime.hour * 60 + BUSINESS_HOURS.startTime.minute;
+            const endMinutes = BUSINESS_HOURS.endTime.hour * 60 + BUSINESS_HOURS.endTime.minute;
+
+            // Check if within grace period
+            const beforeStart = startMinutes - totalMinutes;
+            const afterEnd = totalMinutes - endMinutes;
+
+            if (beforeStart > BUSINESS_HOURS.gracePeriodMinutes) {
+                return {
+                    valid: false,
+                    reason: 'too_early',
+                    message: `${formatTime(timestamp)} MST - Too early (before 7:45 AM)`,
+                    minutesOff: beforeStart
+                };
+            }
+
+            if (afterEnd > BUSINESS_HOURS.gracePeriodMinutes) {
+                return {
+                    valid: false,
+                    reason: 'too_late',
+                    message: `${formatTime(timestamp)} MST - Too late (after 8:15 PM)`,
+                    minutesOff: afterEnd
+                };
+            }
+
+            // Within business hours + grace period
+            return {
+                valid: true,
+                message: 'Within business hours (MST)'
+            };
+        }
+
+        async function loadTimeData() {
+            try {
+                const filterDate = document.getElementById('filterDate').value;
+                const filterEmployee = document.getElementById('filterEmployee').value;
+                const showOnlyAlerts = document.getElementById('showOnlyAlerts').checked;
+
+                // Build query - fetch time entries without joins to avoid relationship conflicts
+                let query = db
+                    .from('time_entries')
+                    .select('*')
+                    .order('clock_in_time', { ascending: false });
+
+                if (filterDate) {
+                    query = query.gte('clock_in_time', `${filterDate}T00:00:00`)
+                                 .lte('clock_in_time', `${filterDate}T23:59:59`);
+                }
+
+                if (filterEmployee) {
+                    query = query.eq('user_id', filterEmployee);
+                }
+
+                const { data: timeEntries, error: entriesError } = await query.limit(100);
+
+                if (entriesError) throw entriesError;
+
+                // Now fetch related data separately to avoid relationship ambiguity
+                if (timeEntries && timeEntries.length > 0) {
+                    // Get unique user IDs
+                    const userIds = [...new Set(timeEntries.map(e => e.user_id))];
+                    
+                    // Fetch user data
+                    const { data: usersData } = await db
+                        .from('users')
+                        .select('id, full_name, email')
+                        .in('id', userIds);
+                    
+                    // Create user lookup map
+                    const userMap = {};
+                    if (usersData) {
+                        usersData.forEach(user => {
+                            userMap[user.id] = user;
+                        });
+                    }
+                    
+                    // Get unique location IDs
+                    const locationIds = [...new Set(timeEntries.map(e => e.work_location_id).filter(id => id))];
+                    
+                    // Fetch location data
+                    const { data: locationsData } = await db
+                        .from('work_locations')
+                        .select('id, name, address')
+                        .in('id', locationIds);
+                    
+                    // Create location lookup map
+                    const locationMap = {};
+                    if (locationsData) {
+                        locationsData.forEach(loc => {
+                            locationMap[loc.id] = loc;
+                        });
+                    }
+                    
+                    // Attach user and location data to time entries
+                    timeEntries.forEach(entry => {
+                        entry.users = userMap[entry.user_id] || null;
+                        entry.work_locations = locationMap[entry.work_location_id] || null;
+                    });
+                }
+
+                displayTimeEntries(timeEntries || []);
+
+            } catch (error) {
+                console.error('Error loading time data:', error);
+                document.getElementById('timeEntriesContainer').innerHTML = `
+                    <div class="text-center py-12 text-red-600">
+                        <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+                        <p>Error loading time entries: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayTimeEntries(entries) {
+            // Store entries globally for edit function
+            currentTimeEntries = entries;
+            
+            const container = document.getElementById('timeEntriesContainer');
+            
+            if (!entries || entries.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-4"></i>
+                        <p>No time entries found for the selected filters</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-50 border-b-2 border-gray-200">
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Employee</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Location</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Clock In</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Clock Out</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Hours</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${entries.map(entry => {
+                                const clockInValid = validateBusinessHours(entry.clock_in_time);
+                                const clockOutValid = entry.clock_out_time ? validateBusinessHours(entry.clock_out_time) : { valid: true };
+                                const hours = entry.clock_out_time ? calculateHours(entry.clock_in_time, entry.clock_out_time) : 0;
+                                
+                                return `
+                                    <tr class="entry-row border-b border-gray-200">
+                                        <td class="px-4 py-3">
+                                            <div class="font-semibold text-gray-800">${entry.users?.full_name || entry.user_name || 'Unknown'}</div>
+                                            <div class="text-xs text-gray-500">${entry.users?.email || entry.user_email || ''}</div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="text-sm">${entry.work_locations?.name || 'Unknown'}</div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="text-sm">${formatTime(entry.clock_in_time)}</div>
+                                            ${!clockInValid.valid ? `<div class="text-xs text-orange-600 mt-1"><i class="fas fa-exclamation-triangle mr-1"></i>${clockInValid.message}</div>` : ''}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            ${entry.clock_out_time ? 
+                                                `<div class="text-sm">${formatTime(entry.clock_out_time)}</div>
+                                                ${!clockOutValid.valid ? `<div class="text-xs text-orange-600 mt-1"><i class="fas fa-exclamation-triangle mr-1"></i>${clockOutValid.message}</div>` : ''}` : 
+                                                '<span class="text-gray-400 text-sm italic">Still clocked in</span>'
+                                            }
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="hours-badge text-lg ${entry.clock_out_time ? 'text-indigo-600' : 'text-gray-400'}">${hours.toFixed(2)}</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            ${entry.manually_adjusted ? 
+                                                '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><i class="fas fa-pen mr-1"></i>Manual</span>' : 
+                                                '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-check mr-1"></i>Auto</span>'
+                                            }
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex gap-2">
+                                                <button 
+                                                    onclick="editEntry('${entry.id}')"
+                                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                    title="Edit this entry"
+                                                >
+                                                    <i class="fas fa-edit mr-1"></i>Edit
+                                                </button>
+                                                <button 
+                                                    onclick="deleteEntry('${entry.id}', '${entry.users?.full_name || 'Unknown'}', '${formatTime(entry.clock_in_time)}')"
+                                                    class="text-red-600 hover:text-red-800 text-sm font-medium"
+                                                    title="Delete this entry"
+                                                >
+                                                    <i class="fas fa-trash mr-1"></i>Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Stats function removed - stat boxes deleted from UI
+
+        // ========================================
+        // MANUAL ENTRY MODAL FUNCTIONS
+        // ========================================
+        async function openManualEntryModal() {
+            // Populate employee dropdown
+            const employeeSelect = document.getElementById('manual-employee');
+            employeeSelect.innerHTML = '<option value="">Select Employee...</option>';
+            employees.forEach(emp => {
+                employeeSelect.innerHTML += `<option value="${emp.id}">${emp.full_name || emp.email}</option>`;
+            });
+
+            // Populate location dropdown
+            const locationSelect = document.getElementById('manual-location');
+            locationSelect.innerHTML = '<option value="">Select Location...</option>';
+            locations.forEach(loc => {
+                locationSelect.innerHTML += `<option value="${loc.id}">${loc.name}</option>`;
+            });
+
+            // Set today's date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('manual-clock-in-date').value = today;
+
+            // Clear form
+            document.getElementById('manual-clock-in-time').value = '';
+            document.getElementById('manual-clock-out-date').value = '';
+            document.getElementById('manual-clock-out-time').value = '';
+            document.getElementById('manual-reason').value = '';
+
+            // Show modal
+            document.getElementById('manualEntryModal').classList.add('active');
+        }
+
+        function closeManualEntryModal() {
+            document.getElementById('manualEntryModal').classList.remove('active');
+            document.getElementById('manualEntryForm').reset();
+        }
+
+        async function saveManualEntry(event) {
+            event.preventDefault();
+            
+            const employeeId = document.getElementById('manual-employee').value;
+            const clockInDate = document.getElementById('manual-clock-in-date').value;
+            const clockInTime = document.getElementById('manual-clock-in-time').value;
+            const clockOutDate = document.getElementById('manual-clock-out-date').value;
+            const clockOutTime = document.getElementById('manual-clock-out-time').value;
+            const locationId = document.getElementById('manual-location').value;
+            const reason = document.getElementById('manual-reason').value;
+
+            if (!employeeId || !clockInDate || !clockInTime || !locationId || !reason) {
+                alert('⚠️ Please fill in all required fields (marked with *)');
+                return;
+            }
+
+            if (reason.trim().length < 5) {
+                alert('⚠️ Please provide a more detailed reason (at least 5 characters)');
+                return;
+            }
+
+            // 🔥 FIXED: Convert Mountain Time input to UTC for storage
+            const clockInString = `${clockInDate}T${clockInTime}:00`;
+            const clockInParts = clockInString.split(/[-T:]/);
+            const clockInUTC = new Date(Date.UTC(
+                parseInt(clockInParts[0]), 
+                parseInt(clockInParts[1]) - 1, 
+                parseInt(clockInParts[2]), 
+                parseInt(clockInParts[3]) + 7, // Add 7 hours to convert MST to UTC
+                parseInt(clockInParts[4])
+            ));
+            const clockInISO = clockInUTC.toISOString();
+            
+            let clockOutISO = null;
+            if (clockOutDate && clockOutTime) {
+                const clockOutString = `${clockOutDate}T${clockOutTime}:00`;
+                const clockOutParts = clockOutString.split(/[-T:]/);
+                const clockOutUTC = new Date(Date.UTC(
+                    parseInt(clockOutParts[0]), 
+                    parseInt(clockOutParts[1]) - 1, 
+                    parseInt(clockOutParts[2]), 
+                    parseInt(clockOutParts[3]) + 7, // Add 7 hours to convert MST to UTC
+                    parseInt(clockOutParts[4])
+                ));
+                clockOutISO = clockOutUTC.toISOString();
+            }
+
+            // Validate times
+            if (clockOutISO && new Date(clockOutISO) <= new Date(clockInISO)) {
+                alert('⚠️ Clock out time must be after clock in time');
+                return;
+            }
+
+            try {
+                const newEntry = {
+                    user_id: employeeId,
+                    work_location_id: locationId,
+                    clock_in_time: clockInISO,
+                    clock_out_time: clockOutISO,
+                    manually_adjusted: true,
+                    adjusted_by: currentUser.id,
+                    adjusted_at: new Date().toISOString(),
+                    adjustment_reason: `[MANUAL ENTRY] ${reason}`
+                };
+
+                const { data, error } = await db
+                    .from('time_entries')
+                    .insert(newEntry)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                const employee = employees.find(e => e.id === employeeId);
+                const hours = clockOutISO ? calculateHours(clockInISO, clockOutISO) : 0;
+
+                alert(
+                    `✅ MANUAL ENTRY CREATED!\n\n` +
+                    `Employee: ${employee.full_name || employee.email}\n` +
+                    `Clock In: ${formatTime(clockInISO)} MST\n` +
+                    `Clock Out: ${clockOutISO ? formatTime(clockOutISO) + ' MST' : 'Not clocked out'}\n` +
+                    `Hours: ${hours.toFixed(2)}\n\n` +
+                    `This entry has been flagged as manually adjusted.`
+                );
+
+                closeManualEntryModal();
+                await loadTimeData();
+
+            } catch (error) {
+                console.error('Error creating manual entry:', error);
+                alert(`❌ ERROR: ${error.message}\n\nPlease check the console for details.`);
+            }
+        }
+
+        // ========================================
+        // UTILITY FUNCTIONS
+        // ========================================
+        function calculateHours(startTime, endTime) {
+            const start = new Date(startTime);
+            const end = new Date(endTime);
+            const hours = (end - start) / (1000 * 60 * 60);
+            return hours;
+        }
+
+        function formatTime(timestamp) {
+            // Parse UTC timestamp and convert to Mountain Time for display
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-US', { 
+                timeZone: 'America/Denver', // Convert UTC to Mountain Time
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('manualEntryModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeManualEntryModal();
+            }
+        });
+
+        // Populate employee filter
+        async function populateEmployeeFilter() {
+            const select = document.getElementById('filterEmployee');
+            select.innerHTML = '<option value="">All Employees</option>';
+            employees.forEach(emp => {
+                select.innerHTML += `<option value="${emp.id}">${emp.full_name || emp.email}</option>`;
+            });
+        }
+
+        // Load employee filter options after employees are loaded
+        setTimeout(populateEmployeeFilter, 1000);
+
+        // ========================================
+        // EDIT ENTRY FUNCTIONS
+        // ========================================
+        let currentTimeEntries = []; // Store loaded entries for editing
+
+        async function editEntry(entryId) {
+            try {
+                // Find the entry in our loaded data
+                const entry = currentTimeEntries.find(e => e.id === entryId);
+                if (!entry) {
+                    alert('Entry not found. Please refresh and try again.');
+                    return;
+                }
+
+                // Populate edit form
+                document.getElementById('edit-entry-id').value = entry.id;
+                
+                // 🔥 FIXED: Convert UTC to MST for display in datetime-local input
+                // The input expects local time without timezone info, so we parse as MST
+                const clockInUTC = new Date(entry.clock_in_time);
+                const clockInMST = new Date(clockInUTC.getTime() - (7 * 60 * 60 * 1000));
+                document.getElementById('edit-clock-in').value = clockInMST.toISOString().slice(0, 16);
+                
+                if (entry.clock_out_time) {
+                    const clockOutUTC = new Date(entry.clock_out_time);
+                    const clockOutMST = new Date(clockOutUTC.getTime() - (7 * 60 * 60 * 1000));
+                    document.getElementById('edit-clock-out').value = clockOutMST.toISOString().slice(0, 16);
+                } else {
+                    document.getElementById('edit-clock-out').value = '';
+                }
+                
+                document.getElementById('edit-reason').value = '';
+
+                // Show modal
+                document.getElementById('editEntryModal').classList.add('active');
+
+            } catch (error) {
+                console.error('Error loading entry for edit:', error);
+                alert(`❌ ERROR: Failed to load entry\n\n${error.message}`);
+            }
+        }
+
+        function closeEditEntryModal() {
+            document.getElementById('editEntryModal').classList.remove('active');
+            document.getElementById('editEntryForm').reset();
+        }
+
+        async function saveEditEntry(event) {
+            event.preventDefault();
+            
+            const entryId = document.getElementById('edit-entry-id').value;
+            const clockInValue = document.getElementById('edit-clock-in').value;
+            const clockOutValue = document.getElementById('edit-clock-out').value;
+            const reason = document.getElementById('edit-reason').value;
+            
+            if (reason.trim().length < 5) {
+                alert('⚠️ Please provide a more detailed reason (at least 5 characters)');
+                return;
+            }
+            
+            try {
+                // 🔥 FIXED: Parse as MST, convert to UTC (same as manual entry)
+                const clockInParts = clockInValue.split(/[-T:]/);
+                const clockInUTC = new Date(Date.UTC(
+                    parseInt(clockInParts[0]), 
+                    parseInt(clockInParts[1]) - 1, 
+                    parseInt(clockInParts[2]), 
+                    parseInt(clockInParts[3]) + 7, // Add 7 hours MST→UTC
+                    parseInt(clockInParts[4])
+                ));
+                const clockInISO = clockInUTC.toISOString();
+                
+                let clockOutISO = null;
+                if (clockOutValue) {
+                    const clockOutParts = clockOutValue.split(/[-T:]/);
+                    const clockOutUTC = new Date(Date.UTC(
+                        parseInt(clockOutParts[0]), 
+                        parseInt(clockOutParts[1]) - 1, 
+                        parseInt(clockOutParts[2]), 
+                        parseInt(clockOutParts[3]) + 7,
+                        parseInt(clockOutParts[4])
+                    ));
+                    clockOutISO = clockOutUTC.toISOString();
+                    
+                    if (new Date(clockOutISO) <= new Date(clockInISO)) {
+                        alert('⚠️ Clock out time must be after clock in time');
+                        return;
+                    }
+                }
+                
+                const entry = currentTimeEntries.find(e => e.id === entryId);
+                
+                const updates = {
+                    clock_in_time: clockInISO,
+                    clock_out_time: clockOutISO,
+                    manually_adjusted: true,
+                    adjusted_by: currentUser.id,
+                    adjusted_at: new Date().toISOString(),
+                    adjustment_reason: entry?.adjustment_reason ? 
+                        `${entry.adjustment_reason}\n\n[EDITED] ${reason}` : 
+                        `[EDITED] ${reason}`
+                };
+                
+                const { error } = await db
+                    .from('time_entries')
+                    .update(updates)
+                    .eq('id', entryId);
+                
+                if (error) throw error;
+                
+                const hours = clockOutISO ? calculateHours(clockInISO, clockOutISO) : 0;
+                
+                alert(
+                    `✅ TIME ENTRY UPDATED!\n\n` +
+                    `Clock In: ${formatTime(clockInISO)} MST\n` +
+                    `Clock Out: ${clockOutISO ? formatTime(clockOutISO) + ' MST' : 'Still clocked in'}\n` +
+                    `Hours: ${hours.toFixed(2)}`
+                );
+                
+                closeEditEntryModal();
+                await loadTimeData();
+                
+            } catch (error) {
+                console.error('Error updating entry:', error);
+                alert(`❌ ERROR: Failed to update entry\n\n${error.message}`);
+            }
+        }
+
+        // Close edit modal when clicking outside
+        document.getElementById('editEntryModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditEntryModal();
+            }
+        });
+
+        // ========================================
+        // DELETE ENTRY FUNCTION
+        // ========================================
+        async function deleteEntry(entryId, employeeName, clockInTime) {
+            if (!confirm(`⚠️ DELETE TIME ENTRY?\n\nEmployee: ${employeeName}\nClock In: ${clockInTime}\n\nThis action CANNOT be undone!\n\nAre you sure?`)) {
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('time_entries')
+                    .delete()
+                    .eq('id', entryId);
+
+                if (error) throw error;
+
+                alert('✅ Time entry deleted successfully!');
+                await loadTimeData();
+
+            } catch (error) {
+                console.error('Error deleting entry:', error);
+                alert(`❌ ERROR: Failed to delete entry\n\n${error.message}`);
+            }
+        }
+    </script>
+
+</body>
+</html>
