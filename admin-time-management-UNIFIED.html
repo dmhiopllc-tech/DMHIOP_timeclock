@@ -365,7 +365,7 @@
             weekdays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
             startTime: { hour: 8, minute: 0 },    // 8:00 AM MST
             endTime: { hour: 20, minute: 0 },     // 8:00 PM MST
-            gracePeriodMinutes: 15                // ±15 minutes allowed
+            gracePeriodMinutes: 30                // ±30 minutes allowed (was 15)
         };
 
         // Initialize
@@ -499,7 +499,7 @@
                 return {
                     valid: false,
                     reason: 'too_early',
-                    message: `${formatTime(timestamp)} MST - Too early (before 7:45 AM)`,
+                    message: `${formatTime(timestamp)} MST - Too early (before 7:30 AM)`,
                     minutesOff: beforeStart
                 };
             }
@@ -508,7 +508,7 @@
                 return {
                     valid: false,
                     reason: 'too_late',
-                    message: `${formatTime(timestamp)} MST - Too late (after 8:15 PM)`,
+                    message: `${formatTime(timestamp)} MST - Too late (after 8:30 PM)`,
                     minutesOff: afterEnd
                 };
             }
