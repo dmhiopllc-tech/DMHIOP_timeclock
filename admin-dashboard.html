@@ -64,14 +64,25 @@
             height: 100%;
             overflow: auto;
             background-color: rgba(0,0,0,0.4);
+            animation: fadeInModal 0.3s;
+        }
+        @keyframes fadeInModal {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         .modal-content {
             background-color: #fefefe;
             margin: 5% auto;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 0;
+            border-radius: 12px;
             width: 90%;
             max-width: 600px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            animation: slideInModal 0.3s;
+        }
+        @keyframes slideInModal {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
         .close {
             color: #aaa;
@@ -102,6 +113,52 @@
         .approval-done {
             background-color: #D1FAE5;
             color: #065F46;
+        }
+        .form-section {
+            padding: 24px;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 12px 12px 0 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .required-indicator {
+            color: #ef4444;
+            margin-left: 4px;
+        }
+        .info-box {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #1e40af;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -330,6 +387,141 @@
 
     </main>
 
+    <!-- Add Employee Modal -->
+    <div id="addEmployeeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeAddEmployeeModal()">&times;</span>
+                <h2 class="text-2xl font-bold mb-2">
+                    <i class="fas fa-user-plus mr-2"></i>Add New Employee
+                </h2>
+                <p class="text-sm opacity-90">Create a new employee account for DMHIOP Time Clock</p>
+            </div>
+            
+            <form id="addEmployeeForm" onsubmit="saveNewEmployee(event)" class="form-section">
+                <div class="info-box">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Note:</strong> A temporary password will be generated and sent to the employee's email. They will be required to change it on first login.
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        Full Name <span class="required-indicator">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        name="full_name" 
+                        id="add_full_name" 
+                        required 
+                        placeholder="John Doe"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        Email Address <span class="required-indicator">*</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        name="email" 
+                        id="add_email" 
+                        required 
+                        placeholder="john.doe@dmhiop.org"
+                        autocomplete="off"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">This will be used for login and notifications</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label>
+                            Employee ID <span class="required-indicator">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="employee_id" 
+                            id="add_employee_id" 
+                            required 
+                            placeholder="EMP001"
+                            autocomplete="off"
+                        >
+                        <p class="text-xs text-gray-500 mt-1">Unique identifier for payroll</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            Hourly Rate <span class="required-indicator">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            step="0.01" 
+                            min="0" 
+                            name="hourly_rate" 
+                            id="add_hourly_rate" 
+                            required 
+                            placeholder="15.00"
+                            autocomplete="off"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        Role <span class="required-indicator">*</span>
+                    </label>
+                    <select name="role" id="add_role" required>
+                        <option value="">Select Role...</option>
+                        <option value="employee">Employee</option>
+                        <option value="manager">Manager</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        Temporary Password <span class="required-indicator">*</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <input 
+                            type="text" 
+                            name="temp_password" 
+                            id="add_temp_password" 
+                            required 
+                            placeholder="Auto-generated or enter custom"
+                            autocomplete="off"
+                        >
+                        <button 
+                            type="button" 
+                            onclick="generatePassword()" 
+                            class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg transition whitespace-nowrap"
+                        >
+                            <i class="fas fa-random mr-1"></i> Generate
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Minimum 8 characters. Employee will change this on first login.</p>
+                </div>
+
+                <div class="mt-6 flex space-x-4">
+                    <button 
+                        type="submit" 
+                        id="addEmployeeSubmitBtn"
+                        class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg transition font-semibold"
+                    >
+                        <i class="fas fa-user-plus mr-2"></i>Create Employee
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="closeAddEmployeeModal()" 
+                        class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg transition font-semibold"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Edit Employee Modal -->
     <div id="editEmployeeModal" class="modal">
         <div class="modal-content">
@@ -492,8 +684,6 @@
                     document.getElementById('stat-pending').textContent = pending?.length || 0;
                 }
 
-                // ✂️ REMOVED: Active Alerts query and stat update
-
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
             }
@@ -552,6 +742,136 @@
                 document.getElementById('employees-tbody').innerHTML = `
                     <tr><td colspan="7" class="px-6 py-4 text-center text-red-600">Error loading employees: ${error.message}</td></tr>
                 `;
+            }
+        }
+
+        // ========================================
+        // ADD EMPLOYEE FUNCTIONS
+        // ========================================
+        
+        function openAddEmployeeModal() {
+            // Reset form
+            document.getElementById('addEmployeeForm').reset();
+            
+            // Generate initial password
+            generatePassword();
+            
+            // Show modal
+            document.getElementById('addEmployeeModal').style.display = 'block';
+        }
+
+        function closeAddEmployeeModal() {
+            document.getElementById('addEmployeeModal').style.display = 'none';
+            document.getElementById('addEmployeeForm').reset();
+        }
+
+        // Generate random password
+        function generatePassword() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%^&*';
+            let password = '';
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('add_temp_password').value = password;
+        }
+
+        // Save new employee
+        async function saveNewEmployee(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('addEmployeeSubmitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                // Disable submit button
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creating Employee...';
+                
+                const formData = new FormData(event.target);
+                const email = formData.get('email').trim();
+                const password = formData.get('temp_password');
+                const fullName = formData.get('full_name').trim();
+                const employeeId = formData.get('employee_id').trim();
+                const hourlyRate = parseFloat(formData.get('hourly_rate'));
+                const role = formData.get('role');
+
+                // Validate password
+                if (password.length < 8) {
+                    throw new Error('Password must be at least 8 characters long');
+                }
+
+                // Check if employee ID already exists
+                const { data: existingEmployee } = await db
+                    .from('users')
+                    .select('employee_id')
+                    .eq('employee_id', employeeId)
+                    .single();
+
+                if (existingEmployee) {
+                    throw new Error(`Employee ID "${employeeId}" already exists. Please use a unique ID.`);
+                }
+
+                // Step 1: Create auth user
+                const { data: authData, error: authError } = await db.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: fullName,
+                            employee_id: employeeId,
+                            role: role
+                        },
+                        emailRedirectTo: window.location.origin + '/login-standalone.html'
+                    }
+                });
+
+                if (authError) {
+                    throw new Error(`Auth Error: ${authError.message}`);
+                }
+
+                if (!authData.user) {
+                    throw new Error('Failed to create user account');
+                }
+
+                // Step 2: Update user profile in users table
+                const { error: profileError } = await db
+                    .from('users')
+                    .update({
+                        full_name: fullName,
+                        employee_id: employeeId,
+                        hourly_rate: hourlyRate,
+                        role: role,
+                        is_active: true
+                    })
+                    .eq('id', authData.user.id);
+
+                if (profileError) {
+                    console.error('Profile update error:', profileError);
+                    // Don't throw - user was created, just profile incomplete
+                }
+
+                // Success!
+                alert(
+                    `✅ EMPLOYEE CREATED SUCCESSFULLY!\n\n` +
+                    `Name: ${fullName}\n` +
+                    `Email: ${email}\n` +
+                    `Employee ID: ${employeeId}\n` +
+                    `Temporary Password: ${password}\n\n` +
+                    `⚠️ IMPORTANT: Save this password! The employee will need it to log in.\n\n` +
+                    `A confirmation email has been sent to ${email}.`
+                );
+
+                closeAddEmployeeModal();
+                loadEmployees();
+                loadDashboardData();
+
+            } catch (error) {
+                console.error('Error creating employee:', error);
+                alert(`❌ ERROR CREATING EMPLOYEE\n\n${error.message}`);
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             }
         }
 
@@ -1035,10 +1355,6 @@
         function closeEditEmployeeModal() {
             document.getElementById('editEmployeeModal').style.display = 'none';
             document.getElementById('editEmployeeForm').reset();
-        }
-
-        function openAddEmployeeModal() {
-            alert('Add employee functionality coming soon');
         }
 
         function openComposeMessageModal() {
